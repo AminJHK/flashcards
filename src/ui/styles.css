@@ -1085,3 +1085,124 @@ textarea.input-sentence {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* ---------- 히트맵 ---------- */
+.hm {
+  --hm-cell: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hm-scroll {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.hm-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.hm-grid {
+  display: grid;
+  grid-auto-rows: var(--hm-cell);
+  gap: 3px;
+  width: max-content;
+}
+
+.hm-month,
+.hm-wd {
+  font-size: 10px;
+  line-height: var(--hm-cell);
+  color: var(--text3);
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.hm-c {
+  display: block;
+  width: var(--hm-cell);
+  height: var(--hm-cell);
+  border: none;
+  padding: 0;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.hm-0 {
+  background: var(--surface2);
+}
+.hm-1 {
+  background: color-mix(in srgb, var(--accent) 28%, var(--surface2));
+}
+.hm-2 {
+  background: color-mix(in srgb, var(--accent) 52%, var(--surface2));
+}
+.hm-3 {
+  background: color-mix(in srgb, var(--accent) 76%, var(--surface2));
+}
+.hm-4 {
+  background: var(--accent);
+}
+
+.hm-today {
+  outline: 1.5px solid var(--text2);
+  outline-offset: 1px;
+}
+
+.hm-picked-cell {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+
+.hm-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text3);
+}
+
+.hm-picked {
+  flex: 1;
+  min-width: 0;
+  color: var(--text2);
+  font-size: 13px;
+}
+
+.hm-legend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.hm-legend .hm-c {
+  width: 10px;
+  height: 10px;
+  cursor: default;
+}
+
+.hm-numbers {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.hm-numbers div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hm-numbers strong {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.hm-numbers span {
+  font-size: 12px;
+  color: var(--text3);
+}

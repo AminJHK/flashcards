@@ -8,6 +8,7 @@ import { Home } from './screens/Home';
 import { NoteEditor } from './screens/NoteEditor';
 import { Review } from './screens/Review';
 import { Settings } from './screens/Settings';
+import { Stats } from './screens/Stats';
 import { applyTheme } from './theme';
 import { ToastProvider } from './toast';
 
@@ -33,7 +34,7 @@ export function App() {
   const [a, b, c, ...rest] = route;
   const inReview = a === 'review';
   const editingNote = a === 'notes' && c === 'edit';
-  const tab = a === 'add' ? 'add' : a === 'decks' ? 'decks' : a === 'settings' ? 'settings' : a === undefined ? '' : null;
+  const tab = a === 'add' ? 'add' : a === 'decks' ? 'decks' : a === 'settings' ? 'settings' : a === undefined || a === 'stats' ? '' : null;
 
   let screen;
   if (inReview) screen = <Review key={b ?? 'all'} deckId={b} />;
@@ -44,6 +45,7 @@ export function App() {
   else if (a === 'decks' && b) screen = <DeckDetail key={b} id={b} />;
   else if (a === 'decks') screen = <DeckList />;
   else if (a === 'settings') screen = <Settings />;
+  else if (a === 'stats') screen = <Stats />;
   else screen = <Home />;
 
   const showTabs = !inReview && !editingNote;

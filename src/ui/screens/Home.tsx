@@ -3,7 +3,10 @@ import { getCardType } from '../../core/cardTypes/registry';
 import { buildQueue } from '../../core/scheduler/queue';
 import { daysSince, runBackup } from '../backup';
 import { backupToDrive, driveBackupDue, driveErrorMessage } from '../driveBackup';
+import { weekColumns } from '../../core/stats/heatmap';
+import { durationLabel, Heatmap, HeatmapNumbers } from '../components/Heatmap';
 import { Icon } from '../components/Icon';
+import { useReviewStats } from '../useReviewStats';
 import { useCards, useDecks, useNotes, useNow, useScheduler, useSettings } from '../hooks';
 import { go } from '../router';
 import { useToast } from '../toast';
@@ -16,6 +19,7 @@ export function Home() {
   const scheduler = useScheduler(settings);
   const now = useNow(60_000);
   const toast = useToast();
+  const record = useReviewStats();
 
   const q = useMemo(() => {
     if (!settings || !decks || !cards) return undefined;
@@ -74,6 +78,21 @@ export function Home() {
             {total > 0 && ` · 약 ${Math.max(1, Math.round((total * 12) / 60))}분`}
           </span>
         </div>
+
+        {record && (
+          <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>
+                {record.todayCount ? `오늘 ${record.todayCount.count}장${record.todayCount.ms ? ` · ${durationLabel(record.todayCount.ms)}` : ''} 공부했어요` : '오늘은 아직 복습하지 않았어요'}
+              </span>
+              <button type="button" className="link-btn" style={{ padding: '4px 0' }} onClick={() => go('stats')}>
+                전체 보기
+              </button>
+            </div>
+            <Heatmap columns={weekColumns(record.today, 26)} counts={record.counts} average={record.stats.dailyAverage} today={record.today} scrollToEnd />
+            <HeatmapNumbers s={record.stats} />
+          </div>
+        )}
 
         <div>
           <div className="section-label" style={{ marginBottom: 10 }}>

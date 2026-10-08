@@ -94,9 +94,11 @@ test('Gemini: 이 기기에서 WAV 변환이 안 되면 녹음 원본 형식으�
   await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();
 
   // 설정의 말하기 테스트 (두 번 빨리 눌러도 녹음이 하나만 시작된다)
-  const mic = page.getByRole('button', { name: '말하기 테스트 시작' });
-  await mic.click();
-  await mic.click({ force: true }).catch(() => {});
+  // 같은 순간에 두 번 누른다 (마이크 권한 창이 떠 있는 동안 두 번 누르는 상황)
+  await page.getByRole('button', { name: '말하기 테스트 시작' }).evaluate((b: HTMLButtonElement) => {
+    b.click();
+    b.click();
+  });
   await expect(page.locator('.voice-bars')).toBeVisible();
   await expect(page.getByText(/다 말했으면 ■ 누르기/)).toBeVisible();
   await page.waitForTimeout(900);
