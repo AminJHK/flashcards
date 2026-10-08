@@ -64,7 +64,7 @@ describe('Gemini API', () => {
       .mockResolvedValueOnce(json(404, { error: { message: 'not found' } }))
       .mockResolvedValueOnce(json(200, { candidates: [{ content: { parts: [{ text: ' 你想什么时候去 \n' }] } }] }));
     vi.stubGlobal('fetch', fetchMock);
-    const text = await transcribe(new Uint8Array([1, 2]), 'zh-CN', ['a', 'b'], 'KEY');
+    const text = await transcribe({ data: new Uint8Array([1, 2]), mimeType: 'audio/wav' }, 'zh-CN', ['a', 'b'], 'KEY');
     expect(text).toBe('你想什么时候去');
     expect(fetchMock.mock.calls[1]![0]).toContain('models/b:generateContent');
     const body = JSON.parse(fetchMock.mock.calls[1]![1].body);
@@ -74,6 +74,6 @@ describe('Gemini API', () => {
 
   it('받아쓰기: 키 오류는 다음 모델로 넘기지 않는다', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => json(403, {})));
-    await expect(transcribe(new Uint8Array([1]), 'zh-CN', ['a', 'b'], 'KEY')).rejects.toBeInstanceOf(GeminiError);
+    await expect(transcribe({ data: new Uint8Array([1]), mimeType: 'audio/webm' }, 'zh-CN', ['a', 'b'], 'KEY')).rejects.toBeInstanceOf(GeminiError);
   });
 });

@@ -96,8 +96,9 @@ test('설정: 다크 테마와 4버튼이 바로 반영된다', async ({ page })
   await page.getByRole('button', { name: /인도네시아어 단어/ }).click();
   await page.getByRole('button', { name: '만들기' }).click();
   await page.getByRole('link', { name: '추가' }).click();
-  await page.getByLabel(/앞면/).fill('perpustakaan');
-  await page.getByLabel(/뒷면/).fill('도서관');
+  await expect(page.getByRole('heading', { name: '단어 추가' })).toBeVisible();
+  await page.getByRole('textbox', { name: /앞면/ }).fill('perpustakaan');
+  await page.getByRole('textbox', { name: /뒷면/ }).fill('도서관');
   await page.getByRole('button', { name: '저장하고 다음 단어' }).click();
   await page.goto('/#/review');
   await page.locator('.card-area').click();

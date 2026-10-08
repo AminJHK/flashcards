@@ -6,6 +6,8 @@ import { GEMINI_VOICES, synthesize, TTS_MODELS } from '../../adapters/gemini/tts
 import { generateAll, missingClips, play } from '../../adapters/speech/speech';
 import { saveSettings } from '../../adapters/storage/repo';
 import { Row, Switch } from '../components/Controls';
+import { Icon } from '../components/Icon';
+import { useVoiceAnswer } from '../useVoiceAnswer';
 import { useToast } from '../toast';
 
 const AI_STUDIO = 'https://aistudio.google.com/apikey';
@@ -161,6 +163,52 @@ function Connected({ s, g }: { s: Settings; g: NonNullable<Settings['gemini']> }
       <Row title="연결 끊기" desc="키를 이 폰에서 지워요.">
         <button type="button" className="btn-plain" onClick={disconnect}>
           끊기
+        </button>
+      </Row>
+    </div>
+  );
+}
+
+/** 말하기 테스트: 실제 복습 화면과 같은 방법으로 녹음 → 받아쓰기를 해 보고 결과나 오류를 그대로 보여준다. */
+export function VoiceTest({ s }: { s: Settings }) {
+  const [result, setResult] = useState<{ ok: boolean; text: string }>();
+  const voice = useVoiceAnswer(
+    s,
+    (t) => setResult({ ok: true, text: t }),
+    (m) => setResult({ ok: false, text: m }),
+  );
+  const how = voice.viaGemini ? 'Gemini로 받아써요' : '기기 음성 인식을 써요';
+  const status =
+    voice.state === 'starting'
+      ? '마이크 준비 중…'
+      : voice.state === 'listening'
+        ? '듣고 있어요. "你好，我是护士" 하고 말한 뒤 다시 누르세요'
+        : voice.state === 'transcribing'
+          ? '알아듣는 중…'
+          : result
+            ? result.ok
+              ? `들은 말: ${result.text}`
+              : result.text
+            : `중국어로 말해 보세요 · ${how}`;
+  return (
+    <div className="group">
+      <Row title="말하기 테스트" desc={status}>
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label={voice.state === 'listening' ? '말하기 끝내기' : '말하기 테스트 시작'}
+          aria-pressed={voice.state === 'listening'}
+          disabled={!voice.supported || voice.state === 'starting' || voice.state === 'transcribing'}
+          onClick={() => {
+            if (voice.state === 'idle') setResult(undefined);
+            void voice.toggle('zh-CN');
+          }}
+          style={{
+            background: voice.state === 'listening' ? 'var(--accent)' : 'var(--surface2)',
+            color: voice.state === 'listening' ? 'var(--on-accent)' : 'var(--text2)',
+          }}
+        >
+          <Icon name="mic" />
         </button>
       </Row>
     </div>

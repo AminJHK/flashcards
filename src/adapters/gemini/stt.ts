@@ -1,3 +1,4 @@
+import type { AudioData } from '../audio/recorder';
 import { bytesToBase64 } from '../audio/wav';
 import { GeminiError, generate } from './api';
 
@@ -16,13 +17,13 @@ export function sttInstruction(lang: string): string {
   ].join(' ');
 }
 
-export async function transcribe(wav: Uint8Array, lang: string, models: readonly string[], key: string): Promise<string> {
+export async function transcribe(audio: AudioData, lang: string, models: readonly string[], key: string): Promise<string> {
   let last: unknown;
   for (const model of models) {
     try {
       const r = await generate(model, key, {
         systemInstruction: { parts: [{ text: sttInstruction(lang) }] },
-        contents: [{ parts: [{ inlineData: { mimeType: 'audio/wav', data: bytesToBase64(wav) } }, { text: 'Transcribe.' }] }],
+        contents: [{ parts: [{ inlineData: { mimeType: audio.mimeType, data: bytesToBase64(audio.data) } }, { text: 'Transcribe.' }] }],
         generationConfig: { temperature: 0 },
       });
       return (r.candidates?.[0]?.content?.parts ?? [])

@@ -320,7 +320,7 @@ export function Review({ deckId }: { deckId?: string }) {
                 className="icon-btn"
                 aria-label={voice.state === 'listening' ? '말하기 끝내기' : '말해서 답하기'}
                 aria-pressed={voice.state === 'listening'}
-                disabled={voice.state === 'transcribing'}
+                disabled={voice.state === 'transcribing' || voice.state === 'starting'}
                 onClick={() => view.expected && voice.toggle(view.expected.lang)}
                 style={{
                   height: 'auto',
@@ -336,7 +336,7 @@ export function Review({ deckId }: { deckId?: string }) {
           )}
           {voice.state !== 'idle' && (
             <span className="faint small" role="status">
-              {voice.state === 'listening' ? '듣고 있어요 · 다 말했으면 마이크를 다시 누르세요' : '받아쓰는 중…'}
+              {voice.state === 'starting' ? '마이크 준비 중…' : voice.state === 'listening' ? '듣고 있어요 · 다 말했으면 마이크를 다시 누르세요' : '알아듣는 중…'}
             </span>
           )}
         </div>

@@ -9,7 +9,7 @@ import { useDecks, useScheduler, useSettings } from '../hooks';
 import { langName } from '../langs';
 import { ACCENTS, prefersDark } from '../theme';
 import { useToast } from '../toast';
-import { GeminiSettings } from './GeminiSettings';
+import { GeminiSettings, VoiceTest } from './GeminiSettings';
 
 const SAMPLE: Record<string, string> = {
   'zh-CN': '你好，我们一起学习中文吧。',
@@ -50,6 +50,7 @@ export function Settings() {
         자연스러운 음성
       </span>
       <GeminiSettings s={s} />
+      <VoiceTest s={s} />
 
       <span className="section-label" style={{ paddingTop: 8 }}>화면</span>
       <div className="group">
