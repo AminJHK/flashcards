@@ -3,7 +3,10 @@ import { useMemo, useState } from 'react';
 import { CARD_TYPES, getCardType } from '../../core/cardTypes/registry';
 import type { AutoplaySide, DeckSettings } from '../../core/model/types';
 import { db } from '../../adapters/storage/db';
-import { createDeck, deleteDeck, updateDeck } from '../../adapters/storage/repo';
+import { loadPinyin } from '../../adapters/pinyin/pinyin';
+import { createDeck, deleteDeck, installPack, updateDeck } from '../../adapters/storage/repo';
+import { PACKS } from '../../core/packs/registry';
+import type { Pack } from '../../core/packs/types';
 import { Row, Segmented, Stepper, Switch } from '../components/Controls';
 import { Icon } from '../components/Icon';
 import { useDecks } from '../hooks';
@@ -84,6 +87,44 @@ const PRESETS: Preset[] = [
   },
 ];
 
+function PackCard({ pack }: { pack: Pack }) {
+  const toast = useToast();
+  const decks = useDecks();
+  const [busy, setBusy] = useState(false);
+  const speak = pack.notes.filter((n) => n.typeId === 'zh-sentence').length;
+  const listen = pack.notes.filter((n) => n.typeId === 'zh-listen').length;
+  const days = Math.ceil(pack.notes.length / pack.deckSettings.newPerDay);
+
+  const install = async () => {
+    if (decks?.some((d) => d.name === pack.deckName) && !window.confirm('같은 이름의 덱이 이미 있어요. 하나 더 만들까요?')) return;
+    setBusy(true);
+    try {
+      const pinyin = await loadPinyin();
+      const deck = await installPack(pack, { pinyin });
+      toast(`문장 ${pack.notes.length}개를 넣었어요`);
+      go(`decks/${deck.id}`, { replace: true });
+    } catch {
+      toast('덱을 만들지 못했어요. 다시 시도해 주세요');
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 20 }}>
+      <span style={{ fontSize: 17, fontWeight: 600 }}>{pack.name}</span>
+      <span className="muted small" style={{ lineHeight: 1.55 }}>
+        {pack.description}
+      </span>
+      <span className="faint small">
+        말하기 {speak}문장 · 듣기 {listen}문장 · 하루 {pack.deckSettings.newPerDay}개씩 약 {days}일
+      </span>
+      <button type="button" className="btn btn-primary" style={{ height: 52 }} onClick={install} disabled={busy}>
+        {busy ? '넣는 중…' : '이 덱 추가하기'}
+      </button>
+    </div>
+  );
+}
+
 export function DeckNew() {
   const [preset, setPreset] = useState(PRESETS[0]!);
   const [name, setName] = useState(PRESETS[0]!.name);
@@ -109,6 +150,13 @@ export function DeckNew() {
         <div className="screen-head">
           <h1 className="title">새 덱</h1>
         </div>
+        <span className="section-label">준비된 덱</span>
+        {PACKS.map((p) => (
+          <PackCard key={p.id} pack={p} />
+        ))}
+        <span className="section-label" style={{ paddingTop: 8 }}>
+          빈 덱 만들기
+        </span>
         <div>
           {PRESETS.map((p) => (
             <button

@@ -82,4 +82,16 @@ describe('repo', () => {
     await repo.importBackup(parseBackup(text), d);
     expect((await repo.getSettings(d)).gemini?.apiKey).toBe('SECRET');
   });
+
+  it('준비된 덱을 설치하면 문장 순서대로 카드가 생기고 병음이 채워진다', async () => {
+    const { cardiacNursingZh } = await import('../../core/packs/cardiacNursingZh');
+    const deck = await repo.installPack(cardiacNursingZh, { pinyin: (t) => `py:${t}` }, d);
+    const notes = await d.notes.where('deckId').equals(deck.id).sortBy('createdAt');
+    expect(notes).toHaveLength(cardiacNursingZh.notes.length);
+    expect(notes[0]!.fields.zh).toBe(cardiacNursingZh.notes[0]!.fields.zh);
+    expect(notes[0]!.fields.pinyin).toBe(`py:${cardiacNursingZh.notes[0]!.fields.zh}`);
+    expect(notes[0]!.tags).toContain('pack:cardiac-nursing-zh');
+    const visible = (await d.cards.where('deckId').equals(deck.id).toArray()).filter((c) => !c.hidden);
+    expect(visible).toHaveLength(cardiacNursingZh.notes.length); // 역방향은 꺼져 있다
+  });
 });

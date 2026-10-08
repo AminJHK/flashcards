@@ -44,6 +44,7 @@ export function Home() {
           <button type="button" className="btn btn-primary" onClick={() => go('decks/new')}>
             첫 덱 만들기
           </button>
+          <span className="faint small">준비된 덱(심장 병동 간호 중국어)도 있어요.</span>
         </div>
       </div>
     );

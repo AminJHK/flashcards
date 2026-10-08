@@ -94,7 +94,7 @@ export function Review({ deckId }: { deckId?: string }) {
         const msg = r.error
           ? `Gemini 음성을 못 써서 기기 음성으로 읽었어요 · ${r.error}`
           : r.via === 'none'
-            ? '이 기기에 이 언어의 음성이 없을 수 있어요. 설정 › 발음에서 확인해 주세요'
+            ? '이 기기에 이 언어의 음성이 없을 수 있어요. 설정에서 자연스러운 음성을 연결해 보세요'
             : undefined;
         if (msg && !warned.has(msg)) {
           warned.add(msg);
@@ -106,7 +106,7 @@ export function Review({ deckId }: { deckId?: string }) {
   );
 
   // 자동 재생
-  const autoplay = cardDeck?.settings.autoplay ?? 'off';
+  const autoplay = view?.autoplay ?? cardDeck?.settings.autoplay ?? 'off';
   useEffect(() => {
     if (!view || editing) return;
     if (autoplay === 'front' && !flipped && view.tts.front.length) say('front');
@@ -285,10 +285,12 @@ export function Review({ deckId }: { deckId?: string }) {
 
   const deckLine = [cardDeck?.name, card.isNew ? '새 카드' : undefined, template?.optional ? '역방향' : undefined].filter(Boolean).join(' · ');
   const faceBlocks = flipped ? view.back : view.front;
+  // 앞면에 버튼이 있는 카드(듣기)는 카드 전체를 탭 버튼으로 만들 수 없다
+  const hasControls = view.front.some((b) => b.kind === 'listen');
 
   const cardInner = (
     <>
-      <CardFace blocks={faceBlocks} />
+      <CardFace blocks={faceBlocks} onSpeak={() => say(flipped ? 'back' : 'front')} />
       {flipped && checked && <AnswerDiff c={checked} given={answer} />}
     </>
   );
@@ -297,9 +299,10 @@ export function Review({ deckId }: { deckId?: string }) {
     <>
       {topBar}
       <div className="deck-line">{deckLine}</div>
-      {produce && !flipped ? (
+      {(produce || hasControls) && !flipped ? (
         <div className="card-area" data-flipped="false" style={{ cursor: 'default' }}>
           {cardInner}
+          {produce && (
           <div className="produce">
             <textarea
               className="input input-sentence"
@@ -330,6 +333,7 @@ export function Review({ deckId }: { deckId?: string }) {
               </button>
             )}
           </div>
+          )}
           {voice.state !== 'idle' && (
             <span className="faint small" role="status">
               {voice.state === 'listening' ? '듣고 있어요 · 다 말했으면 마이크를 다시 누르세요' : '받아쓰는 중…'}
@@ -341,7 +345,7 @@ export function Review({ deckId }: { deckId?: string }) {
           {cardInner}
         </button>
       )}
-      {!flipped && !produce && <div className="flip-hint">아무 곳이나 탭해서 정답 보기</div>}
+      {!flipped && !produce && !hasControls && <div className="flip-hint">아무 곳이나 탭해서 정답 보기</div>}
       <div className="answer-bar">
         {!flipped ? (
           produce ? (

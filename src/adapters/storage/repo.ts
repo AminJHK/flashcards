@@ -1,4 +1,6 @@
 import { getCardType } from '../../core/cardTypes/registry';
+import type { DeriveDeps } from '../../core/cardTypes/types';
+import type { Pack } from '../../core/packs/types';
 import { makeBackup, type Backup } from '../../core/io/backup';
 import { newId } from '../../core/model/ids';
 import { cardsForNote, createNote, trimFields } from '../../core/model/notes';
@@ -108,6 +110,36 @@ export async function deleteNote(id: Id, d: FlashcardsDB = db): Promise<void> {
   await d.transaction('rw', [d.notes, d.cards], async () => {
     await d.cards.where('noteId').equals(id).delete();
     await d.notes.delete(id);
+  });
+}
+
+/**
+ * 준비된 덱을 설치한다. 덱을 새로 만들고 문장을 순서대로 넣는다 (새 카드도 이 순서로 나온다).
+ * 병음 같은 자동 필드는 deps로 채운다.
+ */
+export async function installPack(pack: Pack, deps: DeriveDeps, d: FlashcardsDB = db): Promise<Deck> {
+  return d.transaction('rw', [d.decks, d.notes, d.cards, d.settings], async () => {
+    const now = Date.now();
+    const deck: Deck = { id: newId(), name: pack.deckName, createdAt: now, settings: { ...pack.deckSettings } };
+    await d.decks.add(deck);
+    const sched = schedulerFor(await getSettings(d));
+    const notes: Note[] = [];
+    const cards: Card[] = [];
+    pack.notes.forEach((pn, i) => {
+      const type = getCardType(pn.typeId);
+      let fields = { ...pn.fields };
+      for (const src of new Set(type.fields.map((f) => f.autoFrom).filter(Boolean) as string[])) {
+        const patch = type.derive?.(src, fields, deps) ?? {};
+        // 꾸러미에 직접 적힌 값이 있으면 그걸 쓴다
+        fields = { ...fields, ...Object.fromEntries(Object.entries(patch).filter(([k]) => !fields[k]?.trim())) };
+      }
+      const made = createNote(deck, pn.typeId, fields, now + i, sched);
+      notes.push({ ...made.note, tags: [...pn.tags, `pack:${pack.id}`] });
+      cards.push(...made.cards);
+    });
+    await d.notes.bulkAdd(notes);
+    await d.cards.bulkAdd(cards);
+    return deck;
   });
 }
 

@@ -734,6 +734,18 @@ svg.icon {
   text-align: left;
 }
 
+.listen-btn {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* 작문 답 */
 .produce {
   width: 100%;

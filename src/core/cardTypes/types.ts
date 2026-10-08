@@ -1,4 +1,4 @@
-import type { Deck, Lang } from '../model/types';
+import type { AutoplaySide, Deck, Lang } from '../model/types';
 
 /**
  * 카드 종류 시스템 (docs/DESIGN.md §5).
@@ -50,7 +50,9 @@ export type Block =
   | { kind: 'sentence'; text: string; lang: Lang; emphasis: 'main' | 'sub' }
   | { kind: 'prompt'; text: string }
   | { kind: 'divider' }
-  | { kind: 'memo'; text: string };
+  | { kind: 'memo'; text: string }
+  /** 소리만 먼저 들려준다. 화면에는 재생 버튼과 "글자 보기"가 나온다 (듣기 카드) */
+  | { kind: 'listen'; text: string; lang: Lang };
 
 export interface Speech {
   text: string;
@@ -63,6 +65,8 @@ export interface CardView {
   tts: { front: Speech[]; back: Speech[] };
   /** answer가 'produce'일 때 비교할 정답 */
   expected?: Speech;
+  /** 덱의 자동 재생 설정 대신 이 카드가 정하는 재생 시점 (듣기 카드는 항상 앞면) */
+  autoplay?: AutoplaySide;
 }
 
 export interface ViewContext {
