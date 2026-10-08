@@ -746,6 +746,63 @@ svg.icon {
   justify-content: center;
 }
 
+/* 듣는 중 표시 */
+.voice-meter {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.voice-bars {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.voice-bars span {
+  flex: 1;
+  min-height: 3px;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: height 0.08s linear;
+}
+
+.voice-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text2);
+}
+
+.voice-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--again);
+  animation: voice-blink 1s ease-in-out infinite;
+}
+
+@keyframes voice-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.voice-partial {
+  font-family: var(--font-hanzi);
+  font-size: calc(18px * var(--scale));
+  color: var(--text);
+  line-height: 1.5;
+}
+
 /* 작문 답 */
 .produce {
   width: 100%;

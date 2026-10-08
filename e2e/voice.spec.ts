@@ -54,7 +54,7 @@ test('기기 음성 인식이 아무것도 못 들으면 조용히 끝나지 않
   await fakeWebSpeech(page, '');
   await sentenceCard(page);
   await page.getByRole('button', { name: '말해서 답하기' }).click();
-  await expect(page.getByText('듣고 있어요')).toBeVisible();
+  await expect(page.locator('.voice-bars')).toBeVisible();
   await page.getByRole('button', { name: '말하기 끝내기' }).click();
   await expect(page.getByText(/알아듣지 못했어요 · 설정에서 자연스러운 음성\(Gemini\)을 연결하면/)).toBeVisible();
 });
@@ -97,10 +97,53 @@ test('Gemini: 이 기기에서 WAV 변환이 안 되면 녹음 원본 형식으�
   const mic = page.getByRole('button', { name: '말하기 테스트 시작' });
   await mic.click();
   await mic.click({ force: true }).catch(() => {});
-  await expect(page.getByText(/듣고 있어요/)).toBeVisible();
+  await expect(page.locator('.voice-bars')).toBeVisible();
+  await expect(page.getByText(/다 말했으면 ■ 누르기/)).toBeVisible();
   await page.waitForTimeout(900);
+  await page.screenshot({ path: 'test-results/shots/14-voice-meter-gemini.png' });
   await page.getByRole('button', { name: '말하기 끝내기' }).click();
   await expect(page.getByText('들은 말: 你好，我是护士')).toBeVisible();
   expect(mimes).toHaveLength(1);
   expect(mimes[0]).toMatch(/^audio\/(webm|ogg|mp4)$/);
+});
+
+test('기기 음성 인식이 중간에 혼자 끝나도 다시 이어 듣고, 들은 글자를 실시간으로 보여준다', async ({ page }) => {
+  // 실제 안드로이드처럼: 한 마디 듣고 0.3초 뒤 혼자 끝나 버리는 인식기
+  await page.addInitScript(() => {
+    const words = ['你想', '什么时候', '去'];
+    let session = 0;
+    class EarlyEnd {
+      lang = '';
+      continuous = false;
+      interimResults = false;
+      maxAlternatives = 1;
+      onresult: ((e: unknown) => void) | null = null;
+      onerror: ((e: unknown) => void) | null = null;
+      onend: (() => void) | null = null;
+      private t?: ReturnType<typeof setTimeout>;
+      start() {
+        const w = words[session++];
+        this.t = setTimeout(() => {
+          if (w) this.onresult?.({ results: [[{ transcript: w }]] });
+          setTimeout(() => this.onend?.(), 100);
+        }, 200);
+      }
+      stop() {
+        clearTimeout(this.t);
+        setTimeout(() => this.onend?.(), 20);
+      }
+      abort() {
+        this.onend?.();
+      }
+    }
+    (window as unknown as Record<string, unknown>).webkitSpeechRecognition = EarlyEnd;
+    (window as unknown as Record<string, unknown>).SpeechRecognition = EarlyEnd;
+  });
+  await sentenceCard(page);
+  await page.getByRole('button', { name: '말해서 답하기' }).click();
+  await expect(page.locator('.voice-bars span')).toHaveCount(28);
+  await expect(page.locator('.voice-partial')).toHaveText('你想 什么时候 去', { timeout: 5000 });
+  await page.screenshot({ path: 'test-results/shots/13-voice-meter.png' });
+  await page.getByRole('button', { name: '말하기 끝내기' }).click();
+  await expect(page.getByLabel('내 답')).toHaveValue('你想 什么时候 去');
 });

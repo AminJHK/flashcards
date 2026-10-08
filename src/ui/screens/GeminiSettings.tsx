@@ -7,6 +7,7 @@ import { generateAll, missingClips, play } from '../../adapters/speech/speech';
 import { saveSettings } from '../../adapters/storage/repo';
 import { Row, Switch } from '../components/Controls';
 import { Icon } from '../components/Icon';
+import { VoiceMeter } from '../components/VoiceMeter';
 import { useVoiceAnswer } from '../useVoiceAnswer';
 import { useToast } from '../toast';
 
@@ -182,7 +183,7 @@ export function VoiceTest({ s }: { s: Settings }) {
     voice.state === 'starting'
       ? '마이크 준비 중…'
       : voice.state === 'listening'
-        ? '듣고 있어요. "你好，我是护士" 하고 말한 뒤 다시 누르세요'
+        ? '"你好，我是护士" 하고 말한 뒤 ■를 누르세요'
         : voice.state === 'transcribing'
           ? '알아듣는 중…'
           : result
@@ -208,9 +209,14 @@ export function VoiceTest({ s }: { s: Settings }) {
             color: voice.state === 'listening' ? 'var(--on-accent)' : 'var(--text2)',
           }}
         >
-          <Icon name="mic" />
+          <Icon name={voice.state === 'listening' ? 'stop' : 'mic'} />
         </button>
       </Row>
+      {voice.state === 'listening' && (
+        <div style={{ paddingBottom: 14 }}>
+          <VoiceMeter level={voice.level} startedAt={voice.startedAt} maxMs={voice.maxMs} partial={voice.viaGemini ? undefined : voice.partial} />
+        </div>
+      )}
     </div>
   );
 }

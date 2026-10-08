@@ -53,45 +53,94 @@ export interface Listening {
   /** 듣기를 끝내고 지금까지 들은 걸 받는다 */
   stop(): void;
   cancel(): void;
+  startedAt: number;
+  maxMs: number;
 }
 
-export function listen(lang: string): Listening {
+export const MAX_LISTEN_MS = 60_000;
+
+/**
+ * 듣기 시작. 안드로이드 브라우저는 잠깐 조용하면 혼자 끝내 버리는데, 사용자가 멈추기 전이면
+ * 곧바로 다시 시작해서 이어 듣는다 (최대 maxMs). onPartial로 지금까지 알아들은 글자를 알려준다.
+ */
+export function listen(lang: string, onPartial?: (text: string) => void, maxMs = MAX_LISTEN_MS): Listening {
   const C = ctor();
-  if (!C) return { result: Promise.reject(new SpeechError('이 기기에서는 음성 인식을 쓸 수 없어요', 'unsupported')), stop() {}, cancel() {} };
-  const r = new C();
-  r.lang = lang;
-  r.interimResults = false;
-  r.maxAlternatives = 1;
-  r.continuous = true; // 사용자가 다시 누를 때까지 듣는다
+  const startedAt = Date.now();
+  if (!C) return { result: Promise.reject(new SpeechError('이 기기에서는 음성 인식을 쓸 수 없어요', 'unsupported')), stop() {}, cancel() {}, startedAt, maxMs };
+  let r: RecognitionLike | undefined;
+  let stopping = false;
   let cancelled = false;
-  const parts: string[] = [];
+  const finals: string[] = []; // 이전 세션들에서 확정된 글자
+  let current: string[] = []; // 지금 세션
+  const heard = () => [...finals, ...current].join(' ').replace(/\s+/g, ' ').trim();
+  const timer = setTimeout(() => {
+    stopping = true;
+    r?.stop();
+  }, maxMs);
+
   const result = new Promise<string>((resolve, reject) => {
-    let error: string | undefined;
-    r.onresult = (e) => {
-      parts.length = 0;
-      for (let i = 0; i < e.results.length; i++) parts.push(e.results[i]?.[0]?.transcript ?? '');
-    };
-    r.onerror = (e) => {
-      if (e.error !== 'aborted') error = e.error;
-    };
-    r.onend = () => {
-      const text = parts.join(' ').trim();
-      if (cancelled) resolve('');
-      else if (text) resolve(text);
-      else reject(new SpeechError(MESSAGES[error ?? 'empty'] ?? `음성 인식 오류 (${error})`, error ?? 'empty'));
+    let lastError: string | undefined;
+    let restarts = 0;
+    const begin = () => {
+      const rec = new C();
+      r = rec;
+      rec.lang = lang;
+      rec.interimResults = true;
+      rec.maxAlternatives = 1;
+      rec.continuous = true;
+      current = [];
+      rec.onresult = (e) => {
+        current = [];
+        for (let i = 0; i < e.results.length; i++) current.push(e.results[i]?.[0]?.transcript ?? '');
+        onPartial?.(heard());
+      };
+      rec.onerror = (e) => {
+        if (e.error !== 'aborted' && e.error !== 'no-speech') lastError = e.error;
+        if (e.error === 'no-speech' && !heard()) lastError = 'no-speech';
+      };
+      rec.onend = () => {
+        finals.push(...current);
+        current = [];
+        const fatal = lastError && ['not-allowed', 'service-not-allowed', 'audio-capture', 'language-not-supported'].includes(lastError);
+        // 사용자가 멈추기 전에 끝났으면 다시 듣는다
+        if (!stopping && !cancelled && !fatal && restarts < 30 && Date.now() - startedAt < maxMs) {
+          restarts++;
+          lastError = undefined;
+          try {
+            begin();
+            return;
+          } catch {
+            /* 아래로 */
+          }
+        }
+        clearTimeout(timer);
+        const text = heard();
+        if (cancelled) resolve('');
+        else if (text) resolve(text);
+        else reject(new SpeechError(MESSAGES[lastError ?? 'empty'] ?? `음성 인식 오류 (${lastError})`, lastError ?? 'empty'));
+      };
+      rec.start();
     };
     try {
-      r.start();
+      begin();
     } catch {
+      clearTimeout(timer);
       reject(new SpeechError('음성 인식을 시작하지 못했어요. 잠시 뒤에 다시 눌러 주세요', 'start'));
     }
   });
   return {
     result,
-    stop: () => r.stop(),
+    startedAt,
+    maxMs,
+    stop: () => {
+      stopping = true;
+      r?.stop();
+    },
     cancel: () => {
       cancelled = true;
-      r.abort();
+      stopping = true;
+      clearTimeout(timer);
+      r?.abort();
     },
   };
 }

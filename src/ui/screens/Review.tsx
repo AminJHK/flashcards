@@ -8,6 +8,7 @@ import { recordReview, undoReview } from '../../adapters/storage/repo';
 import { play, stopAll } from '../../adapters/speech/speech';
 import { CardFace } from '../components/CardFace';
 import { Icon } from '../components/Icon';
+import { VoiceMeter } from '../components/VoiceMeter';
 import { useCards, useDecks, useNotes, useNow, useScheduler, useSettings } from '../hooks';
 import { go } from '../router';
 import { useToast } from '../toast';
@@ -348,14 +349,15 @@ export function Review({ deckId }: { deckId?: string }) {
                   borderRadius: 14,
                 }}
               >
-                <Icon name="mic" />
+                <Icon name={voice.state === 'listening' ? 'stop' : 'mic'} />
               </button>
             )}
           </div>
           )}
-          {voice.state !== 'idle' && (
+          {voice.state === 'listening' && <VoiceMeter level={voice.level} startedAt={voice.startedAt} maxMs={voice.maxMs} partial={voice.viaGemini ? undefined : voice.partial} />}
+          {(voice.state === 'starting' || voice.state === 'transcribing') && (
             <span className="faint small" role="status">
-              {voice.state === 'starting' ? '마이크 준비 중…' : voice.state === 'listening' ? '듣고 있어요 · 다 말했으면 마이크를 다시 누르세요' : '알아듣는 중…'}
+              {voice.state === 'starting' ? '마이크 준비 중…' : '알아듣는 중…'}
             </span>
           )}
         </div>

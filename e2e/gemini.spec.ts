@@ -53,7 +53,7 @@ test('Gemini 키를 연결하면 단어 음성을 만들어 저장하고, 말한
   // 복습: 마이크로 답하기 → 받아쓰기 → 비교
   await page.goto('/#/review');
   await page.getByRole('button', { name: '말해서 답하기' }).click();
-  await expect(page.getByText('듣고 있어요')).toBeVisible();
+  await expect(page.locator('.voice-bars')).toBeVisible();
   await page.waitForTimeout(800);
   await page.getByRole('button', { name: '말하기 끝내기' }).click();
   await expect(page.getByLabel('내 답')).toHaveValue('你想什么时候去');

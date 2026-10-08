@@ -12,7 +12,15 @@ export interface AudioData {
 export interface Recording {
   stop(): Promise<AudioData>;
   cancel(): void;
+  /** 지금 소리 크기 0~1 (파형 표시용) */
+  level(): number;
+  /** 녹음을 시작한 시각 */
+  startedAt: number;
+  maxMs: number;
 }
+
+/** 녹음 최대 길이 */
+export const MAX_RECORD_MS = 60_000;
 
 export class RecordingError extends Error {}
 
@@ -32,7 +40,7 @@ function pickMime(): string | undefined {
   });
 }
 
-export async function startRecording(maxMs = 20_000): Promise<Recording> {
+export async function startRecording(maxMs = MAX_RECORD_MS, onAutoStop?: () => void): Promise<Recording> {
   let stream: MediaStream;
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
@@ -50,12 +58,39 @@ export async function startRecording(maxMs = 20_000): Promise<Recording> {
   const stopped = new Promise<void>((resolve) => (rec.onstop = () => resolve()));
   const startedAt = Date.now();
   rec.start(250); // 조금씩 받아 둔다 (일부 기기는 stop 때 데이터를 안 주기도 함)
-  const timer = setTimeout(() => rec.state === 'recording' && rec.stop(), maxMs);
+  const timer = setTimeout(() => {
+    if (rec.state === 'recording') onAutoStop?.();
+  }, maxMs);
+  // 소리 크기 측정 (녹음에는 영향 없음)
+  let meterCtx: AudioContext | undefined;
+  let analyser: AnalyserNode | undefined;
+  let buf: Uint8Array<ArrayBuffer> | undefined;
+  try {
+    meterCtx = new AudioContext();
+    analyser = meterCtx.createAnalyser();
+    analyser.fftSize = 512;
+    meterCtx.createMediaStreamSource(stream).connect(analyser);
+    buf = new Uint8Array(new ArrayBuffer(analyser.fftSize));
+    void meterCtx.resume().catch(() => {});
+  } catch {
+    analyser = undefined;
+  }
+  const level = () => {
+    if (!analyser || !buf) return 0;
+    analyser.getByteTimeDomainData(buf);
+    let sum = 0;
+    for (const v of buf) sum += ((v - 128) / 128) ** 2;
+    return Math.min(1, Math.sqrt(sum / buf.length) * 4);
+  };
   const release = () => {
     clearTimeout(timer);
     stream.getTracks().forEach((t) => t.stop());
+    void meterCtx?.close().catch(() => {});
   };
   return {
+    level,
+    startedAt,
+    maxMs,
     async stop() {
       if (rec.state === 'recording') rec.stop();
       await stopped;

@@ -15,6 +15,11 @@ const GEMINI_HINT = ' · 설정에서 자연스러운 음성(Gemini)을 연결�
  */
 export function useVoiceAnswer(settings: Settings | undefined, onText: (t: string) => void, onError: (m: string) => void) {
   const [state, setState] = useState<VoiceState>('idle');
+  /** 기기 음성 인식이 지금까지 알아들은 글자 (실시간) */
+  const [partial, setPartial] = useState('');
+  const [startedAt, setStartedAt] = useState(0);
+  const [maxMs, setMaxMs] = useState(60_000);
+  const autoStop = useRef<() => void>(() => {});
   const stateRef = useRef<VoiceState>('idle');
   const rec = useRef<Recording | undefined>(undefined);
   const web = useRef<Listening | undefined>(undefined);
@@ -46,7 +51,9 @@ export function useVoiceAnswer(settings: Settings | undefined, onText: (t: strin
         if (now === 'idle') {
           go('starting');
           try {
-            rec.current = await startRecording();
+            rec.current = await startRecording(undefined, () => autoStop.current());
+            setStartedAt(rec.current.startedAt);
+            setMaxMs(rec.current.maxMs);
             go('listening');
           } catch (e) {
             go('idle');
@@ -77,8 +84,11 @@ export function useVoiceAnswer(settings: Settings | undefined, onText: (t: strin
         web.current?.stop();
         return;
       }
-      const l = listen(lang);
+      setPartial('');
+      const l = listen(lang, setPartial);
       web.current = l;
+      setStartedAt(l.startedAt);
+      setMaxMs(l.maxMs);
       go('listening');
       l.result
         .then((t) => t && onText(t))
@@ -89,11 +99,27 @@ export function useVoiceAnswer(settings: Settings | undefined, onText: (t: strin
         })
         .finally(() => {
           web.current = undefined;
+          setPartial('');
           go('idle');
         });
     },
     [useGemini, settings, onText, onError],
   );
 
-  return { supported, state, toggle, cancel, viaGemini: useGemini };
+  // 최대 녹음 시간이 되면 직접 멈춘 것처럼 받아쓴다
+  const lastLang = useRef('zh-CN');
+  autoStop.current = () => {
+    if (stateRef.current === 'listening') void toggle(lastLang.current);
+  };
+  const toggleWithLang = useCallback(
+    (lang: string) => {
+      lastLang.current = lang;
+      return toggle(lang);
+    },
+    [toggle],
+  );
+  /** 지금 소리 크기 0~1. 기기 음성 인식은 소리 크기를 알 수 없어서 -1 */
+  const level = useCallback(() => (rec.current ? rec.current.level() : -1), []);
+
+  return { supported, state, toggle: toggleWithLang, cancel, viaGemini: useGemini, partial, startedAt, maxMs, level };
 }
