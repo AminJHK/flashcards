@@ -9,6 +9,7 @@ import { useDecks, useScheduler, useSettings } from '../hooks';
 import { langName } from '../langs';
 import { ACCENTS, prefersDark } from '../theme';
 import { useToast } from '../toast';
+import { DriveSettings } from './DriveSettings';
 import { GeminiSettings, VoiceTest } from './GeminiSettings';
 
 const SAMPLE: Record<string, string> = {
@@ -155,8 +156,9 @@ export function Settings() {
       <span className="section-label" style={{ paddingTop: 8 }}>
         데이터
       </span>
+      <DriveSettings s={s} />
       <div className="group">
-        <Row title="백업" desc={backupDays === undefined ? '아직 백업하지 않았어요' : backupDays === 0 ? '오늘 백업했어요' : `마지막 백업 ${backupDays}일 전`}>
+        <Row title="백업 파일로 저장" desc={backupDays === undefined ? '아직 백업하지 않았어요' : backupDays === 0 ? '오늘 백업했어요' : `마지막 백업 ${backupDays}일 전`}>
           <button type="button" className="btn-soft" style={{ border: 'none' }} onClick={() => runBackup(toast)}>
             지금 백업
           </button>

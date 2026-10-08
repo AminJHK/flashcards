@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { getCardType } from '../../core/cardTypes/registry';
 import { buildQueue } from '../../core/scheduler/queue';
 import { daysSince, runBackup } from '../backup';
+import { backupToDrive, driveBackupDue, driveErrorMessage } from '../driveBackup';
 import { Icon } from '../components/Icon';
 import { useCards, useDecks, useNotes, useNow, useScheduler, useSettings } from '../hooks';
 import { go } from '../router';
@@ -26,7 +27,8 @@ export function Home() {
   const dateLabel = new Date(now).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' });
   const total = q.counts.review + q.counts.learning + q.counts.newc;
   const backupDays = daysSince(settings.lastBackupAt, now);
-  const needBackup = notes.length > 0 && (backupDays === undefined || backupDays >= 7);
+  const drive = settings.googleDrive?.clientId;
+  const needBackup = notes.length > 0 && (drive ? driveBackupDue(settings, now) : backupDays === undefined || backupDays >= 7);
 
   if (decks.length === 0) {
     return (
@@ -114,8 +116,19 @@ export function Home() {
 
         {needBackup && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px', fontSize: 14 }} className="faint">
-            <span style={{ flex: 1 }}>{backupDays === undefined ? '아직 백업하지 않았어요' : `마지막 백업 ${backupDays}일 전`}</span>
-            <button type="button" className="link-btn" onClick={() => runBackup(toast)}>
+            <span style={{ flex: 1 }}>{drive ? '오늘 아직 Drive에 백업하지 않았어요' : backupDays === undefined ? '아직 백업하지 않았어요' : `마지막 백업 ${backupDays}일 전`}</span>
+            <button
+              type="button"
+              className="link-btn"
+              onClick={() =>
+                drive
+                  ? backupToDrive().then(
+                      () => toast('Google Drive에 백업했어요'),
+                      (e) => toast(driveErrorMessage(e)),
+                    )
+                  : runBackup(toast)
+              }
+            >
               지금 백업
             </button>
           </div>

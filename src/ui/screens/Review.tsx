@@ -11,6 +11,7 @@ import { Icon } from '../components/Icon';
 import { useCards, useDecks, useNotes, useNow, useScheduler, useSettings } from '../hooks';
 import { go } from '../router';
 import { useToast } from '../toast';
+import { backupToDrive, driveBackupDue, driveErrorMessage } from '../driveBackup';
 import { useVoiceAnswer } from '../useVoiceAnswer';
 import { NoteEditor } from './NoteEditor';
 
@@ -275,9 +276,27 @@ export function Review({ deckId }: { deckId?: string }) {
           </span>
         </div>
         <div className="answer-bar">
-          <button type="button" className="btn btn-primary" onClick={() => go('')}>
-            홈으로
-          </button>
+          {doneCount > 0 && driveBackupDue(settings) ? (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() =>
+                backupToDrive().then(
+                  () => {
+                    toast('Google Drive에 백업했어요');
+                    go('');
+                  },
+                  (e) => toast(driveErrorMessage(e)),
+                )
+              }
+            >
+              Drive에 백업하고 홈으로
+            </button>
+          ) : (
+            <button type="button" className="btn btn-primary" onClick={() => go('')}>
+              홈으로
+            </button>
+          )}
         </div>
       </>
     );

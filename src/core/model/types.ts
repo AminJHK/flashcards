@@ -108,6 +108,16 @@ export interface Settings {
   lastBackupAt?: Millis;
   /** 자연스러운 음성 (Gemini API 무료 키). 키는 백업 파일에 넣지 않는다 */
   gemini?: GeminiSettings;
+  /** Google Drive 백업 (이 기기에만 저장, 백업 파일에 넣지 않는다) */
+  googleDrive?: GoogleDriveSettings;
+}
+
+export interface GoogleDriveSettings {
+  /** 사용자가 Google Cloud에서 만든 OAuth 클라이언트 ID */
+  clientId: string;
+  email?: string;
+  folderId?: string;
+  lastDriveBackupAt?: Millis;
 }
 
 export interface GeminiSettings {

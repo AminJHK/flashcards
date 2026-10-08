@@ -76,11 +76,13 @@ describe('repo', () => {
   });
 
   it('백업 파일에는 Gemini 키를 넣지 않고, 복원해도 이 기기의 키는 남는다', async () => {
-    await repo.saveSettings({ gemini: { apiKey: 'SECRET', ttsModel: 'm', voice: 'Kore', useTts: true, useStt: true } }, d);
+    await repo.saveSettings({ gemini: { apiKey: 'SECRET', ttsModel: 'm', voice: 'Kore', useTts: true, useStt: true }, googleDrive: { clientId: 'CID.apps.googleusercontent.com' } }, d);
     const text = JSON.stringify(await repo.exportBackup(d));
     expect(text).not.toContain('SECRET');
+    expect(text).not.toContain('CID.apps');
     await repo.importBackup(parseBackup(text), d);
     expect((await repo.getSettings(d)).gemini?.apiKey).toBe('SECRET');
+    expect((await repo.getSettings(d)).googleDrive?.clientId).toBe('CID.apps.googleusercontent.com');
   });
 
   it('준비된 덱을 설치하면 문장 순서대로 카드가 생기고 병음이 채워진다', async () => {
