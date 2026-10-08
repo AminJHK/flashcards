@@ -2,11 +2,22 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { execSync } from 'node:child_process';
+
+// 설정 화면 맨 아래에 보이는 버전 (어떤 업데이트가 깔렸는지 확인용)
+function version(): string {
+  try {
+    return execSync('git rev-parse --short HEAD').toString().trim();
+  } catch {
+    return 'dev';
+  }
+}
 
 // base를 상대 경로('./')로 두면 GitHub Pages(/flashcards/)와 다른 경로 어디에 올려도 동작한다.
 // 화면 이동은 해시(#/...)로 하므로 서버 설정이 필요 없다.
 export default defineConfig({
   base: './',
+  define: { __APP_VERSION__: JSON.stringify(version()) },
   plugins: [
     react(),
     VitePWA({

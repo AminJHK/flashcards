@@ -195,6 +195,9 @@ export function Settings() {
       <span className="faint small" style={{ padding: '4px 4px 0', lineHeight: 1.6 }}>
         카드와 복습 기록은 이 기기에만 저장돼요. 다른 기기로 옮기려면 백업 파일을 쓰세요.
       </span>
+      <span className="faint small" style={{ padding: '0 4px', textAlign: 'center' }}>
+        버전 {__APP_VERSION__}
+      </span>
     </div>
   );
 }

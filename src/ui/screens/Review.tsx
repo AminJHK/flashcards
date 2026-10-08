@@ -15,6 +15,7 @@ import { useToast } from '../toast';
 import { backupToDrive, driveBackupDue, driveErrorMessage } from '../driveBackup';
 import { useVoiceAnswer } from '../useVoiceAnswer';
 import { NoteEditor } from './NoteEditor';
+import { withTimeout } from '../../adapters/net';
 
 const warned = new Set<string>();
 
@@ -149,18 +150,35 @@ export function Review({ deckId }: { deckId?: string }) {
 
   const rate = useCallback(
     async (r: Rating) => {
-      if (!card || isBusy()) return;
+      if (!card) return;
+      if (isBusy()) {
+        toast('저장하는 중이에요. 잠깐만요');
+        return;
+      }
       busySince.current = Date.now();
+      const at = Date.now();
+      // 소리·마이크 정리는 실패해도 저장을 막지 않게 따로 한다
       try {
-        const at = Date.now();
         stopAll();
+      } catch {
+        /* 무시 */
+      }
+      try {
         voice.cancel();
-        const logId = await recordReview(card.id, r, Math.min(at - shownAt, 120_000));
+      } catch {
+        /* 무시 */
+      }
+      try {
+        const logId = await withTimeout(
+          recordReview(card.id, r, Math.min(at - shownAt, 120_000)),
+          6000,
+          '저장이 너무 오래 걸려요. 앱을 완전히 닫았다가 다시 열어 주세요',
+        );
         setHistory((h) => [...h, { logId, cardId: card.id, rating: r }]);
         setPending({ cardId: card.id, at });
         show(undefined);
-      } catch {
-        toast('저장하지 못했어요. 다시 눌러 주세요');
+      } catch (e) {
+        toast(`저장하지 못했어요 · ${e instanceof Error ? e.message : String(e)}`);
       } finally {
         busySince.current = 0;
       }
@@ -176,12 +194,12 @@ export function Review({ deckId }: { deckId?: string }) {
     }
     busySince.current = Date.now();
     try {
-      await undoReview(last.logId);
+      await withTimeout(undoReview(last.logId), 6000, '되돌리기가 너무 오래 걸려요');
       setHistory((h) => h.slice(0, -1));
       setPending(undefined);
       show(last.cardId, true);
-    } catch {
-      toast('되돌리지 못했어요. 다시 눌러 주세요');
+    } catch (e) {
+      toast(`되돌리지 못했어요 · ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       busySince.current = 0;
     }
