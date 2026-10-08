@@ -144,8 +144,8 @@ test('기기 음성 인식이 중간에 혼자 끝나도 다시 이어 듣고, �
   await sentenceCard(page);
   await page.getByRole('button', { name: '말해서 답하기' }).click();
   await expect(page.locator('.voice-bars span')).toHaveCount(28);
-  await expect(page.locator('.voice-partial')).toHaveText('你想 什么时候 去', { timeout: 5000 });
+  await expect(page.locator('.voice-partial')).toHaveText('你想什么时候去', { timeout: 5000 });
   await page.screenshot({ path: 'test-results/shots/13-voice-meter.png' });
   await page.getByRole('button', { name: '말하기 끝내기' }).click();
-  await expect(page.getByLabel('내 답')).toHaveValue('你想 什么时候 去');
+  await expect(page.getByLabel('내 답')).toHaveValue('你想什么时候去');
 });

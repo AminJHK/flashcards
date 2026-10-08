@@ -1,3 +1,5 @@
+import { mergeTranscripts } from '../../core/answer/transcript';
+
 /**
  * 브라우저 음성 인식 (Gemini를 연결하지 않았을 때). 안드로이드 Chrome은 Google 음성 인식을 쓰므로 인터넷이 필요하다.
  * 홈 화면에 설치한 앱에서는 막혀 있는 경우가 있어서, 그때는 Gemini 연결을 권한다.
@@ -72,7 +74,7 @@ export function listen(lang: string, onPartial?: (text: string) => void, maxMs =
   let cancelled = false;
   const finals: string[] = []; // 이전 세션들에서 확정된 글자
   let current: string[] = []; // 지금 세션
-  const heard = () => [...finals, ...current].join(' ').replace(/\s+/g, ' ').trim();
+  const heard = () => mergeTranscripts([...finals, ...current]);
   const timer = setTimeout(() => {
     stopping = true;
     r?.stop();
@@ -99,7 +101,8 @@ export function listen(lang: string, onPartial?: (text: string) => void, maxMs =
         if (e.error === 'no-speech' && !heard()) lastError = 'no-speech';
       };
       rec.onend = () => {
-        finals.push(...current);
+        const session = mergeTranscripts(current);
+        if (session) finals.push(session);
         current = [];
         const fatal = lastError && ['not-allowed', 'service-not-allowed', 'audio-capture', 'language-not-supported'].includes(lastError);
         // 사용자가 멈추기 전에 끝났으면 다시 듣는다
