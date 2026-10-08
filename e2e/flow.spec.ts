@@ -122,9 +122,9 @@ test('백업 내보내기 → 복원', async ({ page }) => {
   await page.evaluate(() => new Promise((r) => { const q = indexedDB.deleteDatabase('flashcards'); q.onsuccess = q.onerror = q.onblocked = () => r(null); }));
   await page.reload();
   await page.goto('/#/settings');
-  page.once('dialog', (d) => d.accept());
   const chooser = page.waitForEvent('filechooser');
   await page.getByRole('button', { name: '파일 고르기' }).click();
   await (await chooser).setFiles(path!);
+  await page.getByRole('alertdialog').getByRole('button', { name: '복원' }).click();
   await expect(page.getByText('복원했어요 · 단어 1개')).toBeVisible();
 });

@@ -13,6 +13,7 @@ import { useDecks, useSettings } from '../hooks';
 import { langName } from '../langs';
 import { go } from '../router';
 import { useToast } from '../toast';
+import { ask } from '../confirm';
 
 const LAST_DECK = 'flashcards:lastDeck';
 const emptyFields = (t: CardType) => Object.fromEntries(t.fields.map((f) => [f.key, '']));
@@ -151,7 +152,7 @@ function Editor(props: Props & { decks: Deck[]; note?: Note }) {
 
   const remove = async () => {
     if (props.mode !== 'edit' || !note) return;
-    if (!window.confirm('이 단어를 지울까요? 이 단어의 카드도 함께 지워져요.')) return;
+    if (!(await ask('이 단어를 지울까요? 이 단어의 카드도 함께 지워져요.', '지우기'))) return;
     const cards = await db.cards.where('noteId').equals(note.id).toArray();
     await deleteNote(note.id);
     toast('지웠어요', () => restoreNote(note, cards));

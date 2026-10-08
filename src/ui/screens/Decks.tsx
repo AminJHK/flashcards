@@ -13,6 +13,7 @@ import { useDecks } from '../hooks';
 import { LANGS, langName } from '../langs';
 import { go } from '../router';
 import { useToast } from '../toast';
+import { ask } from '../confirm';
 
 export function DeckList() {
   const decks = useDecks();
@@ -96,7 +97,7 @@ function PackCard({ pack }: { pack: Pack }) {
   const days = Math.ceil(pack.notes.length / pack.deckSettings.newPerDay);
 
   const install = async () => {
-    if (decks?.some((d) => d.name === pack.deckName) && !window.confirm('같은 이름의 덱이 이미 있어요. 하나 더 만들까요?')) return;
+    if (decks?.some((d) => d.name === pack.deckName) && !(await ask('같은 이름의 덱이 이미 있어요. 하나 더 만들까요?', '만들기'))) return;
     setBusy(true);
     try {
       const pinyin = await loadPinyin();
@@ -218,7 +219,7 @@ export function DeckDetail({ id }: { id: string }) {
   const optional = type.templates.find((t) => t.optional);
 
   const remove = async () => {
-    if (!window.confirm(`"${deck.name}" 덱과 단어 ${noteCount}개를 모두 지울까요? 되돌릴 수 없어요.`)) return;
+    if (!(await ask(`"${deck.name}" 덱과 단어 ${noteCount}개를 모두 지울까요? 되돌릴 수 없어요.`, '지우기'))) return;
     await deleteDeck(deck.id);
     toast('덱을 지웠어요');
     go('decks', { replace: true });

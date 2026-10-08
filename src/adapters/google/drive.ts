@@ -3,6 +3,8 @@
  * 백업은 내 Drive의 "플래시카드 백업" 폴더에 JSON 파일로 들어가서, Drive 앱에서도 직접 볼 수 있다.
  */
 
+import { fetchWithTimeout, TimeoutError } from '../net';
+
 const API = 'https://www.googleapis.com/drive/v3';
 const UPLOAD = 'https://www.googleapis.com/upload/drive/v3';
 export const FOLDER_NAME = '플래시카드 백업';
@@ -27,9 +29,9 @@ export interface DriveFile {
 async function call<T>(token: string, url: string, init: RequestInit = {}): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(url, { ...init, headers: { Authorization: `Bearer ${token}`, ...(init.headers ?? {}) } });
-  } catch {
-    throw new DriveError('인터넷에 연결되어 있지 않아요');
+    res = await fetchWithTimeout(url, { ...init, headers: { Authorization: `Bearer ${token}`, ...(init.headers ?? {}) } }, 30_000);
+  } catch (e) {
+    throw new DriveError(e instanceof TimeoutError ? e.message : '인터넷에 연결되어 있지 않아요');
   }
   if (res.status === 401) throw new DriveError('Google 로그인이 만료됐어요. 다시 시도해 주세요', 401);
   if (res.status === 403) {

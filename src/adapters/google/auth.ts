@@ -36,6 +36,8 @@ declare global {
   }
 }
 
+import { withTimeout } from '../net';
+
 export class GoogleAuthError extends Error {}
 
 let gisLoading: Promise<Gis> | undefined;
@@ -64,8 +66,8 @@ let cached: { clientId: string; token: string; expiresAt: number } | undefined;
  */
 export async function getAccessToken(clientId: string, opts: { forceConsent?: boolean } = {}): Promise<string> {
   if (!opts.forceConsent && cached && cached.clientId === clientId && cached.expiresAt > Date.now() + 60_000) return cached.token;
-  const gis = await loadGis();
-  return new Promise((resolve, reject) => {
+  const gis = await withTimeout(loadGis(), 15_000, 'Google 로그인을 불러오지 못했어요. 인터넷 연결을 확인해 주세요');
+  const token = new Promise<string>((resolve, reject) => {
     const client = gis.accounts.oauth2.initTokenClient({
       client_id: clientId,
       scope: DRIVE_SCOPE,
@@ -82,6 +84,7 @@ export async function getAccessToken(clientId: string, opts: { forceConsent?: bo
     });
     client.requestAccessToken({ prompt: opts.forceConsent ? 'consent' : '' });
   });
+  return withTimeout(token, 180_000, 'Google 로그인이 끝나지 않았어요. 다시 시도해 주세요');
 }
 
 export function forgetToken(): void {

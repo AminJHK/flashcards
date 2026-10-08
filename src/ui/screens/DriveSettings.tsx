@@ -6,6 +6,7 @@ import { saveSettings } from '../../adapters/storage/repo';
 import { Row } from '../components/Controls';
 import { backupToDrive, connectDrive, driveErrorMessage, listDriveBackups, restoreFromDrive } from '../driveBackup';
 import { useToast } from '../toast';
+import { ask } from '../confirm';
 
 const CONSOLE = 'https://console.cloud.google.com/';
 
@@ -123,8 +124,8 @@ function Connected({ s }: { s: Settings }) {
             type="button"
             className="btn-plain"
             disabled={!!busy}
-            onClick={() => {
-              if (!window.confirm(`지금 있는 데이터를 모두 지우고 ${when(f.createdTime)} 백업으로 바꿀까요?`)) return;
+            onClick={async () => {
+              if (!(await ask(`지금 있는 데이터를 모두 지우고 ${when(f.createdTime)} 백업으로 바꿀까요?`, '복원'))) return;
               void run(f.id, async () => {
                 const n = await restoreFromDrive(f);
                 setFiles(undefined);
@@ -141,8 +142,8 @@ function Connected({ s }: { s: Settings }) {
           type="button"
           className="btn-plain"
           disabled={!!busy}
-          onClick={() => {
-            if (!window.confirm('Google Drive 연결을 끊을까요?')) return;
+          onClick={async () => {
+            if (!(await ask('Google Drive 연결을 끊을까요?', '끊기'))) return;
             forgetToken();
             void saveSettings({ googleDrive: undefined });
           }}

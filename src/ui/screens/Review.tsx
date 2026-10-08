@@ -44,7 +44,9 @@ export function Review({ deckId }: { deckId?: string }) {
   const [editing, setEditing] = useState(false);
   const [answer, setAnswer] = useState('');
   const [checked, setChecked] = useState<AnswerComparison>();
-  const busy = useRef(false);
+  // 저장 중 두 번 눌리지 않게. 혹시 저장이 끝나지 않아도 몇 초 뒤엔 다시 누를 수 있다.
+  const busySince = useRef(0);
+  const isBusy = () => Date.now() - busySince.current < 4000;
 
   const deck = deckId ? decks?.find((d) => d.id === deckId) : undefined;
 
@@ -71,6 +73,13 @@ export function Review({ deckId }: { deckId?: string }) {
     }
     if (q.next) show(q.next.id);
   }, [q, cards, currentId, pending, show]);
+
+  // 저장소 갱신 소식이 늦거나 오지 않아도 빈 화면에 멈춰 있지 않게
+  useEffect(() => {
+    if (!pending) return;
+    const t = setTimeout(() => setPending(undefined), 1500);
+    return () => clearTimeout(t);
+  }, [pending]);
 
   const card = currentId ? cards?.find((c) => c.id === currentId) : undefined;
   const note = card ? notes?.find((n) => n.id === card.noteId) : undefined;
@@ -140,8 +149,8 @@ export function Review({ deckId }: { deckId?: string }) {
 
   const rate = useCallback(
     async (r: Rating) => {
-      if (!card || busy.current) return;
-      busy.current = true;
+      if (!card || isBusy()) return;
+      busySince.current = Date.now();
       try {
         const at = Date.now();
         stopAll();
@@ -153,7 +162,7 @@ export function Review({ deckId }: { deckId?: string }) {
       } catch {
         toast('저장하지 못했어요. 다시 눌러 주세요');
       } finally {
-        busy.current = false;
+        busySince.current = 0;
       }
     },
     [card, shownAt, show, toast, voice],
@@ -161,18 +170,20 @@ export function Review({ deckId }: { deckId?: string }) {
 
   const undo = useCallback(async () => {
     const last = history[history.length - 1];
-    if (!last || busy.current) {
+    if (!last || isBusy()) {
       toast('되돌릴 복습이 없어요');
       return;
     }
-    busy.current = true;
+    busySince.current = Date.now();
     try {
       await undoReview(last.logId);
       setHistory((h) => h.slice(0, -1));
       setPending(undefined);
       show(last.cardId, true);
+    } catch {
+      toast('되돌리지 못했어요. 다시 눌러 주세요');
     } finally {
-      busy.current = false;
+      busySince.current = 0;
     }
   }, [history, show, toast]);
 

@@ -10,7 +10,8 @@ import { Review } from './screens/Review';
 import { Settings } from './screens/Settings';
 import { Stats } from './screens/Stats';
 import { applyTheme } from './theme';
-import { ToastProvider } from './toast';
+import { ConfirmHost, ErrorBoundary } from './confirm';
+import { ToastProvider, useToast } from './toast';
 
 export function App() {
   const route = useRoute();
@@ -53,9 +54,32 @@ export function App() {
   return (
     <div className="app">
       <ToastProvider high={!showTabs}>
-        {screen}
+        <ErrorBoundary resetKey={route.join('/')}>{screen}</ErrorBoundary>
         {showTabs && <TabBar current={tab ?? ''} />}
+        <GlobalErrors />
+        <ConfirmHost />
       </ToastProvider>
     </div>
   );
+}
+
+/** 처리하지 못한 오류가 나도 조용히 굳지 않고 알림으로 알려준다. */
+function GlobalErrors() {
+  const toast = useToast();
+  useEffect(() => {
+    const say = (e: unknown) => {
+      const msg = e instanceof Error ? e.message : typeof e === 'string' ? e : '';
+      if (!msg || /ResizeObserver|AbortError|NotAllowedError/.test(msg)) return;
+      toast(`문제가 생겼어요 · ${msg}`);
+    };
+    const onErr = (ev: ErrorEvent) => say(ev.error ?? ev.message);
+    const onRej = (ev: PromiseRejectionEvent) => say(ev.reason);
+    window.addEventListener('error', onErr);
+    window.addEventListener('unhandledrejection', onRej);
+    return () => {
+      window.removeEventListener('error', onErr);
+      window.removeEventListener('unhandledrejection', onRej);
+    };
+  }, [toast]);
+  return null;
 }

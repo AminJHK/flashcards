@@ -36,7 +36,7 @@ test('Gemini 키를 연결하면 단어 음성을 만들어 저장하고, 말한
   await page.goto('/#/settings');
   await page.getByLabel('Gemini API 키').fill('FAKE-KEY');
   await page.getByRole('button', { name: '연결' }).click();
-  await expect(page.getByText('연결했어요')).toBeVisible();
+  await expect(page.getByText(/연결했어요|연결 완료/)).toBeVisible();
   await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();
   await page.screenshot({ path: 'test-results/shots/10-gemini-settings.png', fullPage: true });
 

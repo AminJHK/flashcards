@@ -2,6 +2,7 @@ import { getCardType } from '../../core/cardTypes/registry';
 import type { Speech } from '../../core/cardTypes/types';
 import type { Card, Deck, Note, Settings } from '../../core/model/types';
 import { GeminiError } from '../gemini/api';
+import { withTimeout } from '../net';
 import { synthesize } from '../gemini/tts';
 import { db } from '../storage/db';
 import { speak as deviceSpeak, stopSpeaking } from '../tts/webSpeech';
@@ -77,7 +78,8 @@ export async function play(items: readonly Speech[], s: Settings | undefined): P
   if (geminiOn(s)) {
     try {
       for (const it of list) {
-        const blob = await clipFor(it, s);
+        // 처음 만드는 음성이 늦으면 기다리지 않고 기기 음성으로 읽는다 (만드는 건 계속해서 저장됨)
+        const blob = await withTimeout(clipFor(it, s), 10_000, '자연스러운 음성을 만드는 데 시간이 걸려요');
         if (my !== token) return { via: 'gemini' };
         await playBlob(blob, my);
       }
@@ -85,7 +87,7 @@ export async function play(items: readonly Speech[], s: Settings | undefined): P
     } catch (e) {
       if (my !== token) return { via: 'gemini' };
       const ok = deviceSpeak(list, s.voices);
-      return { via: ok ? 'device' : 'none', error: e instanceof GeminiError ? e.message : undefined };
+      return { via: ok ? 'device' : 'none', error: e instanceof Error ? e.message : undefined };
     }
   }
   return { via: deviceSpeak(list, s?.voices) ? 'device' : 'none' };

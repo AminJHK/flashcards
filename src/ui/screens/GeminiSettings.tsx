@@ -10,6 +10,7 @@ import { Icon } from '../components/Icon';
 import { VoiceMeter } from '../components/VoiceMeter';
 import { useVoiceAnswer } from '../useVoiceAnswer';
 import { useToast } from '../toast';
+import { ask } from '../confirm';
 
 const AI_STUDIO = 'https://aistudio.google.com/apikey';
 
@@ -28,6 +29,8 @@ function Connect() {
   const [key, setKey] = useState('');
   const [busy, setBusy] = useState(false);
 
+  const [step, setStep] = useState('');
+
   const connect = async () => {
     const k = key.trim();
     if (!k) {
@@ -36,18 +39,25 @@ function Connect() {
     }
     setBusy(true);
     try {
+      setStep('키 확인 중…');
       const models = await listModels(k);
       const ttsModel = pickModel(models, TTS_MODELS, /-tts/);
       if (!ttsModel) throw new GeminiError('이 키로는 음성 모델을 쓸 수 없어요', 'model');
-      // 실제로 소리가 나는지 한 번 확인한다
-      const blob = await synthesize('你好', 'zh-CN', 'Kore', ttsModel, k);
+      // 키가 맞으면 바로 저장한다. 음성 확인은 따로 (느려도 화면이 멈추지 않게)
       await saveSettings({ gemini: { apiKey: k, ttsModel, voice: 'Kore', useTts: true, useStt: true } });
-      void new Audio(URL.createObjectURL(blob)).play().catch(() => {});
-      toast('연결했어요. 이제 자연스러운 음성으로 읽어줘요');
+      toast('연결했어요. 시험 음성을 만드는 중이에요…');
+      void synthesize('你好', 'zh-CN', 'Kore', ttsModel, k).then(
+        (blob) => {
+          void new Audio(URL.createObjectURL(blob)).play().catch(() => {});
+          toast('연결 완료 · 이제 자연스러운 음성으로 읽어줘요');
+        },
+        (e: unknown) => toast(`키는 연결됐지만 음성을 만들지 못했어요 · ${e instanceof Error ? e.message : ''}`),
+      );
     } catch (e) {
       toast(e instanceof Error ? e.message : '연결하지 못했어요');
     } finally {
       setBusy(false);
+      setStep('');
     }
   };
 
@@ -79,7 +89,7 @@ function Connect() {
             style={{ flex: 1, minWidth: 0, fontSize: 15 }}
           />
           <button type="button" className="btn-plain" onClick={connect} disabled={busy} style={{ height: 52, background: 'var(--accent)', color: 'var(--on-accent)', fontWeight: 600 }}>
-            {busy ? '확인 중…' : '연결'}
+            {busy ? step || '확인 중…' : '연결'}
           </button>
         </div>
         <span className="row-desc">
@@ -105,8 +115,8 @@ function Connected({ s, g }: { s: Settings; g: NonNullable<Settings['gemini']> }
     else if (!signal.current.cancelled) toast(r.total ? `음성 ${r.done}개를 만들었어요` : '모든 단어에 음성이 있어요');
   };
 
-  const disconnect = () => {
-    if (!window.confirm('Gemini 연결을 끊을까요? 이미 만든 음성은 계속 쓸 수 있어요.')) return;
+  const disconnect = async () => {
+    if (!(await ask('Gemini 연결을 끊을까요? 이미 만든 음성은 계속 쓸 수 있어요.', '끊기'))) return;
     void saveSettings({ gemini: undefined });
   };
 

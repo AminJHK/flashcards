@@ -3,6 +3,8 @@
  * 무료 사용 시 Google이 보낸 내용을 서비스 개선에 쓸 수 있다 (설정 화면에 안내).
  */
 
+import { fetchWithTimeout, TimeoutError } from '../net';
+
 const BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
 export class GeminiError extends Error {
@@ -14,15 +16,16 @@ export class GeminiError extends Error {
   }
 }
 
-async function call(path: string, key: string, init: RequestInit = {}): Promise<unknown> {
+async function call(path: string, key: string, init: RequestInit = {}, timeoutMs = 20_000): Promise<unknown> {
   let res: Response;
   try {
-    res = await fetch(`${BASE}/${path}`, {
-      ...init,
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key, ...(init.headers ?? {}) },
-    });
-  } catch {
-    throw new GeminiError('인터넷에 연결되어 있지 않아요', 'network');
+    res = await fetchWithTimeout(
+      `${BASE}/${path}`,
+      { ...init, headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key, ...(init.headers ?? {}) } },
+      timeoutMs,
+    );
+  } catch (e) {
+    throw new GeminiError(e instanceof TimeoutError ? e.message : '인터넷에 연결되어 있지 않아요', 'network');
   }
   if (res.ok) return res.json();
   let msg = '';
@@ -43,8 +46,8 @@ export interface GenerateResponse {
   candidates?: { content?: { parts?: { text?: string; inlineData?: { mimeType?: string; data?: string } }[] } }[];
 }
 
-export function generate(model: string, key: string, body: unknown): Promise<GenerateResponse> {
-  return call(`models/${model}:generateContent`, key, { method: 'POST', body: JSON.stringify(body) }) as Promise<GenerateResponse>;
+export function generate(model: string, key: string, body: unknown, timeoutMs = 45_000): Promise<GenerateResponse> {
+  return call(`models/${model}:generateContent`, key, { method: 'POST', body: JSON.stringify(body) }, timeoutMs) as Promise<GenerateResponse>;
 }
 
 /** 키가 맞는지 확인하고, 쓸 수 있는 모델 이름 목록을 돌려준다. */
@@ -52,7 +55,7 @@ export async function listModels(key: string): Promise<string[]> {
   const names: string[] = [];
   let pageToken = '';
   for (let i = 0; i < 5; i++) {
-    const r = (await call(`models?pageSize=200${pageToken ? `&pageToken=${pageToken}` : ''}`, key)) as {
+    const r = (await call(`models?pageSize=200${pageToken ? `&pageToken=${pageToken}` : ''}`, key, {}, 15_000)) as {
       models?: { name: string }[];
       nextPageToken?: string;
     };

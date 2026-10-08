@@ -1038,6 +1038,8 @@ textarea.input-sentence {
   color: var(--toast-fg);
   font-size: 15px;
   z-index: 10;
+  /* 알림이 떠 있어도 아래 버튼은 눌려야 한다 */
+  pointer-events: none;
 }
 
 .toast-high {
@@ -1053,6 +1055,7 @@ textarea.input-sentence {
   color: var(--toast-accent);
   font-size: 15px;
   font-weight: 600;
+  pointer-events: auto;
 }
 
 .done-icon {
@@ -1205,4 +1208,46 @@ textarea.input-sentence {
 .hm-numbers span {
   font-size: 12px;
   color: var(--text3);
+}
+
+/* ---------- 확인 창 ---------- */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px 16px calc(16px + var(--safe-bottom));
+  background: rgb(0 0 0 / 0.45);
+}
+
+.dialog {
+  width: 100%;
+  max-width: 480px;
+  padding: 20px;
+  border-radius: 22px;
+  background: var(--surface);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.dialog-msg {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.dialog-actions .btn {
+  flex: 1;
+  height: 52px;
+  border-radius: 14px;
+  padding: 0 12px;
 }

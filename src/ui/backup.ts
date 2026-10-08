@@ -1,6 +1,7 @@
 import { backupFileName, BackupError, parseBackup } from '../core/io/backup';
 import { pickTextFile, saveFile } from '../adapters/files/share';
 import { exportBackup, importBackup, saveSettings } from '../adapters/storage/repo';
+import { ask } from './confirm';
 
 export async function runBackup(toast: (m: string) => void): Promise<void> {
   try {
@@ -21,7 +22,7 @@ export async function runRestore(toast: (m: string) => void): Promise<void> {
   try {
     const b = parseBackup(text);
     const words = b.notes.length;
-    if (!window.confirm(`지금 있는 데이터를 모두 지우고 백업(${b.exportedAt.slice(0, 10)}, 단어 ${words}개)으로 바꿀까요?`)) return;
+    if (!(await ask(`지금 있는 데이터를 모두 지우고 백업(${b.exportedAt.slice(0, 10)}, 단어 ${words}개)으로 바꿀까요?`, '복원'))) return;
     await importBackup(b);
     toast(`복원했어요 · 단어 ${words}개`);
   } catch (e) {

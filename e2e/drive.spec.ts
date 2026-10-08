@@ -71,9 +71,9 @@ test('Google로 로그인해서 Drive에 백업하고, 데이터를 지운 뒤 D
   await page.getByRole('button', { name: 'Google로 로그인' }).click();
   await expect(page.getByText(/nurse@example.com · 마지막 백업/)).toBeVisible();
   await page.getByRole('button', { name: '백업 목록' }).click();
-  page.once('dialog', (d) => d.accept());
-  // 가장 오래된(단어가 있던) 백업을 복원
+  // 가장 오래된(단어가 있던) 백업을 복원 (앱 안의 확인 창)
   await page.getByRole('button', { name: '복원', exact: true }).last().click();
+  await page.getByRole('alertdialog').getByRole('button', { name: '복원' }).click();
   await expect(page.getByText('복원했어요 · 단어 1개')).toBeVisible();
   await expect(page.getByText(/nurse@example.com/)).toBeVisible(); // 복원해도 Drive 연결은 유지
 });
