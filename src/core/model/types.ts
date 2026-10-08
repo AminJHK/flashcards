@@ -106,6 +106,26 @@ export interface Settings {
   /** 언어별로 고른 기기 음성 이름 */
   voices: Record<Lang, string>;
   lastBackupAt?: Millis;
+  /** 자연스러운 음성 (Gemini API 무료 키). 키는 백업 파일에 넣지 않는다 */
+  gemini?: GeminiSettings;
+}
+
+export interface GeminiSettings {
+  apiKey: string;
+  /** 키를 연결할 때 고른 TTS 모델 */
+  ttsModel: string;
+  voice: string;
+  /** 발음을 Gemini 음성으로 */
+  useTts: boolean;
+  /** 말하기 답을 Gemini로 받아쓰기 */
+  useStt: boolean;
+}
+
+/** 저장된 음성 파일 (다시 만들 수 있으므로 백업하지 않는다) */
+export interface AudioClip {
+  key: string;
+  blob: Blob;
+  createdAt: Millis;
 }
 
 export const DEFAULT_SETTINGS: Settings = {

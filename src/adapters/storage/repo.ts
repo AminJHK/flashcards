@@ -193,14 +193,17 @@ export async function exportBackup(d: FlashcardsDB = db): Promise<Backup> {
     d.reviewLogs.toArray(),
     getSettings(d),
   ]);
-  return makeBackup({ decks, notes, cards, reviewLogs, settings }, Date.now());
+  // API 키는 백업 파일에 넣지 않는다 (파일을 어디에 두든 키가 새지 않게)
+  const { gemini: _gemini, ...safeSettings } = settings;
+  return makeBackup({ decks, notes, cards, reviewLogs, settings: safeSettings as Settings }, Date.now());
 }
 
 /** 백업으로 모든 데이터를 바꾼다. 카드 상태는 로그로 다시 계산한다. */
 export async function importBackup(b: Backup, d: FlashcardsDB = db): Promise<void> {
   await d.transaction('rw', [d.decks, d.notes, d.cards, d.reviewLogs, d.settings], async () => {
+    const keep = (await d.settings.get('settings'))?.gemini; // 이 기기의 Gemini 키는 유지
     await Promise.all([d.decks.clear(), d.notes.clear(), d.cards.clear(), d.reviewLogs.clear(), d.settings.clear()]);
-    await d.settings.put({ ...DEFAULT_SETTINGS, ...b.settings, id: 'settings' });
+    await d.settings.put({ ...DEFAULT_SETTINGS, ...b.settings, gemini: keep, id: 'settings' });
     await d.decks.bulkAdd(b.decks);
     await d.notes.bulkAdd(b.notes);
     await d.cards.bulkAdd(b.cards.map((c) => ({ ...c, schedulerId: undefined })));

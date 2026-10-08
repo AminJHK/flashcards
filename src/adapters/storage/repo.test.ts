@@ -74,4 +74,12 @@ describe('repo', () => {
     const cards = await d.cards.where('noteId').equals(note.id).toArray();
     expect(cards.every((c) => c.deckId === b.id && !c.hidden)).toBe(true);
   });
+
+  it('백업 파일에는 Gemini 키를 넣지 않고, 복원해도 이 기기의 키는 남는다', async () => {
+    await repo.saveSettings({ gemini: { apiKey: 'SECRET', ttsModel: 'm', voice: 'Kore', useTts: true, useStt: true } }, d);
+    const text = JSON.stringify(await repo.exportBackup(d));
+    expect(text).not.toContain('SECRET');
+    await repo.importBackup(parseBackup(text), d);
+    expect((await repo.getSettings(d)).gemini?.apiKey).toBe('SECRET');
+  });
 });

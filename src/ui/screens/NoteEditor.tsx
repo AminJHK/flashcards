@@ -6,7 +6,7 @@ import type { Deck, Note } from '../../core/model/types';
 import { loadPinyin } from '../../adapters/pinyin/pinyin';
 import { db } from '../../adapters/storage/db';
 import { addNote, deleteNote, restoreNote, updateNote } from '../../adapters/storage/repo';
-import { speak } from '../../adapters/tts/webSpeech';
+import { play, prefetchNote } from '../../adapters/speech/speech';
 import { Segmented } from '../components/Controls';
 import { Icon } from '../components/Icon';
 import { useDecks, useSettings } from '../hooks';
@@ -131,11 +131,13 @@ function Editor(props: Props & { decks: Deck[]; note?: Note }) {
     if (props.mode === 'edit') {
       const override = ttsOverride.trim() ? { ...note?.ttsOverride, [type.ttsField]: ttsOverride.trim() } : omit(note?.ttsOverride, type.ttsField);
       await updateNote(props.noteId, { fields, deckId, ttsOverride: override });
+      void prefetchNote(props.noteId, settings);
       toast('고쳤어요');
       props.onDone();
       return;
     }
     const saved = await addNote(deckId, typeId, fields);
+    void prefetchNote(saved.id, settings); // 자연스러운 음성을 미리 만들어 둔다
     const word = type.summary(saved.fields).title;
     setFields(emptyFields(type));
     setManual(new Set());
@@ -159,7 +161,10 @@ function Editor(props: Props & { decks: Deck[]; note?: Note }) {
   const listen = (f: FieldDef) => {
     const text = (f.key === type.ttsField && ttsOverride.trim()) || fields[f.key] || '';
     if (!text.trim()) return;
-    if (!speak([{ text, lang: resolveLang(f.lang, deck) }], settings?.voices)) toast('이 기기에 이 언어의 음성이 없을 수 있어요');
+    void play([{ text, lang: resolveLang(f.lang, deck) }], settings).then((r) => {
+      if (r.error) toast(`기기 음성으로 읽었어요 · ${r.error}`);
+      else if (r.via === 'none') toast('이 기기에 이 언어의 음성이 없을 수 있어요');
+    });
   };
 
   return (

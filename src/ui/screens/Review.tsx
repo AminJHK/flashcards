@@ -5,16 +5,16 @@ import type { Rating } from '../../core/model/types';
 import { formatInterval } from '../../core/scheduler/format';
 import { buildQueue, stateOf } from '../../core/scheduler/queue';
 import { recordReview, undoReview } from '../../adapters/storage/repo';
-import { listen, sttSupported, type Listening } from '../../adapters/stt/webSpeech';
-import { speak, stopSpeaking } from '../../adapters/tts/webSpeech';
+import { play, stopAll } from '../../adapters/speech/speech';
 import { CardFace } from '../components/CardFace';
 import { Icon } from '../components/Icon';
 import { useCards, useDecks, useNotes, useNow, useScheduler, useSettings } from '../hooks';
 import { go } from '../router';
 import { useToast } from '../toast';
+import { useVoiceAnswer } from '../useVoiceAnswer';
 import { NoteEditor } from './NoteEditor';
 
-const warnedLangs = new Set<string>();
+const warned = new Set<string>();
 
 const LABELS: Record<Rating, string> = { 1: '다시', 2: '어려움', 3: '알았음', 4: '쉬움' };
 
@@ -42,7 +42,6 @@ export function Review({ deckId }: { deckId?: string }) {
   const [editing, setEditing] = useState(false);
   const [answer, setAnswer] = useState('');
   const [checked, setChecked] = useState<AnswerComparison>();
-  const [listening, setListening] = useState<Listening>();
   const busy = useRef(false);
 
   const deck = deckId ? decks?.find((d) => d.id === deckId) : undefined;
@@ -90,15 +89,20 @@ export function Review({ deckId }: { deckId?: string }) {
       if (!view) return;
       const items = side === 'back' ? view.tts.back : view.tts.front.length ? view.tts.front : view.tts.back;
       if (!items.length) return;
-      const missing = !speak(items, settings?.voices);
-      // 음성이 없다는 안내는 언어마다 한 번만
-      const lang = items[0]!.lang;
-      if (missing && !warnedLangs.has(lang)) {
-        warnedLangs.add(lang);
-        toast('이 기기에 이 언어의 음성이 없을 수 있어요. 설정 › 발음에서 확인해 주세요');
-      }
+      void play(items, settings).then((r) => {
+        // 안내는 같은 내용이면 한 번만
+        const msg = r.error
+          ? `Gemini 음성을 못 써서 기기 음성으로 읽었어요 · ${r.error}`
+          : r.via === 'none'
+            ? '이 기기에 이 언어의 음성이 없을 수 있어요. 설정 › 발음에서 확인해 주세요'
+            : undefined;
+        if (msg && !warned.has(msg)) {
+          warned.add(msg);
+          toast(msg);
+        }
+      });
     },
-    [view, settings?.voices, toast],
+    [view, settings, toast],
   );
 
   // 자동 재생
@@ -110,7 +114,13 @@ export function Review({ deckId }: { deckId?: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentId, flipped, editing]);
 
-  useEffect(() => () => stopSpeaking(), []);
+  useEffect(() => () => stopAll(), []);
+
+  const voice = useVoiceAnswer(
+    settings,
+    useCallback((t: string) => setAnswer((a) => (a ? `${a} ${t}` : t)), []),
+    useCallback((m: string) => toast(m), [toast]),
+  );
 
   const flip = useCallback(() => {
     if (flipped || !view) return;
@@ -132,8 +142,8 @@ export function Review({ deckId }: { deckId?: string }) {
       busy.current = true;
       try {
         const at = Date.now();
-        stopSpeaking();
-        listening?.cancel();
+        stopAll();
+        voice.cancel();
         const logId = await recordReview(card.id, r, Math.min(at - shownAt, 120_000));
         setHistory((h) => [...h, { logId, cardId: card.id, rating: r }]);
         setPending({ cardId: card.id, at });
@@ -144,7 +154,7 @@ export function Review({ deckId }: { deckId?: string }) {
         busy.current = false;
       }
     },
-    [card, shownAt, show, toast, listening],
+    [card, shownAt, show, toast, voice],
   );
 
   const undo = useCallback(async () => {
@@ -185,21 +195,6 @@ export function Review({ deckId }: { deckId?: string }) {
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   }, [flipped, flip, rate, editing, settings?.buttons]);
-
-  const startListening = () => {
-    if (!view?.expected) return;
-    if (listening) {
-      listening.cancel();
-      setListening(undefined);
-      return;
-    }
-    const l = listen(view.expected.lang);
-    setListening(l);
-    l.result
-      .then((text) => text && setAnswer((a) => (a ? `${a} ${text}` : text)))
-      .catch((e: Error) => toast(e.message))
-      .finally(() => setListening(undefined));
-  };
 
   if (!settings || !decks || !cards || !notes || !q) return <div className="screen" />;
 
@@ -316,19 +311,30 @@ export function Review({ deckId }: { deckId?: string }) {
               onChange={(e) => setAnswer(e.target.value)}
               style={{ fontFamily: 'var(--font-hanzi)' }}
             />
-            {sttSupported() && (
+            {voice.supported && (
               <button
                 type="button"
                 className="icon-btn"
-                aria-label={listening ? '듣기 멈추기' : '말해서 답하기'}
-                aria-pressed={!!listening}
-                onClick={startListening}
-                style={{ height: 'auto', background: listening ? 'var(--accent)' : 'var(--surface)', color: listening ? 'var(--on-accent)' : 'var(--text2)', borderRadius: 14 }}
+                aria-label={voice.state === 'listening' ? '말하기 끝내기' : '말해서 답하기'}
+                aria-pressed={voice.state === 'listening'}
+                disabled={voice.state === 'transcribing'}
+                onClick={() => view.expected && voice.toggle(view.expected.lang)}
+                style={{
+                  height: 'auto',
+                  background: voice.state === 'listening' ? 'var(--accent)' : 'var(--surface)',
+                  color: voice.state === 'listening' ? 'var(--on-accent)' : 'var(--text2)',
+                  borderRadius: 14,
+                }}
               >
                 <Icon name="mic" />
               </button>
             )}
           </div>
+          {voice.state !== 'idle' && (
+            <span className="faint small" role="status">
+              {voice.state === 'listening' ? '듣고 있어요 · 다 말했으면 마이크를 다시 누르세요' : '받아쓰는 중…'}
+            </span>
+          )}
         </div>
       ) : (
         <button type="button" className="card-area" data-flipped={flipped} onClick={flip} aria-label={flipped ? '정답' : '정답 보기'}>

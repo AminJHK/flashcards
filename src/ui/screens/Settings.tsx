@@ -9,6 +9,7 @@ import { useDecks, useScheduler, useSettings } from '../hooks';
 import { langName } from '../langs';
 import { ACCENTS, prefersDark } from '../theme';
 import { useToast } from '../toast';
+import { GeminiSettings } from './GeminiSettings';
 
 const SAMPLE: Record<string, string> = {
   'zh-CN': '你好，我们一起学习中文吧。',
@@ -45,7 +46,12 @@ export function Settings() {
         <h1 className="title">설정</h1>
       </div>
 
-      <span className="section-label">화면</span>
+      <span className="section-label">
+        자연스러운 음성
+      </span>
+      <GeminiSettings s={s} />
+
+      <span className="section-label" style={{ paddingTop: 8 }}>화면</span>
       <div className="group">
         <Row col title="테마">
           <Segmented<ThemePref>
@@ -114,7 +120,7 @@ export function Settings() {
       </div>
 
       <span className="section-label" style={{ paddingTop: 8 }}>
-        발음
+        기기 음성 {s.gemini?.apiKey ? '(Gemini를 못 쓸 때 대신 읽어요)' : ''}
       </span>
       <div className="group">
         {!ttsSupported() && <Row title="이 브라우저에서는 발음을 쓸 수 없어요" desc="안드로이드 Chrome에서 열어 주세요." />}
