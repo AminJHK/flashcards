@@ -1,0 +1,11 @@
+node_modules
+dist
+dev-dist
+test-results
+playwright-report
+*.local
+.env
+.env.*
+# 사용자 데이터·백업 파일은 절대 커밋하지 않는다
+*-backup*.json
+backups/

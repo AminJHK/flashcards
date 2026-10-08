@@ -21,10 +21,16 @@
 - **카드 종류의 필드 `key`와 카드 종류 `id`는 바꾸지 않는다.**
   - 구조를 바꿀 때는 `version`을 올리고 마이그레이션을 작성한다.
 
+## 명령
+
+- `npm run check`: lint + 타입 검사 + 단위 테스트. 푸시 전에 반드시 통과시킨다.
+- `npm run e2e`: Playwright 화면 테스트. 클라우드 환경에서는 `CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`을 붙인다.
+- `node scripts/icons.mjs`: `public/icon.svg`로 PNG 아이콘을 다시 만든다.
+
 ## 관례
 
 - UI 문구는 한국어로 쓴다.
 - 색상은 테마 토큰(CSS 변수)만 쓴다. 라이트/다크 양쪽에서 확인한다.
-- 새 카드 종류는 `src/core/cardTypes/`에 모듈 하나로 추가하고 `registry.ts`에 등록한다.
+- 새 카드 종류는 `src/core/cardTypes/`에 모듈 하나로 추가하고 `registry.ts`에 등록한다 (docs/DESIGN.md §5.3). 화면은 `view()`가 돌려주는 블록만 그리므로 보통 UI는 고치지 않는다.
 - 시각은 UTC 밀리초로 다룬다. "오늘" 계산은 `dayStartHour` 기준이다.
 - 푸시 전에 lint, 타입 검사, 단위 테스트를 모두 통과시킨다.
