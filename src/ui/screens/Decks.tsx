@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
-import { CARD_TYPES, getCardType } from '../../core/cardTypes/registry';
+import { CARD_TYPES, getCardType, hasCardType } from '../../core/cardTypes/registry';
+import type { CardType } from '../../core/cardTypes/types';
 import type { AutoplaySide, DeckSettings } from '../../core/model/types';
 import { db } from '../../adapters/storage/db';
 import { loadPinyin } from '../../adapters/pinyin/pinyin';
@@ -198,10 +199,16 @@ export function DeckDetail({ id }: { id: string }) {
   const decks = useDecks();
   const toast = useToast();
   const noteCount = useLiveQuery(() => db.notes.where('deckId').equals(id).count(), [id]);
+  // 이 덱에 실제로 들어 있는 단어의 카드 종류 (많은 순). "새 단어의 카드 종류"와는 별개다.
+  const usedTypes = useLiveQuery(async () => {
+    const counts = new Map<string, number>();
+    await db.notes.where('deckId').equals(id).each((n) => counts.set(n.typeId, (counts.get(n.typeId) ?? 0) + 1));
+    return [...counts].sort((a, b) => b[1] - a[1]).map(([t]) => t);
+  }, [id]);
   const deck = decks?.find((d) => d.id === id);
   const [name, setName] = useState<string>();
 
-  if (!decks || noteCount === undefined) return <div className="screen" />;
+  if (!decks || noteCount === undefined || !usedTypes) return <div className="screen" />;
   if (!deck) {
     return (
       <div className="screen">
@@ -214,9 +221,12 @@ export function DeckDetail({ id }: { id: string }) {
   }
 
   const s = deck.settings;
-  const type = getCardType(s.defaultTypeId);
+  const defaultType = getCardType(s.defaultTypeId);
+  // 방향 설명과 언어 설정은 덱에 실제로 많이 든 카드 종류를 기준으로 한다 (없으면 새 단어의 기본 종류)
+  const type = getCardType(usedTypes.find(hasCardType) ?? s.defaultTypeId);
   const set = (patch: Partial<DeckSettings>) => updateDeck(deck.id, { settings: patch });
-  const usesDeckLangs = type.fields.some((f) => f.lang === 'deck.front' || f.lang === 'deck.back');
+  const usesLangs = (t: CardType) => t.fields.some((f) => f.lang === 'deck.front' || f.lang === 'deck.back');
+  const usesDeckLangs = [defaultType, ...usedTypes.filter(hasCardType).map(getCardType)].some(usesLangs);
   const optional = type.templates.find((t) => t.optional);
   const forward = type.templates.find((t) => !t.optional) ?? type.templates[0]!;
 
@@ -255,7 +265,7 @@ export function DeckDetail({ id }: { id: string }) {
       </div>
 
       <div className="group">
-        <Row col title="새 단어의 카드 종류" desc={type.description}>
+        <Row col title="새 단어의 카드 종류" desc={`${defaultType.description} 새로 추가하는 단어에만 적용돼요. 이미 있는 단어는 그대로예요.`}>
           <Segmented label="카드 종류" options={CARD_TYPES.map((t) => [t.id, t.shortName] as const)} value={s.defaultTypeId} onChange={(v) => set({ defaultTypeId: v })} />
         </Row>
         {optional && (
@@ -309,11 +319,9 @@ export function DeckDetail({ id }: { id: string }) {
           </>
         )}
       </div>
-      {!usesDeckLangs && (
-        <span className="faint small" style={{ padding: '0 4px' }}>
-          발음: {type.id.startsWith('zh') ? '중국어(zh-CN)로 읽어요' : `앞면 ${langName(s.langs.front)}`}
-        </span>
-      )}
+      <span className="faint small" style={{ padding: '0 4px', lineHeight: 1.6 }}>
+        {usesDeckLangs ? '앞면·뒷면 언어는 기본, 동사 변화 카드를 읽을 때 써요. ' : ''}중국어 카드(중국어 단어·작문·듣기)는 설정과 상관없이 항상 중국어로 읽어요.
+      </span>
 
       <button type="button" className="btn btn-danger" onClick={remove}>
         덱 지우기
