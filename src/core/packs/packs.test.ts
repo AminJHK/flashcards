@@ -66,3 +66,38 @@ describe('여행 스페인어', () => {
     }
   });
 });
+
+describe('스페인어 불규칙 동사 변화', () => {
+  const pack = PACKS.find((p) => p.id === 'spanish-irregular-es')!;
+
+  it('여섯 인칭 변화형이 모두 있고 인칭 어미가 맞다', () => {
+    for (const n of pack.notes) {
+      const f = n.fields;
+      const label = `${f.verb} ${f.tense}`;
+      expect(n.typeId).toBe('es-conj');
+      for (const k of ['yo', 'tu', 'el', 'nos', 'vos', 'ellos']) expect(f[k]?.trim(), `${label} ${k}`).toBeTruthy();
+      expect(f.nos, label).toMatch(/mos$/);
+      expect(f.vos, label).toMatch(/(is|ís)$/);
+      expect(f.ellos, label).toMatch(/n$/);
+      for (const k of ['verb', 'meaning', 'tense', 'yo', 'tu', 'el', 'nos', 'vos', 'ellos', 'memo']) expect(f[k] ?? '', label).not.toMatch(HANGUL);
+    }
+  });
+
+  it('현재형이 과거형보다 앞에 있다', () => {
+    const lastPresent = pack.notes.map((n) => n.fields.tense).lastIndexOf('presente');
+    const firstPast = pack.notes.findIndex((n) => n.fields.tense !== 'presente');
+    expect(lastPresent).toBeLessThan(firstPast);
+  });
+
+  it('카드 화면: 앞면은 동사와 시제, 뒷면은 대명사가 붙은 여섯 줄이고 한 번에 읽는다', () => {
+    const type = getCardType('es-conj');
+    const n = pack.notes.find((x) => x.fields.verb === 'tener' && x.fields.tense === 'presente')!;
+    const deck = { id: 'd', name: 'x', createdAt: 0, settings: pack.deckSettings };
+    const v = type.view('forward', { fields: n.fields, deck });
+    expect(v.front.map((b) => ('text' in b ? b.text : ''))).toEqual(['presente', 'tener', 'to have']);
+    const lines = v.back.filter((b) => b.kind === 'sentence').map((b) => ('text' in b ? b.text : ''));
+    expect(lines).toEqual(['yo tengo', 'tú tienes', 'él tiene', 'nosotros tenemos', 'vosotros tenéis', 'ellos tienen']);
+    expect(v.tts.back).toEqual([{ text: lines.join(', '), lang: 'es-ES' }]);
+    expect(v.tts.front).toEqual([{ text: 'tener', lang: 'es-ES' }]);
+  });
+});

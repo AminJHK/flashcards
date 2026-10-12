@@ -51,3 +51,18 @@ test('여행 스페인어 덱: 스페인어 단어를 보고 영어 뜻과 예�
   await page.getByRole('button', { name: /알았음/ }).click();
   await expect(page.getByText('ir', { exact: true })).toBeVisible();
 });
+
+test('스페인어 불규칙 동사 덱: 동사를 보고 여섯 인칭 변화형을 확인한다', async ({ page }) => {
+  await page.goto('/#/decks/new');
+  const panel = page.locator('.panel', { hasText: '스페인어 불규칙 동사 변화' });
+  await panel.getByRole('button', { name: '이 덱 추가하기' }).click();
+  await expect(page.getByLabel('덱 이름')).toHaveValue('스페인어 불규칙 동사');
+  await page.getByRole('link', { name: '오늘' }).click();
+  await expect(page.getByText('새 5')).toBeVisible();
+  await page.getByRole('button', { name: '복습 시작' }).click();
+  await expect(page.getByText('ser', { exact: true })).toBeVisible();
+  await expect(page.getByText('presente', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
+  for (const t of ['yo soy', 'tú eres', 'él es', 'nosotros somos', 'vosotros sois', 'ellos son']) await expect(page.getByText(t, { exact: true })).toBeVisible();
+  await page.screenshot({ path: 'test-results/shots/14-spanish-conj-back.png' });
+});
