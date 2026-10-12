@@ -2,11 +2,15 @@ import { useState } from 'react';
 import { dayToDate, yearColumns } from '../../core/stats/heatmap';
 import { Heatmap, HeatmapNumbers } from '../components/Heatmap';
 import { Icon } from '../components/Icon';
+import { MemoryPanel, useMemoryByDeck } from '../components/MemoryBar';
+import { useDecks } from '../hooks';
 import { go } from '../router';
 import { useReviewStats } from '../useReviewStats';
 
 export function Stats() {
   const data = useReviewStats();
+  const decks = useDecks();
+  const memory = useMemoryByDeck();
   const thisYear = data ? dayToDate(data.today).getUTCFullYear() : new Date().getFullYear();
   const [year, setYear] = useState<number>();
   if (!data) return <div className="screen" />;
@@ -42,6 +46,24 @@ export function Stats() {
       <div className="panel" style={{ padding: 20 }}>
         <HeatmapNumbers s={data.stats} />
       </div>
+
+      {decks && memory && decks.some((d) => memory.get(d.id)?.total) && (
+        <>
+          <span className="section-label" style={{ paddingTop: 8 }}>
+            덱별 기억 상태
+          </span>
+          <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 20 }}>
+            {decks
+              .filter((d) => memory.get(d.id)?.total)
+              .map((d) => (
+                <MemoryPanel key={d.id} m={memory.get(d.id)!} title={d.name} />
+              ))}
+          </div>
+          <span className="faint small" style={{ padding: '0 4px', lineHeight: 1.6 }}>
+            탄탄함은 다음 복습까지 3주 이상 남은 카드예요. 기억할 확률은 FSRS가 계산한, 지금 시험을 보면 맞힐 확률의 평균이에요.
+          </span>
+        </>
+      )}
       <span className="faint small" style={{ padding: '0 4px', lineHeight: 1.6 }}>
         지금까지 모두 {data.stats.total}장 복습했어요. 되돌린 복습은 세지 않아요.
       </span>

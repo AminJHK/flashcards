@@ -1251,3 +1251,108 @@ textarea.input-sentence {
   border-radius: 14px;
   padding: 0 12px;
 }
+
+/* ---------- 기억 상태 (덱별) ---------- */
+.mem-bar {
+  display: flex;
+  gap: 2px;
+  height: 12px;
+  width: 100%;
+}
+
+.mem-bar.thin {
+  height: 6px;
+}
+
+.mem-seg {
+  min-width: 4px;
+  border-radius: 4px;
+}
+
+.mem-0 {
+  background: var(--surface2);
+}
+.mem-1 {
+  background: color-mix(in srgb, var(--accent) 40%, var(--surface2));
+}
+.mem-2 {
+  background: color-mix(in srgb, var(--accent) 70%, var(--surface2));
+}
+.mem-3 {
+  background: var(--accent);
+}
+
+.mem-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.mem-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mem-panel + .mem-panel {
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.mem-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mem-title {
+  font-size: 16px;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.mem-recall {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+  margin-left: auto;
+}
+
+.mem-recall strong {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.mem-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 16px;
+  font-size: 14px;
+}
+
+.mem-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mem-sw {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+
+.mem-n {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  font-weight: 600;
+}

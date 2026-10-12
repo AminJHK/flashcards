@@ -10,6 +10,8 @@ import { PACKS } from '../../core/packs/registry';
 import type { Pack } from '../../core/packs/types';
 import { Row, Segmented, Stepper, Switch } from '../components/Controls';
 import { Icon } from '../components/Icon';
+import { MemoryMini, MemoryPanel, useMemoryByDeck } from '../components/MemoryBar';
+import { EMPTY_MEMORY } from '../../core/stats/memory';
 import { useDecks, useSettings } from '../hooks';
 import { speak as deviceSpeak, voicesFor, voicesReady } from '../../adapters/tts/webSpeech';
 import { LANGS, langName, noVoiceMessage } from '../langs';
@@ -19,6 +21,7 @@ import { ask } from '../confirm';
 
 export function DeckList() {
   const decks = useDecks();
+  const memory = useMemoryByDeck();
   const counts = useLiveQuery(async () => {
     const notes = await db.notes.toArray();
     const m = new Map<string, number>();
@@ -41,6 +44,7 @@ export function DeckList() {
                   {getCardType(d.settings.defaultTypeId).name} · {counts.get(d.id) ?? 0}개
                   {d.settings.forwardEnabled === false ? ' · 역방향만' : d.settings.reverseEnabled ? ' · 양방향' : ''}
                 </span>
+                <MemoryMini m={memory?.get(d.id)} />
               </span>
               <span className="faint">
                 <Icon name="chevronRight" size={20} />
@@ -199,6 +203,7 @@ export function DeckNew() {
 export function DeckDetail({ id }: { id: string }) {
   const decks = useDecks();
   const settings = useSettings();
+  const memory = useMemoryByDeck();
   const toast = useToast();
   const noteCount = useLiveQuery(() => db.notes.where('deckId').equals(id).count(), [id]);
   // 이 덱에 실제로 들어 있는 단어의 카드 종류 (많은 순). "새 단어의 카드 종류"와는 별개다.
@@ -264,6 +269,10 @@ export function DeckDetail({ id }: { id: string }) {
         <button type="button" className="btn btn-plain" style={{ flex: 1, height: 52, width: 'auto' }} onClick={() => go(`decks/${deck.id}/notes`)}>
           단어 {noteCount}개 보기
         </button>
+      </div>
+
+      <div className="panel" style={{ padding: 20 }}>
+        <MemoryPanel m={memory?.get(deck.id) ?? EMPTY_MEMORY} title="기억 상태" />
       </div>
 
       <div className="group">
