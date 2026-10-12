@@ -28,8 +28,13 @@ const LANG_EN: Record<string, string> = {
 };
 
 /** 짧은 단어는 언어를 잘못 짐작할 수 있어서, 읽을 언어를 앞에 알려준다. */
+/** 지역 발음이 중요한 언어 (예: 스페인 스페인어와 중남미 스페인어) */
+const REGION_EN: Record<string, string> = {
+  'es-ES': 'Castilian Spanish with a natural accent from Spain',
+};
+
 export function ttsPrompt(text: string, lang: string): string {
-  const name = LANG_EN[lang.slice(0, 2).toLowerCase()] ?? lang;
+  const name = REGION_EN[lang] ?? LANG_EN[lang.slice(0, 2).toLowerCase()] ?? lang;
   return `Say in ${name}, clearly and naturally, at a calm pace for a language learner: ${text}`;
 }
 

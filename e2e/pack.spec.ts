@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('준비된 덱(심장 병동 간호 중국어)을 넣고, 말하기·듣기 카드를 복습한다', async ({ page }) => {
   await page.goto('/#/decks/new');
-  await page.getByRole('button', { name: '이 덱 추가하기' }).click();
+  await page.locator('.panel', { hasText: '심장 병동 간호 중국어' }).getByRole('button', { name: '이 덱 추가하기' }).click();
   await expect(page.getByText(/문장 \d+개를 넣었어요/)).toBeVisible();
   await expect(page.getByLabel('덱 이름')).toHaveValue('심장 병동 간호 중국어');
   await expect(page.getByRole('button', { name: /단어 2\d\d개 보기/ })).toBeVisible();
@@ -30,4 +30,24 @@ test('준비된 덱(심장 병동 간호 중국어)을 넣고, 말하기·듣기
   await expect(page.getByText('저는 왕리화이고, 1952년 3월 8일생이에요.')).toBeVisible();
   await expect(page.locator('.b-pinyin')).toContainText('chū shēng');
   await page.screenshot({ path: 'test-results/shots/12-listen-back.png' });
+});
+
+test('여행 스페인어 덱: 스페인어 단어를 보고 뜻과 예문을 확인한다', async ({ page }) => {
+  await page.goto('/#/decks/new');
+  const panel = page.locator('.panel', { hasText: '여행 스페인어' });
+  await expect(panel).toContainText('단어 514개');
+  await panel.getByRole('button', { name: '이 덱 추가하기' }).click();
+  await expect(page.getByText('단어 514개를 넣었어요')).toBeVisible();
+  await expect(page.getByLabel('덱 이름')).toHaveValue('여행 스페인어');
+
+  await page.getByRole('link', { name: '오늘' }).click();
+  await expect(page.getByText('새 15')).toBeVisible();
+  await page.getByRole('button', { name: '복습 시작' }).click();
+  await expect(page.getByText('la casa', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
+  await expect(page.getByText('집', { exact: true })).toBeVisible();
+  await expect(page.getByText('en casa 집에서')).toBeVisible();
+  await page.screenshot({ path: 'test-results/shots/13-spanish-back.png' });
+  await page.getByRole('button', { name: /알았음/ }).click();
+  await expect(page.getByText('ir', { exact: true })).toBeVisible();
 });

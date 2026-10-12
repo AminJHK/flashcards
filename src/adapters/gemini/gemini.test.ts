@@ -56,6 +56,7 @@ describe('Gemini API', () => {
     expect(body.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName).toBe('Kore');
     expect(body.contents[0].parts[0].text).toBe(ttsPrompt('银行', 'zh-CN'));
     expect(ttsPrompt('besok', 'id-ID')).toMatch(/Indonesian.*: besok$/);
+    expect(ttsPrompt('el coche', 'es-ES')).toMatch(/Spanish.*Spain.*: el coche$/);
   });
 
   it('받아쓰기: 첫 모델이 없으면 다음 모델로 넘어간다', async () => {

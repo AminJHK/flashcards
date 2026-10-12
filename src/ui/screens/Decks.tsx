@@ -102,7 +102,7 @@ function PackCard({ pack }: { pack: Pack }) {
     try {
       const pinyin = await loadPinyin();
       const deck = await installPack(pack, { pinyin });
-      toast(`문장 ${pack.notes.length}개를 넣었어요`);
+      toast(`${speak + listen ? '문장' : '단어'} ${pack.notes.length}개를 넣었어요`);
       go(`decks/${deck.id}`, { replace: true });
     } catch {
       toast('덱을 만들지 못했어요. 다시 시도해 주세요');
@@ -117,7 +117,7 @@ function PackCard({ pack }: { pack: Pack }) {
         {pack.description}
       </span>
       <span className="faint small">
-        말하기 {speak}문장 · 듣기 {listen}문장 · 하루 {pack.deckSettings.newPerDay}개씩 약 {days}일
+        {speak + listen ? `말하기 ${speak}문장 · 듣기 ${listen}문장` : `단어 ${pack.notes.length}개`} · 하루 {pack.deckSettings.newPerDay}개씩 약 {days}일
       </span>
       <button type="button" className="btn btn-primary" style={{ height: 52 }} onClick={install} disabled={busy}>
         {busy ? '넣는 중…' : '이 덱 추가하기'}

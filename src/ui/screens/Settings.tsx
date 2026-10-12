@@ -18,6 +18,7 @@ const SAMPLE: Record<string, string> = {
   'ko-KR': '안녕하세요, 오늘도 화이팅!',
   'en-US': 'Hello, nice to meet you.',
   'ja-JP': 'こんにちは、よろしくお願いします。',
+  'es-ES': 'Hola, ¿dónde está la estación de tren?',
 };
 
 export function Settings() {
