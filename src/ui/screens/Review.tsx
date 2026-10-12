@@ -16,6 +16,7 @@ import { backupToDrive, driveBackupDue, driveErrorMessage } from '../driveBackup
 import { useVoiceAnswer } from '../useVoiceAnswer';
 import { NoteEditor } from './NoteEditor';
 import { withTimeout } from '../../adapters/net';
+import { noVoiceMessage } from '../langs';
 
 const warned = new Set<string>();
 
@@ -106,7 +107,7 @@ export function Review({ deckId }: { deckId?: string }) {
         const msg = r.error
           ? `Gemini 음성을 못 써서 기기 음성으로 읽었어요 · ${r.error}`
           : r.via === 'none'
-            ? '이 기기에 이 언어의 음성이 없을 수 있어요. 설정에서 자연스러운 음성을 연결해 보세요'
+            ? noVoiceMessage(r.missing)
             : undefined;
         if (msg && !warned.has(msg)) {
           warned.add(msg);

@@ -55,8 +55,12 @@ describe('Gemini API', () => {
     expect(body.generationConfig.responseModalities).toEqual(['AUDIO']);
     expect(body.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName).toBe('Kore');
     expect(body.contents[0].parts[0].text).toBe(ttsPrompt('银行', 'zh-CN'));
-    expect(ttsPrompt('besok', 'id-ID')).toMatch(/Indonesian.*: besok$/);
-    expect(ttsPrompt('el coche', 'es-ES')).toMatch(/Spanish.*Spain.*: el coche$/);
+    expect(ttsPrompt('besok', 'id-ID')).toBe('Say in Indonesian: besok');
+    expect(ttsPrompt('el coche', 'es-ES')).toBe('Say in Spanish (Spain): el coche');
+    // 문장은 글자만 보낸다 (설명이 길면 모델이 설명까지 읽어 버린다)
+    expect(ttsPrompt('¿Dónde está la estación de tren?', 'es-ES')).toBe('¿Dónde está la estación de tren?');
+    expect(ttsPrompt('yo tengo, tú tienes, él tiene', 'es-ES')).toBe('yo tengo, tú tienes, él tiene');
+    for (const t of ['ir', 'la casa', '银行']) expect(ttsPrompt(t, 'es-ES').length).toBeLessThan(40);
   });
 
   it('받아쓰기: 첫 모델이 없으면 다음 모델로 넘어간다', async () => {

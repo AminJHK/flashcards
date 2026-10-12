@@ -5,7 +5,7 @@ import { GeminiError } from '../gemini/api';
 import { withTimeout } from '../net';
 import { synthesize } from '../gemini/tts';
 import { db } from '../storage/db';
-import { speak as deviceSpeak, stopSpeaking } from '../tts/webSpeech';
+import { missingVoiceLangs, speak as deviceSpeak, stopSpeaking } from '../tts/webSpeech';
 
 /**
  * 발음 재생 순서 (docs/DESIGN.md §6)
@@ -18,8 +18,18 @@ export function geminiOn(s: Settings | undefined): s is Settings & { gemini: Non
   return !!s?.gemini?.apiKey && s.gemini.useTts;
 }
 
+/** 음성을 만드는 글(프롬프트)을 바꾸면 올린다. 그러면 예전 방식으로 만든 음성은 쓰지 않고 새로 만든다. */
+const CLIP_VERSION = 'v2';
+
 export function clipKey(item: Speech, s: Settings & { gemini: NonNullable<Settings['gemini']> }): string {
-  return `${s.gemini.ttsModel}|${s.gemini.voice}|${item.lang}|${item.text}`;
+  return `${CLIP_VERSION}|${s.gemini.ttsModel}|${s.gemini.voice}|${item.lang}|${item.text}`;
+}
+
+/** 예전 방식으로 만든 음성 파일(설명까지 읽어 버린 것 포함)을 지운다. */
+export async function dropStaleClips(): Promise<void> {
+  const keys = (await db.audio.toCollection().primaryKeys()) as string[];
+  const stale = keys.filter((k) => !k.startsWith(`${CLIP_VERSION}|`));
+  if (stale.length) await db.audio.bulkDelete(stale);
 }
 
 async function clipFor(item: Speech, s: Settings & { gemini: NonNullable<Settings['gemini']> }): Promise<Blob> {
@@ -68,6 +78,8 @@ export interface PlayResult {
   via: 'gemini' | 'device' | 'none';
   /** Gemini가 안 돼서 기기 음성으로 바꿨을 때 그 이유 */
   error?: string;
+  /** 기기에 음성이 없어서 읽지 못한 언어 (예: ['es-ES']) */
+  missing?: string[];
 }
 
 export async function play(items: readonly Speech[], s: Settings | undefined): Promise<PlayResult> {
@@ -87,10 +99,11 @@ export async function play(items: readonly Speech[], s: Settings | undefined): P
     } catch (e) {
       if (my !== token) return { via: 'gemini' };
       const ok = deviceSpeak(list, s.voices);
-      return { via: ok ? 'device' : 'none', error: e instanceof Error ? e.message : undefined };
+      return { via: ok ? 'device' : 'none', error: e instanceof Error ? e.message : undefined, missing: ok ? undefined : missingVoiceLangs(list) };
     }
   }
-  return { via: deviceSpeak(list, s?.voices) ? 'device' : 'none' };
+  const ok = deviceSpeak(list, s?.voices);
+  return { via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list) };
 }
 
 /** 노트 하나의 모든 카드에서 읽을 텍스트 (중복 제거) */

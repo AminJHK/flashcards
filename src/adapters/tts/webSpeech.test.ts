@@ -1,0 +1,89 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+interface FakeVoice {
+  name: string;
+  lang: string;
+  localService: boolean;
+}
+
+/** 기기 음성을 흉내 낸다. 읽도록 넘긴 것들을 spoken에 모은다. */
+function fakeDevice(voices: FakeVoice[]) {
+  const spoken: { text: string; lang: string; voice?: string }[] = [];
+  class Utterance {
+    lang = '';
+    rate = 1;
+    voice: FakeVoice | null = null;
+    constructor(public text: string) {}
+  }
+  const g = globalThis as Record<string, unknown>;
+  g.SpeechSynthesisUtterance = Utterance;
+  g.window = {
+    speechSynthesis: {
+      getVoices: () => voices,
+      cancel: () => {},
+      speak: (u: Utterance) => spoken.push({ text: u.text, lang: u.lang, voice: u.voice?.name }),
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    },
+  };
+  return spoken;
+}
+
+const EN = { name: 'English US', lang: 'en-US', localService: true };
+const ES = { name: 'Spanish Spain', lang: 'es_ES', localService: true };
+const ES_MX = { name: 'Spanish Mexico', lang: 'es-MX', localService: true };
+
+type Mod = typeof import('./webSpeech');
+
+describe('기기 음성', () => {
+  let speak: Mod['speak'];
+  let missingVoiceLangs: Mod['missingVoiceLangs'];
+  // 음성 목록은 모듈 안에 기억해 두므로, 테스트마다 새로 불러온다
+  const load = async () => ({ speak, missingVoiceLangs } = await import('./webSpeech'));
+  beforeEach(() => vi.resetModules());
+  afterEach(() => {
+    const g = globalThis as Record<string, unknown>;
+    delete g.window;
+    delete g.SpeechSynthesisUtterance;
+  });
+
+  it('스페인어 음성이 있으면 그 음성으로 읽는다', async () => {
+    const spoken = fakeDevice([EN, ES]);
+    await load();
+    expect(speak([{ text: 'la casa', lang: 'es-ES' }])).toBe(true);
+    expect(spoken).toEqual([{ text: 'la casa', lang: 'es_ES', voice: 'Spanish Spain' }]);
+  });
+
+  it('같은 스페인어면 지역이 달라도 가까운 음성을 쓴다 (es-ES가 먼저)', async () => {
+    const spoken = fakeDevice([ES_MX, EN]);
+    await load();
+    expect(speak([{ text: 'la casa', lang: 'es-ES' }])).toBe(true);
+    expect(spoken[0]!.voice).toBe('Spanish Mexico');
+  });
+
+  it('스페인어 음성이 없으면 영어 음성으로 억지로 읽지 않고 없다고 알린다', async () => {
+    const spoken = fakeDevice([EN]);
+    await load();
+    expect(speak([{ text: 'la casa', lang: 'es-ES' }])).toBe(false);
+    expect(spoken).toEqual([]);
+    expect(missingVoiceLangs([{ text: 'la casa', lang: 'es-ES' }])).toEqual(['es-ES']);
+  });
+
+  it('읽을 수 있는 문장만 읽는다', async () => {
+    const spoken = fakeDevice([EN]);
+    await load();
+    speak([
+      { text: 'la casa', lang: 'es-ES' },
+      { text: 'the house', lang: 'en-US' },
+    ]);
+    expect(spoken.map((s) => s.text)).toEqual(['the house']);
+  });
+
+  it('음성 목록이 아직 도착하지 않았으면 언어 태그를 믿고 기기에 맡긴다', async () => {
+    const spoken = fakeDevice([]);
+    await load();
+    expect(speak([{ text: 'la casa', lang: 'es-ES' }])).toBe(true);
+    expect(spoken).toEqual([{ text: 'la casa', lang: 'es-ES', voice: undefined }]);
+    expect(missingVoiceLangs([{ text: 'la casa', lang: 'es-ES' }])).toEqual([]);
+  });
+});

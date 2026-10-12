@@ -53,7 +53,7 @@ test('덱 만들기 → 단어 추가(병음 자동) → 복습 → 되돌리기
   await page.getByRole('button', { name: /알았음/ }).click();
 
   await expect(page.locator('.b-hanzi.front')).toHaveText('银行');
-  await page.getByRole('button', { name: '되돌리기' }).click();
+  await page.locator('.review-top').getByRole('button', { name: '되돌리기' }).click();
   await expect(page.locator('.b-hanzi.back')).toHaveText('图书馆');
   await page.getByRole('button', { name: /알았음/ }).click();
   await expect(page.locator('.b-hanzi.front')).toHaveText('银行');

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { requestPersistence } from '../adapters/files/share';
+import { dropStaleClips } from '../adapters/speech/speech';
 import { TabBar } from './components/TabBar';
 import { useSettings } from './hooks';
 import { go, useRoute } from './router';
@@ -30,6 +31,7 @@ export function App() {
 
   useEffect(() => {
     void requestPersistence();
+    void dropStaleClips().catch(() => {});
   }, []);
 
   const [a, b, c, ...rest] = route;

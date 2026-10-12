@@ -6,7 +6,7 @@ import { onVoicesChanged, speak, ttsSupported, voicesFor } from '../../adapters/
 import { daysSince, runBackup, runRestore } from '../backup';
 import { Row, Segmented, Stepper, Switch } from '../components/Controls';
 import { useDecks, useScheduler, useSettings } from '../hooks';
-import { langName } from '../langs';
+import { langName, noVoiceMessage } from '../langs';
 import { ACCENTS, prefersDark } from '../theme';
 import { useToast } from '../toast';
 import { DriveSettings } from './DriveSettings';
@@ -146,7 +146,9 @@ export function Settings() {
                     ))}
                   </select>
                 )}
-                <button type="button" className="btn-plain" style={{ border: 'none' }} onClick={() => speak([{ text: SAMPLE[lang] ?? 'Hello', lang }], s.voices)}>
+                <button type="button" className="btn-plain" style={{ border: 'none' }} onClick={() => {
+                    if (!speak([{ text: SAMPLE[lang] ?? 'Hello', lang }], s.voices)) toast(noVoiceMessage([lang]));
+                  }}>
                   듣기
                 </button>
               </Row>

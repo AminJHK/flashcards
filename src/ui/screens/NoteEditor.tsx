@@ -14,6 +14,7 @@ import { langName } from '../langs';
 import { go } from '../router';
 import { useToast } from '../toast';
 import { ask } from '../confirm';
+import { noVoiceMessage } from '../langs';
 
 const LAST_DECK = 'flashcards:lastDeck';
 const emptyFields = (t: CardType) => Object.fromEntries(t.fields.map((f) => [f.key, '']));
@@ -164,7 +165,7 @@ function Editor(props: Props & { decks: Deck[]; note?: Note }) {
     if (!text.trim()) return;
     void play([{ text, lang: resolveLang(f.lang, deck) }], settings).then((r) => {
       if (r.error) toast(`기기 음성으로 읽었어요 · ${r.error}`);
-      else if (r.via === 'none') toast('이 기기에 이 언어의 음성이 없을 수 있어요');
+      else if (r.via === 'none') toast(noVoiceMessage(r.missing));
     });
   };
 

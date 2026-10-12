@@ -27,15 +27,21 @@ const LANG_EN: Record<string, string> = {
   de: 'German',
 };
 
-/** 짧은 단어는 언어를 잘못 짐작할 수 있어서, 읽을 언어를 앞에 알려준다. */
 /** 지역 발음이 중요한 언어 (예: 스페인 스페인어와 중남미 스페인어) */
 const REGION_EN: Record<string, string> = {
-  'es-ES': 'Castilian Spanish with a natural accent from Spain',
+  'es-ES': 'Spanish (Spain)',
 };
 
+/**
+ * Gemini에 보낼 글. 설명이 길면 모델이 그 설명까지 소리 내어 읽어 버리므로 가능한 한 짧게 쓴다.
+ * - 문장(세 단어 이상)은 글자만 보낸다. 언어는 글을 보고 알아서 알아듣는다.
+ * - 한두 단어는 언어를 잘못 짐작하기 쉬워서 "Say in 언어: 단어" 한 줄만 앞에 붙인다.
+ */
 export function ttsPrompt(text: string, lang: string): string {
+  const t = text.trim();
+  if (t.split(/\s+/).length >= 3 || t.length >= 12) return t;
   const name = REGION_EN[lang] ?? LANG_EN[lang.slice(0, 2).toLowerCase()] ?? lang;
-  return `Say in ${name}, clearly and naturally, at a calm pace for a language learner: ${text}`;
+  return `Say in ${name}: ${t}`;
 }
 
 export async function synthesize(text: string, lang: string, voice: string, model: string, key: string): Promise<Blob> {

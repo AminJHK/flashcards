@@ -57,20 +57,34 @@ function pickVoice(lang: string, preferred?: string): SpeechSynthesisVoice | und
   return list.find((v) => v.name === preferred) ?? list[0];
 }
 
-/** 차례대로 읽는다. 이전에 읽던 것은 멈춘다. 음성이 없으면 false. */
+/** 이 기기에 음성이 없는 언어들. 음성 목록이 아직 안 왔으면 알 수 없으니 비워 둔다. */
+export function missingVoiceLangs(items: readonly Speech[]): string[] {
+  if (!ttsSupported() || !loadVoices().length) return [];
+  return [...new Set(items.filter((i) => i.text && !pickVoice(i.lang)).map((i) => i.lang))];
+}
+
+/**
+ * 차례대로 읽는다. 이전에 읽던 것은 멈춘다. 음성이 없으면 false.
+ * 그 언어의 음성이 없는 문장은 읽지 않는다. 억지로 읽으면 기본 음성(영어)이 스페인어를 영어처럼 읽어서
+ * 더 헷갈린다. 음성 목록이 아직 도착하지 않았을 때만 언어 태그를 믿고 기기에 맡긴다.
+ */
 export function speak(items: readonly Speech[], preferred: Record<string, string> = {}, rate = 0.9): boolean {
   const s = synth();
   if (!s || !ttsSupported()) return false;
   s.cancel();
+  const known = loadVoices().length > 0;
   let found = true;
   for (const it of items) {
     if (!it.text) continue;
-    const u = new SpeechSynthesisUtterance(it.text);
-    u.lang = it.lang;
-    u.rate = rate;
     const v = pickVoice(it.lang, preferred[it.lang]);
+    if (!v && known) {
+      found = false;
+      continue;
+    }
+    const u = new SpeechSynthesisUtterance(it.text);
+    u.lang = v?.lang ?? it.lang; // 고른 음성의 언어 태그를 같이 써야 안드로이드가 그 음성으로 읽는다
+    u.rate = rate;
     if (v) u.voice = v;
-    else found = false;
     s.speak(u);
   }
   return found;
