@@ -36,7 +36,8 @@ export function DeckList() {
               <span className="row-text">
                 <span style={{ fontSize: 17, fontWeight: 600 }}>{d.name}</span>
                 <span className="faint small">
-                  {getCardType(d.settings.defaultTypeId).name} · {counts.get(d.id) ?? 0}개{d.settings.reverseEnabled ? ' · 역방향 켜짐' : ''}
+                  {getCardType(d.settings.defaultTypeId).name} · {counts.get(d.id) ?? 0}개
+                  {d.settings.forwardEnabled === false ? ' · 역방향만' : d.settings.reverseEnabled ? ' · 양방향' : ''}
                 </span>
               </span>
               <span className="faint">
@@ -217,6 +218,7 @@ export function DeckDetail({ id }: { id: string }) {
   const set = (patch: Partial<DeckSettings>) => updateDeck(deck.id, { settings: patch });
   const usesDeckLangs = type.fields.some((f) => f.lang === 'deck.front' || f.lang === 'deck.back');
   const optional = type.templates.find((t) => t.optional);
+  const forward = type.templates.find((t) => !t.optional) ?? type.templates[0]!;
 
   const remove = async () => {
     if (!(await ask(`"${deck.name}" 덱과 단어 ${noteCount}개를 모두 지울까요? 되돌릴 수 없어요.`, '지우기'))) return;
@@ -256,11 +258,30 @@ export function DeckDetail({ id }: { id: string }) {
         <Row col title="새 단어의 카드 종류" desc={type.description}>
           <Segmented label="카드 종류" options={CARD_TYPES.map((t) => [t.id, t.shortName] as const)} value={s.defaultTypeId} onChange={(v) => set({ defaultTypeId: v })} />
         </Row>
+        {optional && (
+          <Row title="정방향 카드" desc={`${forward.label}${type.id === 'basic' ? ` (${langName(s.langs.front)} → ${langName(s.langs.back)})` : ''}. 끄면 숨겨져요 (복습 기록은 그대로).`}>
+            <Switch
+              label="정방향 카드"
+              checked={s.forwardEnabled !== false}
+              onChange={(v) => {
+                if (!v && !s.reverseEnabled) return toast('정방향과 역방향 중 하나는 켜 두어야 해요');
+                void set({ forwardEnabled: v }).then(() => toast(v ? '정방향 카드를 켰어요' : '정방향 카드를 숨겼어요 · 기록은 그대로예요'));
+              }}
+            />
+          </Row>
+        )}
         <Row
           title="역방향 카드"
-          desc={optional ? `${optional.label} 카드도 만들어요. 꺼도 기록은 남아요.` : '이 카드 종류에는 역방향이 없어요.'}
+          desc={optional ? `${optional.label}${type.id === 'basic' ? ` (${langName(s.langs.back)} → ${langName(s.langs.front)})` : ''}. 끄면 숨겨져요 (복습 기록은 그대로).` : '이 카드 종류에는 역방향이 없어요.'}
         >
-          <Switch label="역방향 카드" checked={s.reverseEnabled} onChange={(v) => set({ reverseEnabled: v }).then(() => toast(v ? '역방향 카드를 켰어요' : '역방향 카드를 숨겼어요 · 기록은 그대로예요'))} />
+          <Switch
+            label="역방향 카드"
+            checked={s.reverseEnabled}
+            onChange={(v) => {
+              if (!v && s.forwardEnabled === false) return toast('정방향과 역방향 중 하나는 켜 두어야 해요');
+              void set({ reverseEnabled: v }).then(() => toast(v ? '역방향 카드를 켰어요' : '역방향 카드를 숨겼어요 · 기록은 그대로예요'));
+            }}
+          />
         </Row>
         <Row title="하루 새 카드">
           <Stepper label="하루 새 카드" value={s.newPerDay} min={0} max={200} step={5} onChange={(v) => set({ newPerDay: v })} />

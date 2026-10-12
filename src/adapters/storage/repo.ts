@@ -39,14 +39,14 @@ export async function createDeck(name: string, settings: DeckSettings, d: Flashc
   return deck;
 }
 
-/** 덱 설정을 바꾼다. 역방향 스위치가 바뀌면 카드의 hidden을 맞춘다 (기록은 그대로). */
+/** 덱 설정을 바꾼다. 정방향·역방향 스위치가 바뀌면 카드의 hidden을 맞춘다 (기록은 그대로). */
 export async function updateDeck(id: Id, patch: { name?: string; settings?: Partial<DeckSettings> }, d: FlashcardsDB = db): Promise<void> {
   await d.transaction('rw', [d.decks, d.notes, d.cards, d.settings], async () => {
     const deck = await d.decks.get(id);
     if (!deck) return;
     const next: Deck = { ...deck, name: patch.name?.trim() || deck.name, settings: { ...deck.settings, ...patch.settings } };
     await d.decks.put(next);
-    if (next.settings.reverseEnabled !== deck.settings.reverseEnabled) {
+    if (next.settings.reverseEnabled !== deck.settings.reverseEnabled || next.settings.forwardEnabled !== deck.settings.forwardEnabled) {
       const sched = schedulerFor(await getSettings(d));
       const now = Date.now();
       const notes = await d.notes.where('deckId').equals(id).toArray();

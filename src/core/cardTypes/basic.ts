@@ -34,6 +34,8 @@ export const basic: CardType = {
           ...memo,
         ],
         tts: { front: [], back: [sayFront] },
+        // 앞면(뜻)은 읽을 게 없으니, 정답(앞면 언어)에서 들려준다
+        autoplay: ctx.deck.settings.autoplay === 'off' ? 'off' : 'back',
       };
     }
     return {

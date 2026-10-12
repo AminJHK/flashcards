@@ -43,11 +43,27 @@ test('여행 스페인어 덱: 스페인어 단어를 보고 영어 뜻과 예�
   await page.getByRole('link', { name: '오늘' }).click();
   await expect(page.getByText('새 15')).toBeVisible();
   await page.getByRole('button', { name: '복습 시작' }).click();
+  // 기본값: 영어를 보고 스페인어를 떠올린다
+  await expect(page.getByText('house, home', { exact: true })).toBeVisible();
+  await expect(page.getByText('la casa', { exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
+  await expect(page.getByText('la casa', { exact: true })).toBeVisible();
+  await expect(page.getByText('en casa at home')).toBeVisible();
+  await page.screenshot({ path: 'test-results/shots/13-spanish-back.png' });
+  await page.getByRole('button', { name: '복습 닫기' }).click();
+
+  // 설정에서 방향을 바꾼다: 정방향(스페인어 → 영어)을 켜고 역방향을 끈다
+  await page.goto('/#/decks');
+  await page.getByRole('button', { name: /여행 스페인어/ }).click();
+  await expect(page.getByText('역방향만')).toHaveCount(0);
+  await page.getByRole('switch', { name: '정방향 카드' }).click();
+  await expect(page.getByRole('switch', { name: '정방향 카드' })).toHaveAttribute('aria-checked', 'true');
+  await page.getByRole('switch', { name: '역방향 카드' }).click();
+  await expect(page.getByRole('switch', { name: '역방향 카드' })).toHaveAttribute('aria-checked', 'false');
+  await page.getByRole('button', { name: '이 덱 복습' }).click();
   await expect(page.getByText('la casa', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
   await expect(page.getByText('house, home', { exact: true })).toBeVisible();
-  await expect(page.getByText('en casa at home')).toBeVisible();
-  await page.screenshot({ path: 'test-results/shots/13-spanish-back.png' });
   await page.getByRole('button', { name: /알았음/ }).click();
   await expect(page.getByText('ir', { exact: true })).toBeVisible();
 });

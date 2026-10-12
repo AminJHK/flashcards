@@ -34,7 +34,7 @@ export function cardsForNote(note: Note, existing: readonly Card[], deck: Deck, 
   const type = getCardType(note.typeId);
   const changed: Card[] = [];
   type.templates.forEach((tpl, ord) => {
-    const hidden = !!tpl.optional && !deck.settings.reverseEnabled;
+    const hidden = tpl.optional ? !deck.settings.reverseEnabled : deck.settings.forwardEnabled === false;
     const have = existing.find((c) => c.templateId === tpl.id);
     if (have) {
       if (have.hidden !== hidden || have.deckId !== note.deckId) changed.push({ ...have, hidden, deckId: note.deckId });

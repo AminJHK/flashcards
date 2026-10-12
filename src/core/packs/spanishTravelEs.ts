@@ -22,13 +22,15 @@ function v(es: string, en: string, memo = '', travel = false): PackNote {
 export const spanishTravelEs: Pack = {
   id: 'spanish-travel-es',
   name: '여행 스페인어 · 핵심 명사와 동사',
-  description: '스페인 여행에 꼭 필요한 명사 354개와 동사 160개. 뜻과 예문은 영어예요. 많이 쓰는 순서대로 나오고, 명사는 관사(el/la)와 함께, 사람은 남녀 형태를 같이 외워요.',
+  description: '스페인 여행에 꼭 필요한 명사 354개와 동사 160개. 영어를 보고 스페인어를 떠올려요 (설정에서 방향을 바꿀 수 있어요). 뜻과 예문은 영어이고, 많이 쓰는 순서대로 나와요. 명사는 관사(el/la)와 함께, 사람은 남녀 형태를 같이 외워요.',
   deckName: '여행 스페인어',
   deckSettings: {
     defaultTypeId: 'basic',
-    reverseEnabled: false,
+    // 영어를 보고 스페인어를 떠올리는 방향만 (설정에서 바꿀 수 있다)
+    reverseEnabled: true,
+    forwardEnabled: false,
     newPerDay: 15,
-    autoplay: 'front',
+    autoplay: 'back',
     langs: { front: 'es-ES', back: 'en-US' },
   },
   notes: [

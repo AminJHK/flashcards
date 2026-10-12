@@ -49,6 +49,21 @@ describe('repo', () => {
     expect(back.reps).toBe(1);
   });
 
+  it('정방향 스위치를 끄면 역방향만 보이고, 다시 켜면 기록과 함께 돌아온다', async () => {
+    const deck = await repo.createDeck('ES', { ...settings, defaultTypeId: 'basic', reverseEnabled: true, forwardEnabled: false }, d);
+    const note = await repo.addNote(deck.id, 'basic', { front: 'la casa', back: 'house' }, d);
+    const cards = await d.cards.where('noteId').equals(note.id).toArray();
+    const fwd = cards.find((c) => c.templateId === 'forward')!;
+    const rev = cards.find((c) => c.templateId === 'reverse')!;
+    expect([fwd.hidden, rev.hidden]).toEqual([true, false]);
+    await repo.recordReview(rev.id, 3, undefined, d);
+    await repo.updateDeck(deck.id, { settings: { forwardEnabled: true } }, d);
+    expect((await d.cards.get(fwd.id))!.hidden).toBe(false);
+    await repo.updateDeck(deck.id, { settings: { forwardEnabled: false } }, d);
+    expect((await d.cards.get(fwd.id))!.hidden).toBe(true);
+    expect((await d.cards.get(rev.id))!.reps).toBe(1);
+  });
+
   it('백업을 내보내고 다른 DB로 가져오면 같은 상태가 된다', async () => {
     const deck = await repo.createDeck('HSK', settings, d);
     const note = await repo.addNote(deck.id, 'zh-word', { hanzi: '书', meaning: '책' }, d);

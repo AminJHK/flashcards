@@ -14,6 +14,8 @@ export interface DeckSettings {
   defaultTypeId: string;
   /** 선택 템플릿(역방향 등)을 켤지 여부 */
   reverseEnabled: boolean;
+  /** 기본(정방향) 카드를 보일지. 없으면 true. 끄면 역방향만 복습한다 (예: 영어 → 스페인어) */
+  forwardEnabled?: boolean;
   newPerDay: number;
   autoplay: AutoplaySide;
   /** 기본(앞/뒤) 카드처럼 언어가 정해지지 않은 필드의 TTS 언어 */
