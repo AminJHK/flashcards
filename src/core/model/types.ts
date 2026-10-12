@@ -100,6 +100,8 @@ export interface Settings {
   /** 최적화한 FSRS 파라미터. 없으면 기본값 */
   fsrsParams?: number[];
   dayStartHour: number;
+  /** 남은 카드가 "몇 분 뒤 다시" 카드뿐일 때 이만큼(분) 일찍 보여준다. 0이면 정해진 시간까지 기다린다 */
+  learnAheadMin: number;
   buttons: 2 | 4;
   theme: ThemePref;
   amoled: boolean;
@@ -145,6 +147,7 @@ export const DEFAULT_SETTINGS: Settings = {
   desiredRetention: 0.9,
   schedulerId: 'fsrs-6',
   dayStartHour: 4,
+  learnAheadMin: 0,
   buttons: 2,
   theme: 'system',
   amoled: false,

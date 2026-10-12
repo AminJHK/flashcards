@@ -60,7 +60,11 @@ test('덱 만들기 → 단어 추가(병음 자동) → 복습 → 되돌리기
   await page.locator('.card-area').click();
   await page.getByRole('button', { name: /다시/ }).click();
 
-  // 학습 단계 카드만 남음 → 20분 안이면 앞당겨 보여준다
+  // 학습 단계 카드만 남음 → 정해진 간격을 지키고 기다리는 화면을 보여준다
+  await expect(page.getByText('잠깐 쉬어도 돼요')).toBeVisible();
+  await expect(page.getByText(/분 뒤\) 다시 나와요/)).toBeVisible();
+  // 원하면 바로 볼 수도 있다
+  await page.getByRole('button', { name: '지금 바로 보기' }).click();
   await expect(page.locator('.b-hanzi.front')).toBeVisible();
   await page.getByRole('button', { name: '복습 닫기' }).click();
   await expect(page.getByRole('heading', { name: '오늘' })).toBeVisible();

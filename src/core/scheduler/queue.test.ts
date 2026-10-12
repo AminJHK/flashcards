@@ -13,8 +13,8 @@ function words(d: ReturnType<typeof deck>, n: number, start = T0 - DAY): Card[] 
   return out;
 }
 
-const q = (cards: Card[], decks: ReturnType<typeof deck>[], now = T0) =>
-  buildQueue({ now, tzOffsetMin: KST, dayStartHour: 4, cards, decks, scheduler: sched });
+const q = (cards: Card[], decks: ReturnType<typeof deck>[], now = T0, learnAheadMs = 0) =>
+  buildQueue({ now, tzOffsetMin: KST, dayStartHour: 4, cards, decks, scheduler: sched, learnAheadMs });
 
 describe('buildQueue', () => {
   it('덱의 하루 새 카드 한도를 지킨다', () => {
@@ -67,13 +67,24 @@ describe('buildQueue', () => {
     expect(q(cards, [d], T0 + MIN).next?.id).toBe(cards[1]!.id);
   });
 
-  it('학습 단계 카드만 남으면 20분까지 앞당겨 보여주고, 그보다 이르면 기다린다', () => {
+  it('기본: 학습 단계 카드만 남아도 정해진 간격을 지키고, 그때까지 기다린다', () => {
+    const d = deck('d', { newPerDay: 1 });
+    const cards = words(d, 1).filter((c) => !c.hidden);
+    cards[0] = applyReview(cards[0]!, 2, T0, sched); // 어려움 → 몇 분 뒤
+    const r = q(cards, [d], T0 + MIN);
+    expect(r.next).toBeUndefined();
+    expect(r.waiting).toEqual({ count: 1, nextDue: cards[0]!.due, cardId: cards[0]!.id });
+    // 시간이 되면 나온다
+    expect(q(cards, [d], cards[0]!.due).next?.id).toBe(cards[0]!.id);
+  });
+
+  it('미리 보기를 켜면(20분) 그 안의 학습 카드는 앞당겨 보여주고, 그보다 이르면 기다린다', () => {
     const d = deck('d', { newPerDay: 1 });
     const cards = words(d, 1).filter((c) => !c.hidden);
     cards[0] = applyReview(cards[0]!, 3, T0, sched); // 알았음 → 10분 뒤
-    expect(q(cards, [d], T0 + MIN).next?.id).toBe(cards[0]!.id);
+    expect(q(cards, [d], T0 + MIN, 20 * MIN).next?.id).toBe(cards[0]!.id);
     cards[0] = { ...cards[0]!, due: T0 + 40 * MIN };
-    const r = q(cards, [d], T0 + MIN);
+    const r = q(cards, [d], T0 + MIN, 20 * MIN);
     expect(r.next).toBeUndefined();
     expect(r.waiting).toEqual({ count: 1, nextDue: T0 + 40 * MIN, cardId: cards[0]!.id });
   });

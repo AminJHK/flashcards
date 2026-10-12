@@ -23,7 +23,7 @@ export function Home() {
 
   const q = useMemo(() => {
     if (!settings || !decks || !cards) return undefined;
-    return buildQueue({ now, tzOffsetMin: new Date(now).getTimezoneOffset(), dayStartHour: settings.dayStartHour, cards, decks, scheduler });
+    return buildQueue({ now, tzOffsetMin: new Date(now).getTimezoneOffset(), dayStartHour: settings.dayStartHour, cards, decks, scheduler, learnAheadMs: settings.learnAheadMin * 60_000 });
   }, [settings, decks, cards, scheduler, now]);
 
   if (!settings || !decks || !cards || !notes || !q) return <div className="screen" />;

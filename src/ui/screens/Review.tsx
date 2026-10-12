@@ -54,7 +54,7 @@ export function Review({ deckId }: { deckId?: string }) {
 
   const q = useMemo(() => {
     if (!settings || !decks || !cards) return undefined;
-    return buildQueue({ now, tzOffsetMin: new Date(now).getTimezoneOffset(), dayStartHour: settings.dayStartHour, cards, decks, scheduler, deckId });
+    return buildQueue({ now, tzOffsetMin: new Date(now).getTimezoneOffset(), dayStartHour: settings.dayStartHour, cards, decks, scheduler, deckId, learnAheadMs: settings.learnAheadMin * 60_000 });
   }, [settings, decks, cards, scheduler, now, deckId]);
 
   const show = useCallback((id: string | undefined, side = false) => {
@@ -277,9 +277,9 @@ export function Review({ deckId }: { deckId?: string }) {
             </span>
             <h2 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>잠깐 쉬어도 돼요</h2>
             <span className="muted" style={{ fontSize: 15, lineHeight: 1.6 }}>
-              방금 배운 카드 {q.waiting.count}장이 {at}쯤 다시 나와요.
+              방금 배운 카드 {q.waiting.count}장이 {at}쯤 ({formatInterval(Math.max(0, q.waiting.nextDue - now))} 뒤) 다시 나와요.
               <br />
-              이 화면을 켜 두면 때가 되면 바로 보여줘요.
+              이 화면을 켜 두면 때가 되면 바로 보여줘요. 앱을 닫았다가 그때 다시 열어도 돼요.
             </span>
           </div>
           <div className="answer-bar" style={{ flexDirection: 'column', gap: 4 }}>

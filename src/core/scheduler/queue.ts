@@ -2,9 +2,6 @@ import { studyDay, studyDayEnd } from '../model/day';
 import type { Card, Deck, Id, Millis, Rating } from '../model/types';
 import type { SchedState, Scheduler } from './types';
 
-/** 남은 카드가 학습 단계 카드뿐이면 예정보다 이만큼 일찍 보여준다 (Anki의 learn ahead와 같음). */
-export const LEARN_AHEAD_MS = 20 * 60_000;
-
 export interface QueueInput {
   now: Millis;
   tzOffsetMin: number;
@@ -14,6 +11,11 @@ export interface QueueInput {
   scheduler: Scheduler;
   /** 특정 덱만 볼 때 */
   deckId?: Id;
+  /**
+   * 남은 카드가 학습 단계 카드뿐이면 예정보다 이만큼 일찍 보여준다 (Anki의 learn ahead).
+   * 기본 0: 정해진 간격을 지키고, 그때까지는 기다리는 화면을 보여준다.
+   */
+  learnAheadMs?: number;
 }
 
 export interface DeckCounts {
@@ -117,7 +119,7 @@ export function buildQueue(input: QueueInput): QueueResult {
     }
   }
   // 학습 단계 카드밖에 남지 않았으면 조금 앞당겨 보여주고, 그래도 이르면 기다린다
-  if (!next) next = learning.find((c) => c.due <= now + LEARN_AHEAD_MS);
+  if (!next && input.learnAheadMs) next = learning.find((c) => c.due <= now + input.learnAheadMs!);
   if (!next && learning.length) {
     return { counts, byDeck, waiting: { count: learning.length, nextDue: learning[0]!.due, cardId: learning[0]!.id } };
   }

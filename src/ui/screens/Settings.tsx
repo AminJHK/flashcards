@@ -112,6 +112,18 @@ export function Settings() {
         <Row title="목표 기억률" desc="높이면 덜 잊지만 복습이 늘어요. 보통 90%를 권해요.">
           <Stepper label="목표 기억률" value={Math.round(s.desiredRetention * 100)} min={80} max={97} format={(v) => `${v}%`} onChange={(v) => set({ desiredRetention: v / 100 })} />
         </Row>
+        <Row col title="기다리는 카드 미리 보기" desc="남은 카드가 '몇 분 뒤 다시' 카드뿐일 때, 이 시간 안이면 기다리지 않고 바로 보여줘요. 끄면 정해진 시간이 될 때까지 기다려요 (권장: 간격을 지켜야 더 잘 외워져요).">
+          <Segmented<number>
+            label="기다리는 카드 미리 보기"
+            options={[
+              [0, '끄기'],
+              [5, '5분'],
+              [20, '20분'],
+            ]}
+            value={s.learnAheadMin}
+            onChange={(v) => set({ learnAheadMin: v })}
+          />
+        </Row>
         <Row title="하루 시작" desc="이 시각에 '오늘'이 바뀌어요">
           <Stepper label="하루 시작 시각" value={s.dayStartHour} min={0} max={8} format={(v) => (v === 0 ? '자정' : `새벽 ${v}시`)} onChange={(v) => set({ dayStartHour: v })} />
         </Row>
