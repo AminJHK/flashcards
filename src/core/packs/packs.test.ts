@@ -40,12 +40,18 @@ describe.each(PACKS.map((p) => [p.id, p] as const))('준비된 덱 %s', (_id, pa
 describe('여행 스페인어', () => {
   const pack = PACKS.find((p) => p.id === 'spanish-travel-es')!;
 
-  it('앞면은 스페인어, 뒷면은 한국어 뜻이다', () => {
-    expect(pack.deckSettings.langs).toEqual({ front: 'es-ES', back: 'ko-KR' });
+  it('앞면은 스페인어, 뒷면은 영어 뜻이다 (한글 없음)', () => {
+    expect(pack.deckSettings.langs).toEqual({ front: 'es-ES', back: 'en-US' });
     for (const n of pack.notes) {
       expect(n.typeId).toBe('basic');
-      expect(n.fields.front).not.toMatch(HANGUL);
-      expect(n.fields.back, n.fields.front).toMatch(HANGUL);
+      for (const f of ['front', 'back', 'memo']) expect(n.fields[f] ?? '', n.fields.front).not.toMatch(HANGUL);
+      expect(n.fields.back, n.fields.front).toMatch(/^[a-z(]/i);
+    }
+  });
+
+  it('남녀 형태를 같이 적은 명사는 「el … / la …」 모양이다', () => {
+    for (const n of pack.notes.filter((x) => x.fields.front!.includes('/'))) {
+      expect(n.fields.front).toMatch(/^el \S+ \/ la \S+$/);
     }
   });
 

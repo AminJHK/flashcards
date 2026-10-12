@@ -32,7 +32,7 @@ test('준비된 덱(심장 병동 간호 중국어)을 넣고, 말하기·듣기
   await page.screenshot({ path: 'test-results/shots/12-listen-back.png' });
 });
 
-test('여행 스페인어 덱: 스페인어 단어를 보고 뜻과 예문을 확인한다', async ({ page }) => {
+test('여행 스페인어 덱: 스페인어 단어를 보고 영어 뜻과 예문을 확인한다', async ({ page }) => {
   await page.goto('/#/decks/new');
   const panel = page.locator('.panel', { hasText: '여행 스페인어' });
   await expect(panel).toContainText('단어 514개');
@@ -45,8 +45,8 @@ test('여행 스페인어 덱: 스페인어 단어를 보고 뜻과 예문을 �
   await page.getByRole('button', { name: '복습 시작' }).click();
   await expect(page.getByText('la casa', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
-  await expect(page.getByText('집', { exact: true })).toBeVisible();
-  await expect(page.getByText('en casa 집에서')).toBeVisible();
+  await expect(page.getByText('house, home', { exact: true })).toBeVisible();
+  await expect(page.getByText('en casa at home')).toBeVisible();
   await page.screenshot({ path: 'test-results/shots/13-spanish-back.png' });
   await page.getByRole('button', { name: /알았음/ }).click();
   await expect(page.getByText('ir', { exact: true })).toBeVisible();
