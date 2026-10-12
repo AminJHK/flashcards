@@ -40,11 +40,29 @@ export function onVoicesChanged(cb: () => void): () => void {
   return () => s.removeEventListener('voiceschanged', h);
 }
 
+/** 안드로이드는 음성 목록이 늦게 도착한다. 첫 재생 전에 잠깐 기다려서, 목록이 비었다고 기본(영어) 음성으로 읽는 일을 막는다. */
+export function voicesReady(timeoutMs = 1500): Promise<void> {
+  const s = synth();
+  if (!s || loadVoices().length) return Promise.resolve();
+  return new Promise((resolve) => {
+    const done = () => {
+      s.removeEventListener('voiceschanged', done);
+      clearTimeout(t);
+      loadVoices();
+      resolve();
+    };
+    const t = setTimeout(done, timeoutMs);
+    s.addEventListener('voiceschanged', done);
+  });
+}
+
+/** 같은 언어(지역까지 같은 것 먼저), 그 안에서는 기기에 저장된 음성(인터넷 없이도 나오는 것)을 먼저. */
 function matching(lang: string): SpeechSynthesisVoice[] {
   const want = norm(lang);
   const all = loadVoices();
-  const exact = all.filter((v) => norm(v.lang) === want);
-  const near = all.filter((v) => norm(v.lang).slice(0, 2) === want.slice(0, 2) && !exact.includes(v));
+  const local = (v: SpeechSynthesisVoice) => (v.localService ? 0 : 1);
+  const exact = all.filter((v) => norm(v.lang) === want).sort((a, b) => local(a) - local(b));
+  const near = all.filter((v) => norm(v.lang).slice(0, 2) === want.slice(0, 2) && !exact.includes(v)).sort((a, b) => local(a) - local(b));
   return [...exact, ...near];
 }
 

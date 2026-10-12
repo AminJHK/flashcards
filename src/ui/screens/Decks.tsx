@@ -10,8 +10,9 @@ import { PACKS } from '../../core/packs/registry';
 import type { Pack } from '../../core/packs/types';
 import { Row, Segmented, Stepper, Switch } from '../components/Controls';
 import { Icon } from '../components/Icon';
-import { useDecks } from '../hooks';
-import { LANGS, langName } from '../langs';
+import { useDecks, useSettings } from '../hooks';
+import { speak as deviceSpeak, voicesFor, voicesReady } from '../../adapters/tts/webSpeech';
+import { LANGS, langName, noVoiceMessage } from '../langs';
 import { go } from '../router';
 import { useToast } from '../toast';
 import { ask } from '../confirm';
@@ -197,6 +198,7 @@ export function DeckNew() {
 
 export function DeckDetail({ id }: { id: string }) {
   const decks = useDecks();
+  const settings = useSettings();
   const toast = useToast();
   const noteCount = useLiveQuery(() => db.notes.where('deckId').equals(id).count(), [id]);
   // 이 덱에 실제로 들어 있는 단어의 카드 종류 (많은 순). "새 단어의 카드 종류"와는 별개다.
@@ -310,11 +312,28 @@ export function DeckDetail({ id }: { id: string }) {
         </Row>
         {usesDeckLangs && (
           <>
-            <Row title="앞면 언어">
+            <Row title="앞면 언어" desc="카드 추가할 때 앞면 칸에 적는 말의 언어 (스페인어 덱이면 스페인어). 역방향 카드로 화면 순서를 바꿔도 이 설정은 그대로 두세요.">
               <LangSelect value={s.langs.front} onChange={(v) => set({ langs: { ...s.langs, front: v } })} label="앞면 언어" />
             </Row>
-            <Row title="뒷면 언어">
+            <Row title="뒷면 언어" desc="뒷면 칸에 적는 말(뜻)의 언어">
               <LangSelect value={s.langs.back} onChange={(v) => set({ langs: { ...s.langs, back: v } })} label="뒷면 언어" />
+            </Row>
+            <Row title="기기 음성으로 읽어 보기" desc="이 덱의 첫 단어를 폰에 설치된 음성으로 읽어 봐요 (Gemini 아님).">
+              <button
+                type="button"
+                className="btn-plain"
+                onClick={async () => {
+                  const n = await db.notes.where('deckId').equals(id).first();
+                  const text = (n?.fields.front ?? n?.fields.verb ?? '').trim();
+                  if (!text) return toast('읽어 볼 단어가 없어요');
+                  await voicesReady();
+                  const ok = deviceSpeak([{ text, lang: s.langs.front }], settings?.voices);
+                  const voice = voicesFor(s.langs.front)[0];
+                  toast(ok ? `${langName(s.langs.front)} 음성으로 읽어요${voice ? ` · ${voice.name}` : ''} · "${text}"` : noVoiceMessage([s.langs.front]));
+                }}
+              >
+                읽어 보기
+              </button>
             </Row>
           </>
         )}

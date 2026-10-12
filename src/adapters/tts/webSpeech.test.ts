@@ -79,6 +79,29 @@ describe('기기 음성', () => {
     expect(spoken.map((s) => s.text)).toEqual(['the house']);
   });
 
+  it('같은 언어 음성이 여러 개면 기기에 저장된 음성(인터넷 없이 나오는 것)을 먼저 쓴다', async () => {
+    const spoken = fakeDevice([{ name: 'Google español (network)', lang: 'es-ES', localService: false }, { name: 'Samsung Spanish', lang: 'es-ES', localService: true }, EN]);
+    await load();
+    speak([{ text: 'la casa', lang: 'es-ES' }]);
+    expect(spoken[0]!.voice).toBe('Samsung Spanish');
+  });
+
+  it('음성 목록이 늦게 도착해도 기다렸다가 그 음성으로 읽는다', async () => {
+    const voices: FakeVoice[] = [];
+    const spoken = fakeDevice(voices);
+    const synth = (globalThis as unknown as { window: { speechSynthesis: { addEventListener: (e: string, f: () => void) => void } } }).window.speechSynthesis;
+    let fire: () => void = () => {};
+    synth.addEventListener = (_e, f) => (fire = f);
+    await load();
+    const { voicesReady } = await import('./webSpeech');
+    const ready = voicesReady(1000);
+    voices.push(EN, ES); // 이제 도착
+    fire();
+    await ready;
+    speak([{ text: 'la casa', lang: 'es-ES' }]);
+    expect(spoken).toEqual([{ text: 'la casa', lang: 'es_ES', voice: 'Spanish Spain' }]);
+  });
+
   it('음성 목록이 아직 도착하지 않았으면 언어 태그를 믿고 기기에 맡긴다', async () => {
     const spoken = fakeDevice([]);
     await load();

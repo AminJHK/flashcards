@@ -5,7 +5,7 @@ import { GeminiError } from '../gemini/api';
 import { withTimeout } from '../net';
 import { synthesize } from '../gemini/tts';
 import { db } from '../storage/db';
-import { missingVoiceLangs, speak as deviceSpeak, stopSpeaking } from '../tts/webSpeech';
+import { missingVoiceLangs, speak as deviceSpeak, stopSpeaking, voicesReady } from '../tts/webSpeech';
 
 /**
  * 발음 재생 순서 (docs/DESIGN.md §6)
@@ -98,10 +98,14 @@ export async function play(items: readonly Speech[], s: Settings | undefined): P
       return { via: 'gemini' };
     } catch (e) {
       if (my !== token) return { via: 'gemini' };
+      await voicesReady();
+      if (my !== token) return { via: 'device' };
       const ok = deviceSpeak(list, s.voices);
       return { via: ok ? 'device' : 'none', error: e instanceof Error ? e.message : undefined, missing: ok ? undefined : missingVoiceLangs(list) };
     }
   }
+  await voicesReady();
+  if (my !== token) return { via: 'device' };
   const ok = deviceSpeak(list, s?.voices);
   return { via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list) };
 }
