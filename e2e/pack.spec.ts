@@ -87,13 +87,13 @@ test('덱의 "새 단어 카드 종류"를 바꿔도 이미 있는 스페인어 
   await page.goto('/#/decks/new');
   await page.locator('.panel', { hasText: '여행 스페인어' }).getByRole('button', { name: '이 덱 추가하기' }).click();
   await expect(page.getByLabel('덱 이름')).toHaveValue('여행 스페인어');
-  await expect(page.getByLabel('앞면 언어')).toHaveValue('es-ES');
-  await expect(page.getByLabel('뒷면 언어')).toHaveValue('en-US');
+  await expect(page.getByLabel('배우는 언어')).toHaveValue('es-ES');
+  await expect(page.getByLabel('뜻 언어')).toHaveValue('en-US');
 
   // 새 단어의 종류를 듣기로 바꿔도 (새 단어에만 적용) 기존 단어 기준의 설명과 언어 설정이 남는다
   await page.getByRole('group', { name: '카드 종류' }).getByRole('button', { name: '듣기' }).click();
   await expect(page.getByText('새로 추가하는 단어에만 적용돼요')).toBeVisible();
-  await expect(page.getByLabel('앞면 언어')).toHaveValue('es-ES');
-  await expect(page.getByText('스페인어 → 영어')).toBeVisible();
+  await expect(page.getByLabel('배우는 언어')).toHaveValue('es-ES');
+  await expect(page.getByText('스페인어 단어 보고 영어 뜻 떠올리기', { exact: false })).toBeVisible();
   await expect(page.getByText('발음: 중국어(zh-CN)로 읽어요')).toHaveCount(0);
 });

@@ -271,7 +271,7 @@ export function DeckDetail({ id }: { id: string }) {
           <Segmented label="카드 종류" options={CARD_TYPES.map((t) => [t.id, t.shortName] as const)} value={s.defaultTypeId} onChange={(v) => set({ defaultTypeId: v })} />
         </Row>
         {optional && (
-          <Row title="정방향 카드" desc={`${forward.label}${type.id === 'basic' ? ` (${langName(s.langs.front)} → ${langName(s.langs.back)})` : ''}. 끄면 숨겨져요 (복습 기록은 그대로).`}>
+          <Row title="정방향 카드" desc={`${type.id === 'basic' ? `${langName(s.langs.front)} 단어 보고 ${langName(s.langs.back)} 뜻 떠올리기` : forward.label}. 끄면 숨겨져요 (복습 기록은 그대로).`}>
             <Switch
               label="정방향 카드"
               checked={s.forwardEnabled !== false}
@@ -284,7 +284,7 @@ export function DeckDetail({ id }: { id: string }) {
         )}
         <Row
           title="역방향 카드"
-          desc={optional ? `${optional.label}${type.id === 'basic' ? ` (${langName(s.langs.back)} → ${langName(s.langs.front)})` : ''}. 끄면 숨겨져요 (복습 기록은 그대로).` : '이 카드 종류에는 역방향이 없어요.'}
+          desc={optional ? `${type.id === 'basic' ? `${langName(s.langs.back)} 뜻 보고 ${langName(s.langs.front)} 단어 떠올리기` : optional.label}. 끄면 숨겨져요 (복습 기록은 그대로).` : '이 카드 종류에는 역방향이 없어요.'}
         >
           <Switch
             label="역방향 카드"
@@ -312,11 +312,11 @@ export function DeckDetail({ id }: { id: string }) {
         </Row>
         {usesDeckLangs && (
           <>
-            <Row title="앞면 언어" desc="카드 추가할 때 앞면 칸에 적는 말의 언어 (스페인어 덱이면 스페인어). 역방향 카드로 화면 순서를 바꿔도 이 설정은 그대로 두세요.">
-              <LangSelect value={s.langs.front} onChange={(v) => set({ langs: { ...s.langs, front: v } })} label="앞면 언어" />
+            <Row title="배우는 언어" desc="단어를 이 언어 발음으로 읽어요 (예: 스페인어). 어느 쪽이 먼저 보이는지와는 상관없어요.">
+              <LangSelect value={s.langs.front} onChange={(v) => set({ langs: { ...s.langs, front: v } })} label="배우는 언어" />
             </Row>
-            <Row title="뒷면 언어" desc="뒷면 칸에 적는 말(뜻)의 언어">
-              <LangSelect value={s.langs.back} onChange={(v) => set({ langs: { ...s.langs, back: v } })} label="뒷면 언어" />
+            <Row title="뜻 언어" desc="뜻을 적은 언어 (예: 영어, 한국어)">
+              <LangSelect value={s.langs.back} onChange={(v) => set({ langs: { ...s.langs, back: v } })} label="뜻 언어" />
             </Row>
             <Row title="기기 음성으로 읽어 보기" desc="이 덱의 첫 단어를 폰에 설치된 음성으로 읽어 봐요 (Gemini 아님).">
               <button
@@ -339,7 +339,7 @@ export function DeckDetail({ id }: { id: string }) {
         )}
       </div>
       <span className="faint small" style={{ padding: '0 4px', lineHeight: 1.6 }}>
-        {usesDeckLangs ? '앞면·뒷면 언어는 기본, 동사 변화 카드를 읽을 때 써요. ' : ''}중국어 카드(중국어 단어·작문·듣기)는 설정과 상관없이 항상 중국어로 읽어요.
+        {usesDeckLangs ? '배우는 언어·뜻 언어는 기본, 동사 변화 카드에 써요. 먼저 보이는 쪽은 위의 카드 방향 스위치로 정해요. ' : ''}중국어 카드(중국어 단어·작문·듣기)는 설정과 상관없이 항상 중국어로 읽어요.
       </span>
 
       <button type="button" className="btn btn-danger" onClick={remove}>

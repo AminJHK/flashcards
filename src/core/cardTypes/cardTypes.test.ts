@@ -30,7 +30,7 @@ describe('카드 종류', () => {
     expect(t.derive!('meaning', { hanzi: '图书馆' }, { pinyin: fakePinyin })).toEqual({});
   });
 
-  it('기본: 역방향은 뜻을 먼저 보여주고, 정답에서 앞면 언어로 읽어준다', () => {
+  it('기본: 역방향은 뜻을 먼저 보여주고, 정답에서 배우는 언어로 읽어준다', () => {
     const deck = { id: 'd', name: 'x', createdAt: 0, settings: { defaultTypeId: 'basic', reverseEnabled: true, forwardEnabled: false, newPerDay: 10, autoplay: 'front' as const, langs: { front: 'es-ES', back: 'en-US' } } };
     const v = getCardType('basic').view('reverse', { fields: { front: 'la casa', back: 'house' }, deck });
     expect(v.front).toEqual([{ kind: 'word', text: 'house', size: 'front', lang: 'en-US' }]);
