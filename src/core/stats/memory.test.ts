@@ -4,7 +4,7 @@ import type { Card } from '../model/types';
 import { createFsrs6 } from '../scheduler/fsrs6';
 import { applyReview } from '../scheduler/queue';
 import { DAY, MIN, T0, deck } from '../testUtil';
-import { memoryBreakdown, memoryByDeck } from './memory';
+import { memoryBreakdown, memoryByDeck, wordMemory } from './memory';
 
 const sched = createFsrs6({ desiredRetention: 0.9 });
 const d = deck('d');
@@ -45,6 +45,18 @@ describe('기억 상태', () => {
     const soon = memoryBreakdown([card], sched, card.lastReviewAt!).recall!;
     const later = memoryBreakdown([card], sched, at + 120 * DAY).recall!;
     expect(soon).toBeGreaterThan(later);
+  });
+
+  it('단어 하나: 카드가 여러 장이면 가장 약한 카드를 보여주고, 숨긴 카드는 빼고, 안 본 단어는 새 카드', () => {
+    const solid = reviewed(word(1), 8).card;
+    const weak = applyReview(word(2), 1, T0, sched);
+    const m = wordMemory([solid, { ...weak, noteId: solid.noteId }], sched, T0 + MIN)!;
+    expect(m.level).toBe('learning');
+    expect(m.lapses).toBe(weak.lapses + solid.lapses);
+    expect(m.due).toBe(Math.min(solid.due, weak.due));
+    expect(wordMemory([solid, { ...weak, hidden: true }], sched, T0 + MIN)!.level).toBe('solid');
+    expect(wordMemory([word(3)], sched, T0)).toEqual({ level: 'fresh', lapses: 0 });
+    expect(wordMemory([{ ...word(4), hidden: true }], sched, T0)).toBeUndefined();
   });
 
   it('덱별로 나눈다', () => {

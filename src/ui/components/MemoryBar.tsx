@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo } from 'react';
-import { memoryByDeck, type MemoryBreakdown } from '../../core/stats/memory';
+import { LEVELS, memoryByDeck, type MemoryBreakdown, type WordMemory } from '../../core/stats/memory';
+import { formatInterval } from '../../core/scheduler/format';
 import { db } from '../../adapters/storage/db';
 import { useNow, useScheduler, useSettings } from '../hooks';
 
@@ -78,5 +79,28 @@ export function MemoryPanel({ m, title }: { m: MemoryBreakdown; title?: string }
         ))}
       </ul>
     </div>
+  );
+}
+
+const LEVEL_LABEL = Object.fromEntries(PARTS.map(([k, label]) => [k, label])) as Record<WordMemory['level'], string>;
+
+/** 단어 하나의 기억 상태: 막대 세 칸(단계) + 기억할 확률 + 다음 복습 */
+export function WordMeter({ m, now }: { m: WordMemory; now: number }) {
+  const step = LEVELS.indexOf(m.level); // 0~3
+  const next = m.due === undefined ? undefined : m.due <= now ? '지금 복습' : `${formatInterval(m.due - now)} 후`;
+  const label = LEVEL_LABEL[m.level];
+  const text = m.recall === undefined ? label : `${label} · ${pct(m.recall)}`;
+  return (
+    <span className="word-meter" role="img" aria-label={[text, next && `다음 복습 ${next}`].filter(Boolean).join(', ')}>
+      <span className="word-bars" aria-hidden="true">
+        {[1, 2, 3].map((i) => (
+          <i key={i} className={i <= step ? `mem-${step}` : 'mem-0'} style={{ height: 6 + i * 4 }} />
+        ))}
+      </span>
+      <span className="word-meter-text">
+        <span>{text}</span>
+        {next && <span className="faint">{next}</span>}
+      </span>
+    </span>
   );
 }

@@ -1356,3 +1356,41 @@ textarea.input-sentence {
   color: var(--text);
   font-weight: 600;
 }
+
+/* 단어 목록: 단어마다 기억 상태 */
+.list-row.with-meter {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.word-meter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.word-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 18px;
+}
+
+.word-bars i {
+  display: block;
+  width: 6px;
+  border-radius: 2px;
+}
+
+.word-meter-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text2);
+  font-variant-numeric: tabular-nums;
+  min-width: 118px;
+}

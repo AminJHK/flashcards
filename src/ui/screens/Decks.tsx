@@ -10,9 +10,10 @@ import { PACKS } from '../../core/packs/registry';
 import type { Pack } from '../../core/packs/types';
 import { Row, Segmented, Stepper, Switch } from '../components/Controls';
 import { Icon } from '../components/Icon';
-import { MemoryMini, MemoryPanel, useMemoryByDeck } from '../components/MemoryBar';
-import { EMPTY_MEMORY } from '../../core/stats/memory';
-import { useDecks, useSettings } from '../hooks';
+import { MemoryMini, MemoryPanel, useMemoryByDeck, WordMeter } from '../components/MemoryBar';
+import { EMPTY_MEMORY, LEVELS, wordMemory, type WordMemory } from '../../core/stats/memory';
+import type { Card } from '../../core/model/types';
+import { useDecks, useNow, useScheduler, useSettings } from '../hooks';
 import { speak as deviceSpeak, voicesFor, voicesReady } from '../../adapters/tts/webSpeech';
 import { LANGS, langName, noVoiceMessage } from '../langs';
 import { go } from '../router';
@@ -373,18 +374,39 @@ function LangSelect({ value, onChange, label }: { value: string; onChange: (v: s
 export function NoteList({ deckId }: { deckId: string }) {
   const decks = useDecks();
   const notes = useLiveQuery(() => db.notes.where('deckId').equals(deckId).toArray(), [deckId]);
+  const cards = useLiveQuery(() => db.cards.where('deckId').equals(deckId).toArray(), [deckId]);
+  const scheduler = useScheduler(useSettings());
+  const now = useNow(60_000);
   const [query, setQuery] = useState('');
+  const [order, setOrder] = useState<'recent' | 'weak' | 'strong'>('recent');
   const deck = decks?.find((d) => d.id === deckId);
+
+  const memory = useMemo(() => {
+    const byNote = new Map<string, Card[]>();
+    for (const c of cards ?? []) byNote.set(c.noteId, [...(byNote.get(c.noteId) ?? []), c]);
+    return new Map([...byNote].map(([id, cs]) => [id, wordMemory(cs, scheduler, now)] as const));
+  }, [cards, scheduler, now]);
 
   const shown = useMemo(() => {
     if (!notes) return [];
     const qy = query.trim().toLowerCase();
+    // 약한 순: 본 단어 중 단계가 낮고, 기억할 확률이 낮고, 다음 복습이 가까운 것부터. 새 카드는 맨 뒤
+    const strength = (m: WordMemory | undefined) =>
+      !m || m.recall === undefined ? Infinity : LEVELS.indexOf(m.level) * 10 + Math.round(m.recall * 100) / 100 + Math.min(m.due ?? 0, now + 3650 * 86_400_000) / 1e15;
     return notes
       .filter((n) => !qy || Object.values(n.fields).some((v) => v.toLowerCase().includes(qy)))
-      .sort((a, b) => b.createdAt - a.createdAt);
-  }, [notes, query]);
+      .sort((a, b) => {
+        if (order === 'recent') return b.createdAt - a.createdAt;
+        const sa = strength(memory.get(a.id));
+        const sb = strength(memory.get(b.id));
+        if (sa === sb) return b.createdAt - a.createdAt;
+        if (sa === Infinity) return 1;
+        if (sb === Infinity) return -1;
+        return order === 'weak' ? sa - sb : sb - sa;
+      });
+  }, [notes, query, order, memory, now]);
 
-  if (!decks || !notes) return <div className="screen" />;
+  if (!decks || !notes || !cards) return <div className="screen" />;
 
   return (
     <div className="screen">
@@ -396,14 +418,27 @@ export function NoteList({ deckId }: { deckId: string }) {
         <h1 className="title">단어 {notes.length}개</h1>
       </div>
       <input className="input search" type="search" placeholder="찾기" aria-label="단어 찾기" value={query} onChange={(e) => setQuery(e.target.value)} />
+      <Segmented
+        label="정렬"
+        options={[
+          ['recent', '최근 추가'],
+          ['weak', '기억 약한 순'],
+          ['strong', '기억 강한 순'],
+        ]}
+        value={order}
+        onChange={setOrder}
+      />
       <div>
         {shown.map((n) => {
           const t = getCardType(n.typeId);
           const { title, sub } = t.summary(n.fields);
           return (
-            <button key={n.id} type="button" className="list-row" onClick={() => go(`notes/${n.id}/edit/decks/${deckId}/notes`)}>
-              <span className={`list-title${t.id === 'zh-word' ? ' zh' : ''}`}>{title}</span>
-              <span className="faint small">{sub}</span>
+            <button key={n.id} type="button" className="list-row with-meter" onClick={() => go(`notes/${n.id}/edit/decks/${deckId}/notes`)}>
+              <span className="row-text">
+                <span className={`list-title${t.id === 'zh-word' ? ' zh' : ''}`}>{title}</span>
+                <span className="faint small">{sub}</span>
+              </span>
+              {memory.get(n.id) && <WordMeter m={memory.get(n.id)!} now={now} />}
             </button>
           );
         })}
