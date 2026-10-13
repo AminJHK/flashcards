@@ -195,7 +195,7 @@ function Editor(props: Props & { decks: Deck[]; note?: Note }) {
             </select>
           </label>
           {!editing && (
-            <Segmented large label="카드 종류" options={CARD_TYPES.map((t) => [t.id, t.shortName] as const)} value={typeId} onChange={changeType} />
+            <Segmented large wrap label="카드 종류" options={CARD_TYPES.map((t) => [t.id, t.shortName] as const)} value={typeId} onChange={changeType} />
           )}
         </div>
 

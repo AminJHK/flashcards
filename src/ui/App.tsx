@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { requestPersistence } from '../adapters/files/share';
 import { dropStaleClips } from '../adapters/speech/speech';
+import { enterFullscreen, exitFullscreen } from '../adapters/display/fullscreen';
 import { TabBar } from './components/TabBar';
 import { useSettings } from './hooks';
 import { go, useRoute } from './router';
@@ -28,6 +29,21 @@ export function App() {
     mq.addEventListener('change', h);
     return () => mq.removeEventListener('change', h);
   }, [settings]);
+
+  // 전체 화면: 브라우저는 탭할 때만 허락하므로, 켜져 있으면 탭할 때마다 확인한다
+  const full = settings?.fullscreen;
+  useEffect(() => {
+    if (full === undefined) return;
+    if (!full) {
+      exitFullscreen();
+      return;
+    }
+    // 버튼이 할 일(파일 고르기, 로그인 창 등)을 먼저 하도록, 클릭이 다 처리된 뒤(버블 단계 끝)에 요청한다.
+    // 전체 화면 요청이 먼저 가면 브라우저가 "사용자가 누름" 허가를 써 버려서 파일 고르기 창이 안 뜬다.
+    const h = () => setTimeout(enterFullscreen, 0);
+    window.addEventListener('click', h);
+    return () => window.removeEventListener('click', h);
+  }, [full]);
 
   useEffect(() => {
     void requestPersistence();

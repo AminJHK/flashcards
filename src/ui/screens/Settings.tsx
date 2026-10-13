@@ -11,6 +11,7 @@ import { ACCENTS, prefersDark } from '../theme';
 import { useToast } from '../toast';
 import { DriveSettings } from './DriveSettings';
 import { GeminiSettings, VoiceTest } from './GeminiSettings';
+import { fullscreenSupported } from '../../adapters/display/fullscreen';
 
 const SAMPLE: Record<string, string> = {
   'zh-CN': '你好，我们一起学习中文吧。',
@@ -68,6 +69,11 @@ export function Settings() {
             onChange={(v) => set({ theme: v })}
           />
         </Row>
+        {fullscreenSupported() && (
+          <Row title="전체 화면" desc="위쪽 상태 표시줄과 아래 내비게이션 바를 숨겨요. 화면을 한 번 누르면 바뀌어요. 가장자리를 쓸어 넘기면 잠깐 보여요.">
+            <Switch label="전체 화면" checked={s.fullscreen} onChange={(v) => set({ fullscreen: v })} />
+          </Row>
+        )}
         <Row title="완전 검정 배경" desc="다크 모드에서 OLED 화면용">
           <Switch label="완전 검정 배경" checked={s.amoled} onChange={(v) => set({ amoled: v })} />
         </Row>

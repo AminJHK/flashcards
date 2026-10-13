@@ -95,6 +95,11 @@ select:focus-visible {
   padding: 32px 20px 24px;
 }
 
+/* 화면이 길어져도 버튼·입력칸이 납작하게 줄어들지 않게 (스크롤로 넘긴다) */
+.screen > * {
+  flex-shrink: 0;
+}
+
 .screen-head {
   display: flex;
   align-items: baseline;
@@ -344,6 +349,18 @@ svg.icon {
 
 .seg-lg {
   border-radius: 14px;
+}
+
+/* 고를 것이 많을 때: 잘리지 않게 여러 줄로 나눈다 */
+.seg-wrap {
+  flex-wrap: wrap;
+}
+
+/* 한 줄에 세 개씩, 남은 줄은 꽉 채워 늘린다 */
+.seg-wrap button {
+  flex: 1 1 30%;
+  white-space: normal;
+  line-height: 1.2;
 }
 
 .seg-lg button {

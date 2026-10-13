@@ -278,7 +278,7 @@ export function DeckDetail({ id }: { id: string }) {
 
       <div className="group">
         <Row col title="새 단어의 카드 종류" desc={`${defaultType.description} 새로 추가하는 단어에만 적용돼요. 이미 있는 단어는 그대로예요.`}>
-          <Segmented label="카드 종류" options={CARD_TYPES.map((t) => [t.id, t.shortName] as const)} value={s.defaultTypeId} onChange={(v) => set({ defaultTypeId: v })} />
+          <Segmented wrap label="카드 종류" options={CARD_TYPES.map((t) => [t.id, t.shortName] as const)} value={s.defaultTypeId} onChange={(v) => set({ defaultTypeId: v })} />
         </Row>
         {optional && (
           <Row title="정방향 카드" desc={`${type.id === 'basic' ? `${langName(s.langs.front)} 단어 보고 ${langName(s.langs.back)} 뜻 떠올리기` : forward.label}. 끄면 숨겨져요 (복습 기록은 그대로).`}>

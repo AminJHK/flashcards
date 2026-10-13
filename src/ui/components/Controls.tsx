@@ -5,16 +5,19 @@ export function Segmented<T extends string | number>({
   value,
   onChange,
   large,
+  wrap,
   label,
 }: {
   options: readonly (readonly [T, string])[];
   value: T;
   onChange: (v: T) => void;
   large?: boolean;
+  /** 고를 것이 많으면 여러 줄로 */
+  wrap?: boolean;
   label?: string;
 }) {
   return (
-    <div className={`seg${large ? ' seg-lg' : ''}`} role="group" aria-label={label}>
+    <div className={`seg${large ? ' seg-lg' : ''}${wrap ? ' seg-wrap' : ''}`} role="group" aria-label={label}>
       {options.map(([v, text]) => (
         <button key={String(v)} type="button" aria-pressed={v === value} onClick={() => onChange(v)}>
           {text}
