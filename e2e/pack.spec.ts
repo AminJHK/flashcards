@@ -135,3 +135,26 @@ test('준비된 덱이 고쳐지면 덱 화면에서 받을 수 있고, 내가 �
   await page.getByLabel('단어 찾기').fill('la casa');
   await expect(page.getByText('my house')).toBeVisible();
 });
+
+test('인도네시아어 구어체 덱: 말하는 형태를 보고, 뒷면에서 표준형·어근·예문을 본다', async ({ page }) => {
+  await page.goto('/#/decks/new');
+  const panel = page.locator('.panel', { hasText: '인도네시아어 구어체' });
+  await expect(panel).toContainText('단어 100개');
+  await panel.getByRole('button', { name: '이 덱 추가하기' }).click();
+  await expect(page.getByLabel('덱 이름')).toHaveValue('인도네시아어 구어체');
+  await page.getByRole('button', { name: '이 덱 복습' }).click();
+  await expect(page.getByText('aku', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
+  await expect(page.getByText('Aku capek banget.')).toBeVisible();
+  await expect(page.getByText('나 너무 피곤해.')).toBeVisible();
+  await page.screenshot({ path: 'test-results/shots/22-indonesian-back.png' });
+  await page.getByRole('button', { name: /알았음/ }).click();
+  await expect(page.getByText('kamu', { exact: true })).toBeVisible();
+  // 표준형·어근이 있는 동사: 단어 목록에서 찾아 확인
+  await page.getByRole('button', { name: '복습 닫기' }).click();
+  await page.getByRole('button', { name: /단어 100개 보기/ }).click();
+  await page.getByLabel('단어 찾기').fill('nyari');
+  await page.getByRole('button', { name: /nyari/ }).click();
+  await expect(page.getByLabel('표준형')).toHaveValue('mencari');
+  await expect(page.getByLabel('어근')).toHaveValue('cari');
+});

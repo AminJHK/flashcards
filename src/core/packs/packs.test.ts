@@ -127,3 +127,26 @@ describe('스페인어 불규칙 동사 변화', () => {
     expect(v.tts.front).toEqual([{ text: 'tener', lang: 'es-ES' }]);
   });
 });
+
+describe('인도네시아어 구어체', () => {
+  const pack = PACKS.find((p) => p.id === 'indonesian-colloquial')!;
+
+  it('앞면(말하는 형태)·예문은 인도네시아어, 뜻·예문 뜻은 한국어이고 사용역이 정해져 있다', () => {
+    for (const n of pack.notes) {
+      const f = n.fields;
+      expect(n.typeId).toBe('id-spoken');
+      for (const k of ['word', 'standard', 'root', 'example']) expect(f[k] ?? '', `${f.word} ${k}`).not.toMatch(HANGUL);
+      expect(f.meaning, f.word).toMatch(HANGUL);
+      expect(f.exampleKo, f.word).toMatch(HANGUL);
+      expect(f.example, f.word).toBeTruthy();
+      expect(['일반', '구어', '자카르타식', '격식', '속어']).toContain(f.register);
+    }
+  });
+
+  it('예문에 그 단어(또는 붙은 형태)가 들어 있다', () => {
+    for (const n of pack.notes) {
+      const word = n.fields.word!.toLowerCase().split(' ')[0]!;
+      expect(n.fields.example!.toLowerCase(), n.fields.word).toContain(word.replace(/-.*/, ''));
+    }
+  });
+});

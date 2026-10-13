@@ -1,0 +1,70 @@
+# 인도네시아어 구어체 덱 · 첫 100장 검수 메모
+
+- 카드 파일: `indonesian_colloquial_first100.csv` (UTF-8, Anki 가져오기용, 필드 순서는 요청서 그대로)
+- 앱 안의 같은 덱: 덱 › 새 덱 › "인도네시아어 구어체 · 첫 100장" (`src/core/packs/indonesianColloquial.ts`)
+- 빈도 근거: OpenSubtitles2018 인도네시아어 단어 빈도표 (orgtre/top-open-subtitles-sentences, `bld/top_words/id_top_words.csv`, 3만 단어)
+  - 코드는 CC BY 3.0, 목록은 OpenSubtitles 코퍼스 조건을 따른다.
+
+## 이번에 하지 않은 것 (주장하지 않음)
+
+- 현지인 검증, 자카르타 자연 발화 코퍼스(BTJ) 대조, 사전 대조는 하지 않았다. 뜻·예문·사용역은 작성자 판단이다.
+- "이 단어들로 회화의 몇 %를 알아듣는다" 같은 이해율은 계산하지 않았다.
+- 음성 파일은 만들지 않았다. 앱에서는 Gemini 음성 또는 기기 음성으로 단어와 예문을 읽는다.
+
+## 순위·빈도 표기 규칙
+
+- `Rank_Source`, `Source_Count`: 빈도표에 그 철자가 그대로 있는 경우에만 적었다 (대소문자 무시, 첫 번째로 나온 순위).
+- 99장은 빈도표에 그대로 있다. 구어형도 있다: nggak 1243위, gimana 2514위, nyari 18384위.
+- 빈도표에 없는 것:
+  - `nggak apa-apa` 한 장. 여러 단어로 된 표현이라 순위를 비우고 `phrase` 태그를 달았다.
+  - 빈도표에 없는 구어형을 보충한 카드(`supplementary_spoken`)는 이번 100장에 없다.
+
+## 고르고 뺀 기준
+
+자막은 대부분 외국 영화·드라마를 번역한 글이라 실제 말과 다르다. 그래서 순위를 그대로 따르지 않았다.
+
+**뒤로 미루거나 뺀 것**
+- **번역체·격식형:** kau(2위), anda, adalah, telah, bahwa, oleh, apakah, mengapa, sebuah, seorang, memiliki, melakukan, mengatakan.
+  - 구어 대응형이 있으면 표준형 칸으로 보냈다. 예: tidak → nggak, sudah → udah, bagaimana → gimana, saja → aja.
+- **극중 편향 어휘:** mati, membunuh, senjata, polisi, raja, perang, kapal, sial, sialan, Tuhan. 드라마·영화에 몰려 있어서 미뤘다.
+- **잡음:** 영어(the, you, i, a, 's), 줄임 표기(yg, Tn, ku, mu, nya), 감탄사 표기(Oh, Hei, uh).
+- **대명사가 붙은 형태:** padaku, denganmu, ayahku, ayahmu 같은 형태는 따로 카드로 만들지 않았다.
+- **파생형 중복:** melihat, melihatnya, lihat은 liat 한 장으로 합치고 표준형·어근 칸에 연결했다.
+- **gak:** nggak와 철자만 달라서 nggak 카드의 주의사항에 넣었다.
+
+**앞으로 당긴 것**
+- 인사·대명사·호칭·부정·질문·시간·장소·담화표지(sih, dong, deh, kan, nih, tuh, lho, kok, aja, banget)·생활 동사·형용사·연결어 순.
+
+**구어 동사 연결**
+- 형태가 그대로 대응하면 `구어형 | 표준형 | 어근`으로 이었다. 예: nyari | mencari | cari, nunggu | menunggu | tunggu
+- 뜻만 대응하고 어근이 다르면 주의사항에 적었다:
+  - bikin ↔ membuat
+  - ngomong ↔ berbicara
+  - bilang ↔ mengatakan
+  - kasih ↔ memberi
+- 표준형이 하나로 딱 대응하지 않으면 그렇게 적었다. 예: ngapain
+
+**사용역**
+- 표기는 `일반` / `구어` / `자카르타식` 세 가지만 썼다. 이번 100장에는 `격식`·`속어` 카드가 없다.
+- 기본은 지역을 덜 타는 aku / kamu / nggak이다.
+- gue, lo, doang은 `자카르타식`으로 따로 표시하고, 쓰는 상황을 주의사항에 적었다.
+
+## 불확실한 표현 (검증 필요)
+
+| 카드 | 확인할 점 |
+|---|---|
+| ngerti | 어근을 erti로 적었다. 사전에 따라 표기가 다를 수 있다 |
+| capek | 사전 표제어가 capai로 실린 경우가 있다 |
+| doang | 자카르타(베타위) 구어로 표시했다. 다른 도시에서 얼마나 쓰는지 확인 필요 |
+| mas, mbak, kak | 호칭 선호가 지역·나이·상황마다 다르다. 하나의 전국 규칙이 아니다 |
+| kok, sih, dong, deh, lho | 뜻이 문맥과 억양에 크게 좌우된다. 한국어 뜻은 대표적인 쓰임 하나만 적었다 |
+| 예문 전체 | 짧고 흔한 문장으로 썼지만 현지인이 읽어 보지 않았다 |
+
+## 다음 단계 (요청서 9번)
+
+1. 이 100장을 직접 써 보거나 현지인에게 보여 주고, 어색한 뜻·예문·빠진 단어를 알려 주세요.
+2. 고친 기준으로 500장 단위로 늘린다. 다음 묶음 후보:
+   - 생활 명사: duit, hp, temen, cewek, cowok, warung, kantor
+   - 감정 형용사: seneng, marah, takut, males, bosen
+   - 구어 동사: ngobrol, mikir, inget, nyampe, dateng
+   - 담화표지·감탄사: gini, situ, ntar, sumpah, astaga, waduh

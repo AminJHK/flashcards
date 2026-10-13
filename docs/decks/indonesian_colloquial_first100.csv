@@ -1,0 +1,101 @@
+ID,Rank_Source,Word_Spoken,Meaning_KO,Standard_Form,Root,Example_ID,Example_KO,Register,Note,Source_Count,Tags
+ID-0001,1,aku,나,aku,,Aku capek banget.,나 너무 피곤해.,구어,친구·가족 사이의 기본 '나'. 처음 보는 어른이나 가게에서는 saya가 무난하다.,3785033,pronoun
+ID-0002,31,kamu,너,kamu,,Kamu udah makan?,너 밥 먹었어?,구어,"친한 사이에서. 어른에게는 '너' 자리에 Bapak, Ibu, Mas, Mbak 같은 호칭을 쓴다.",417487,pronoun
+ID-0003,23,saya,"저, 나 (정중)",saya,,Saya dari Korea.,저는 한국에서 왔어요.,일반,"처음 만난 사람, 가게, 어른에게 쓰는 무난한 '나'.",571791,pronoun
+ID-0004,12,kita,우리 (듣는 사람 포함),kita,,Kita makan di mana?,우리 어디서 먹어?,일반,구어에서는 듣는 사람을 빼는 kami 자리에도 kita를 자주 쓴다.,1209622,pronoun
+ID-0005,9,dia,"그, 그녀, 걔",dia,,Dia lagi di jalan.,걔 지금 오는 중이야.,일반,남녀 구분이 없다. di jalan(길에 있다) = 오는 중.,1407463,pronoun
+ID-0006,17,mereka,"그들, 걔들",mereka,,Mereka belum datang.,걔들 아직 안 왔어.,일반,,746533,pronoun
+ID-0007,907,gue,나 (자카르타식),aku / saya,,Gue nggak tahu.,난 몰라.,자카르타식,친한 사이의 자카르타 구어. gua라고도 쓴다. 다른 지역이나 윗사람에게 쓰면 무례하게 들릴 수 있다.,11414,pronoun
+ID-0008,2025,lo,너 (자카르타식),kamu,,Lo di mana?,너 어디야?,자카르타식,"lu라고도 쓴다. gue와 짝으로, 친한 사이에서만.",4591,pronoun
+ID-0009,2104,kak,"언니, 오빠, 형, 누나 (호칭)",kakak,,"Kak, mau pesan.","저기요, 주문할게요.",일반,kakak의 준말. 나보다 조금 위로 보이는 사람이나 가게 직원을 부를 때도 쓴다.,4392,address
+ID-0010,6772,mas,"형, 오빠 (젊은 남성 호칭)",mas,,"Mas, berapa?","저기요, 얼마예요?",일반,자바어에서 온 호칭. 자카르타에서도 젊은 남자 직원·기사를 부를 때 흔하다. 지역에 따라 bang(abang)도 쓴다.,937,address
+ID-0011,17285,mbak,"언니, 누나 (젊은 여성 호칭)",mbak,,"Mbak, ada air putih?","저기요, 생수 있어요?",일반,자바어에서 온 호칭. 젊은 여성 직원을 부를 때 흔하다.,210,address
+ID-0012,134,pak,"아저씨, 기사님 (남성 존칭)",bapak,,"Pak, ke Blok M ya.","기사님, 블록엠으로 가 주세요.",일반,"bapak의 준말. 나이 있는 남성, 기사, 직원에게.",102980,address
+ID-0013,517,bu,"아주머니, 사장님 (여성 존칭)",ibu,,"Bu, ini berapa?","사장님, 이거 얼마예요?",일반,ibu의 준말. 나이 있는 여성에게.,21939,address
+ID-0014,1243,nggak,"아니, 안 (부정)",tidak,,Aku nggak mau.,나 안 할래.,구어,"gak, ga, enggak 등 철자가 여러 가지다. 표준형 tidak은 말로는 딱딱하게 들린다.",8198,negation
+ID-0015,43,bukan,~이 아니다 (명사 부정),bukan,,Bukan aku!,나 아니야!,일반,명사·대명사를 부정한다. 동사·형용사는 nggak.,314129,negation
+ID-0016,138,belum,아직 안,belum,,"Belum, nanti aja.","아직, 이따 할게.",일반,'~했어?'에 대한 대답으로 단독으로 자주 쓴다.,98435,negation
+ID-0017,44,jangan,~하지 마,jangan,,Jangan lupa ya!,잊지 마!,일반,,313376,negation
+ID-0018,,nggak apa-apa,괜찮아,tidak apa-apa,,"Nggak apa-apa, santai aja.","괜찮아, 편하게 해.",구어,"말할 때는 '(ng)gak papa', 'gapapa'처럼 줄여서도 들린다.",,greeting phrase
+ID-0019,11,apa,"무엇, 뭐",apa,,Ini apa?,이거 뭐야?,일반,문장 맨 앞에 오면 예/아니오 질문 표시도 한다.,1343136,question
+ID-0020,61,siapa,누구,siapa,,Itu siapa?,저 사람 누구야?,일반,,220736,question
+ID-0021,93,mana,어디 (di/ke/dari mana),mana,,Kamu di mana?,너 어디야?,일반,"di mana 어디에, ke mana 어디로, dari mana 어디에서.",146564,question
+ID-0022,356,kapan,언제,kapan,,Kapan pulang?,언제 집에 가?,일반,pulang = 집·고향으로 돌아가다.,33271,question
+ID-0023,226,berapa,"얼마, 몇",berapa,,Ini berapa?,이거 얼마예요?,일반,"가격, 개수, 나이를 모두 묻는다.",59284,question
+ID-0024,2514,gimana,"어떻게, 어때",bagaimana,,Gimana kabarnya?,어떻게 지내?,구어,bagaimana의 구어형.,3544,question
+ID-0025,67,kenapa,왜,mengapa,,Kenapa telat?,왜 늦었어?,일반,말로는 mengapa보다 kenapa가 훨씬 자연스럽다. telat = 늦다(구어).,196708,question
+ID-0026,1895,kok,왜 (의외·놀람),,,Kok sepi?,왜 이렇게 조용해?,구어,예상과 다를 때 쓰는 '왜'. 문장 끝에서는 '~인데 뭘'처럼 부드럽게 반박한다.,4934,question discourse
+ID-0027,4447,ngapain,"뭐 해, 뭐 하러",melakukan apa,apa,Ngapain di sini?,여기서 뭐 해?,구어,상황에 따라 '왜 굳이'라는 뉘앙스도 있다. 표준형은 하나로 딱 대응하지 않는다.,1664,question
+ID-0028,1082,sih,(강조·궁금함·누그러뜨림),,,Kenapa sih?,아니 왜?,구어,"뜻이 문맥에 따라 달라진다. 질문에서는 궁금함·답답함, 평서문에서는 '~긴 한데'.",9450,discourse
+ID-0029,1506,dong,"~해 줘, 당연하지",,,Bantuin dong!,좀 도와줘!,구어,부탁을 조르거나 '당연하지(Iya dong)'를 말할 때. bantuin = bantu(돕다)의 구어형.,6562,discourse
+ID-0030,4144,deh,"~할게, ~해 봐",,,Coba deh.,한번 해 봐.,구어,"권유하거나 결정을 가볍게 말할 때. 'Ya udah deh' 그래, 알았어.",1812,discourse
+ID-0031,121,kan,~잖아; ~지?,bukan,,Kan aku udah bilang.,내가 말했잖아.,구어,"상대도 아는 사실을 확인한다. 문장 끝 '..., kan?'은 '~지?'.",114238,discourse
+ID-0032,2114,nih,"자, 이거 (건넬 때)",ini,,"Nih, buat kamu.","자, 이거 너 줄게.",구어,ini가 줄어든 말. 물건을 건네거나 '지금 이거'를 강조한다.,4373,discourse
+ID-0033,4151,tuh,"봐, 저거",itu,,"Tuh, orangnya dateng.","봐, 그 사람 온다.",구어,itu가 줄어든 말. dateng = datang(구어 발음).,1809,discourse
+ID-0034,22,ya,응; ~지? ~해 줘,ya,,Besok ya!,내일 봐!,일반,"대답 '응', 문장 끝에서는 확인하거나 부드럽게 부탁한다.",571941,discourse
+ID-0035,377,iya,"응, 네",ya,,"Iya, bener.","응, 맞아.",구어,대답으로 ya보다 또렷하다. bener = benar(맞다).,31474,discourse
+ID-0036,8375,lho,"어머, ~다니까",,,Bagus lho!,좋다니까!,구어,놀람이나 '몰랐지?' 하는 강조. loh라고도 쓴다.,679,discourse
+ID-0037,4242,kayak,"~같은, ~처럼",seperti,,Kayaknya mau hujan.,비 오려나 봐.,구어,kaya라고도 들린다. kayaknya = ~인 것 같아.,1762,discourse
+ID-0038,3624,gitu,"그렇게, 그래",begitu,,"Oh, gitu.","아, 그렇구나.",구어,맞장구로 아주 자주 쓴다. 비슷한 gini는 '이렇게'.,2157,discourse
+ID-0039,6727,emang,"원래, 정말",memang,,Emang kenapa?,그게 왜?,구어,'Emang!'은 '그러니까!'. emangnya 형태도 많다.,946,discourse
+ID-0040,2099,aja,"그냥, ~만",saja,,Di sini aja.,그냥 여기서 하자.,구어,saja의 구어형. 명령·제안을 부드럽게 한다.,4398,discourse
+ID-0041,2916,banget,"진짜, 엄청",sekali,,Enak banget!,진짜 맛있다!,구어,형용사 뒤에 온다.,2912,discourse
+ID-0042,15938,doang,~뿐,saja / hanya,,Segitu doang?,그게 다야?,자카르타식,"자카르타(베타위) 구어. 다른 지역에서는 aja, cuma가 무난하다. segitu = 그만큼.",240,discourse
+ID-0043,9558,yuk,~하자,ayo,,Makan yuk!,밥 먹자!,구어,ayo보다 부드러운 권유. 문장 끝에 온다.,551,discourse
+ID-0044,58,ayo,"자, 어서; ~하자",ayo,,"Ayo, cepet!","어서, 빨리!",일반,"ayok, yok으로도 들린다. cepet = cepat(빨리).",227476,discourse
+ID-0045,281,masa,설마,masa,,Masa sih?,설마?,구어,"'시기, 시절'이라는 뜻도 있다. 여기서는 놀람·의심 표현.",45231,interjection
+ID-0046,4903,beneran,진짜로,benar-benar,,Beneran?,진짜?,구어,,1447,interjection
+ID-0047,2324,aduh,"아이고, 아야",aduh,,"Aduh, sakit!","아야, 아파!",일반,아프거나 곤란할 때.,3882,interjection
+ID-0048,2637,makasih,고마워,terima kasih,,Makasih ya!,고마워!,구어,terima kasih를 줄인 말. 'Makasih banyak' 정말 고마워.,3332,greeting
+ID-0049,1649,sama-sama,천만에요,sama-sama,,Sama-sama!,천만에!,일반,고맙다는 말에 대한 대답.,5913,greeting
+ID-0050,101,maaf,미안해요; 실례지만,maaf,,"Maaf, telat.","미안, 늦었어.",일반,"사과할 때, 또는 말을 꺼낼 때 '실례지만'.",136495,greeting
+ID-0051,468,permisi,실례합니다,permisi,,"Permisi, mau lewat.","실례합니다, 좀 지나갈게요.",일반,"지나갈 때, 가게에 들어갈 때, 말을 걸 때.",24898,greeting
+ID-0052,98,oke,"오케이, 좋아",oke,,"Oke, nanti aku kabarin.","오케이, 이따 연락할게.",구어,kabarin = kabari(소식을 알리다)의 구어형.,140300,greeting
+ID-0053,38,sekarang,지금,sekarang,,Sekarang jam berapa?,지금 몇 시야?,일반,,352777,time
+ID-0054,292,nanti,"이따, 나중에",nanti,,Nanti aja.,이따 하자.,일반,"말로는 ntar, entar로 줄여서도 들린다.",43160,time
+ID-0055,303,tadi,아까,tadi,,Tadi aku ketemu dia.,아까 걔 만났어.,일반,tadi pagi = 오늘 아침에.,41579,time
+ID-0056,331,besok,내일,besok,,Besok libur.,내일 쉬어.,일반,,37557,time
+ID-0057,737,kemarin,어제,kemarin,,Kemarin hujan.,어제 비 왔어.,일반,,14933,time
+ID-0058,10927,bentar,잠깐,sebentar,,Bentar ya.,잠깐만.,구어,sebentar를 줄인 말. 'Tunggu bentar' 잠깐 기다려.,449,time
+ID-0059,2976,udah,"이미, 벌써; 됐어",sudah,,"Udah, cukup.","됐어, 그만.",구어,'Udah makan?'(밥 먹었어?)은 안부 인사로도 쓴다.,2833,time
+ID-0060,46,lagi,"~하는 중; 또, 더",sedang,,Lagi apa?,뭐 하고 있어?,구어,"동사 앞이면 '~하는 중', 뒤면 '또, 더'. 'Mau lagi?' 더 줄까?",301756,time
+ID-0061,87,masih,"아직(도), 여전히",masih,,Masih di kantor.,아직 회사야.,일반,,159281,time
+ID-0062,210,dulu,먼저; 예전에,dulu,,Makan dulu yuk.,밥부터 먹자.,일반,동사 뒤에서는 '먼저 ~부터'. 'duluan'은 '(나) 먼저 갈게'.,66358,time
+ID-0063,39,sini,여기,sini,,"Sini, duduk.",이리 와서 앉아.,일반,"di sini 여기에, ke sini 여기로. 'Sini!'는 '이리 와!'.",348691,place
+ID-0064,91,sana,"저기, 거기 (먼 곳)",sana,,Dia di sana.,걔 저기 있어.,일반,가까운 '거기'는 situ.,150145,place
+ID-0065,29067,deket,가까운,dekat,,Rumahku deket kok.,우리 집 가까워.,구어,dekat의 구어 발음. -ku = 나의.,85,place adjective
+ID-0066,297,jauh,먼,jauh,,Jauh nggak?,멀어?,일반,,42444,place adjective
+ID-0067,57,mau,원하다; ~하려고 하다,mau,,Mau ke mana?,어디 가?,일반,'어디 가?'는 인사처럼 자주 묻는다.,230496,verb
+ID-0068,15,bisa,할 수 있다,bisa,,Bisa bahasa Inggris?,영어 할 줄 알아요?,일반,'Bisa!' 돼! 'Nggak bisa' 안 돼.,837122,verb
+ID-0069,27,harus,~해야 한다,harus,,Aku harus pulang.,나 집에 가야 돼.,일반,,489365,verb
+ID-0070,173,boleh,해도 된다,boleh,,Boleh foto?,사진 찍어도 돼요?,일반,허락을 구할 때.,79677,verb
+ID-0071,18,tahu,알다,tahu,,Nggak tahu.,몰라.,일반,말로는 tau로도 많이 쓴다. 음식 tahu(두부)와 철자가 같다.,680222,verb
+ID-0072,7313,pengen,~하고 싶다,ingin,,Aku pengen pulang.,집에 가고 싶어.,구어,pingin이라고도 쓴다.,833,verb
+ID-0073,6566,ngerti,"이해하다, 알아듣다",mengerti,erti,Ngerti nggak?,알아들었어?,구어,어근 표기는 사전에 따라 다를 수 있다 (검증 필요).,983,verb needs_check
+ID-0074,1006,ngomong,말하다,berbicara,omong,Ngomong apa sih?,무슨 소리야?,구어,어근은 omong. 표준형 berbicara(어근 bicara)와는 뜻만 대응한다.,10227,verb
+ID-0075,89,bilang,"말하다, 전하다",mengatakan,bilang,Bilang aja.,그냥 말해.,구어,'Bilang sama dia' 걔한테 말해 줘. 표준 mengatakan(어근 kata)과는 뜻만 대응한다.,156570,verb
+ID-0076,76,kasih,주다,memberi,kasih,Kasih tahu aku ya.,나한테 알려 줘.,구어,kasih tahu = 알려 주다. '사랑'이라는 뜻도 있다. 표준 memberi(어근 beri)와는 뜻만 대응한다.,182650,verb
+ID-0077,18384,nyari,찾다,mencari,cari,Lagi nyari apa?,뭐 찾고 있어?,구어,,190,verb
+ID-0078,18358,nunggu,기다리다,menunggu,tunggu,Aku nunggu di depan.,앞에서 기다릴게.,구어,명령은 'Tunggu!'(기다려).,190,verb
+ID-0079,2881,nonton,보다 (영화·TV·경기),menonton,tonton,Nonton film yuk.,영화 보자.,구어,,2955,verb
+ID-0080,3412,liat,보다,melihat,lihat,Liat deh!,이것 좀 봐!,구어,lihat의 구어 발음.,2345,verb
+ID-0081,1250,ketemu,만나다,bertemu,temu,Ketemu di mana?,어디서 만나?,구어,,8150,verb
+ID-0082,2911,bikin,만들다; ~하게 하다,membuat,bikin,Bikin kopi dulu.,커피 먼저 탈게.,구어,표준 membuat(어근 buat)와는 뜻만 대응한다. 'Bikin kesel' 짜증 나게 해.,2917,verb
+ID-0083,7180,pake,"쓰다, 입다; 넣다",memakai,pakai,Pake gula nggak?,설탕 넣어요?,구어,pakai의 구어 발음. 음식을 주문할 때 '~넣어/빼고'로 자주 쓴다.,858,verb
+ID-0084,176,makan,먹다,makan,,Udah makan belum?,밥 먹었어?,일반,'Udah makan?'은 '잘 지내?' 같은 안부 인사이기도 하다.,79066,verb
+ID-0085,325,minum,마시다,minum,,Mau minum apa?,뭐 마실래?,일반,,38958,verb
+ID-0086,240,pulang,"집에 가다, 돌아가다",pulang,,Aku pulang dulu ya.,나 먼저 집에 갈게.,일반,헤어질 때 인사로 자주 쓴다. pulang kampung = 고향에 가다.,55441,verb
+ID-0087,167,jalan,걷다; 나가 놀다,berjalan,jalan,Jalan-jalan yuk.,놀러 나가자.,구어,"명사로는 '길'. jalan-jalan = 산책, 여행, 놀러 가기.",81112,verb
+ID-0088,407,kerja,일하다,bekerja,kerja,Kerja di mana?,어디서 일해요?,구어,명사 '일'로도 쓴다.,29164,verb
+ID-0089,1269,beli,사다,membeli,beli,Mau beli apa?,뭐 살 거야?,구어,말할 때는 me- 없이 beli가 보통이다.,7995,verb
+ID-0090,1271,bayar,"내다, 계산하다",membayar,bayar,Bayar di mana?,어디서 계산해요?,구어,,7985,verb
+ID-0091,24,tapi,"근데, 하지만",tetapi,,"Mau, tapi nggak ada duit.",하고 싶은데 돈이 없어.,일반,말로는 tetapi보다 tapi가 기본. duit = 돈(구어).,532752,connector
+ID-0092,228,terus,"그래서, 그다음에; 계속",lalu,,Terus gimana?,그래서 어떻게 됐어?,구어,'Lurus terus' 계속 직진.,58037,connector
+ID-0093,10772,soalnya,왜냐하면 ~거든,karena,,"Aku pulang duluan, soalnya capek.","먼저 갈게, 피곤해서.",구어,이유를 뒤에 덧붙일 때. duluan = 먼저.,459,connector
+ID-0094,2204,kalo,~하면; ~는?,kalau,,"Kalo bisa, besok aja.",되면 내일 하자.,구어,kalau의 구어 표기. 'Kalo kamu?' 너는?,4166,connector
+ID-0095,124,sama,"~와, ~에게; 같은",dengan / kepada,,Sama siapa?,누구랑?,구어,"구어에서는 dengan, kepada 대신 sama를 많이 쓴다.",112918,connector
+ID-0096,289,cuma,"~뿐, 그냥",hanya,,Cuma bercanda.,그냥 농담이야.,구어,,43653,connector
+ID-0097,5816,capek,피곤한,lelah,capek,Capek banget hari ini.,오늘 너무 피곤해.,구어,사전에는 capai로 실린 경우가 있다 (검증 필요).,1155,adjective needs_check
+ID-0098,678,enak,"맛있는; 편한, 좋은",enak,,Enak nggak?,맛있어?,일반,"음식 외에도 '편하다, 좋다'.",16031,adjective
+ID-0099,83,bagus,"좋은, 멋진",bagus,,Bagus banget!,진짜 좋다!,일반,물건이나 결과가 좋을 때. 맛은 enak.,166389,adjective
+ID-0100,1571,mahal,비싼,mahal,,Mahal banget!,너무 비싸!,일반,'Bisa kurang?'(깎아 줄 수 있어요?)과 같이 쓴다.,6246,adjective
