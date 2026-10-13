@@ -79,7 +79,8 @@ export function applyTheme(s: Pick<Settings, 'theme' | 'amoled' | 'accent' | 'fo
   for (const [k, v] of Object.entries(t)) root.style.setProperty(`--${k}`, v);
   root.style.setProperty('--scale', String(FONT_SCALE[s.fontScale] ?? 1));
   root.style.colorScheme = dark ? 'dark' : 'light';
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t.bg!);
+  // 상태 표시줄 색을 앱 배경과 맞춘다 (브라우저가 따르면)
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', t.bg!));
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(s));
   } catch {

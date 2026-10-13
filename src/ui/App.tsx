@@ -31,7 +31,7 @@ export function App() {
   }, [settings]);
 
   // 전체 화면: 브라우저는 탭할 때만 허락하므로, 켜져 있으면 탭할 때마다 확인한다
-  const full = settings?.fullscreen;
+  const full = settings?.immersive;
   useEffect(() => {
     if (full === undefined) return;
     if (!full) {

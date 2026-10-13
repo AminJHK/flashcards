@@ -70,8 +70,8 @@ export function Settings() {
           />
         </Row>
         {fullscreenSupported() && (
-          <Row title="전체 화면" desc="위쪽 상태 표시줄과 아래 내비게이션 바를 숨겨요. 화면을 한 번 누르면 바뀌어요. 가장자리를 쓸어 넘기면 잠깐 보여요.">
-            <Switch label="전체 화면" checked={s.fullscreen} onChange={(v) => set({ fullscreen: v })} />
+          <Row title="전체 화면" desc="상태 표시줄과 내비게이션 바를 숨겨요. 가장자리를 쓸어 넘기면 잠깐 보여요.">
+            <Switch label="전체 화면" checked={s.immersive} onChange={(v) => set({ immersive: v })} />
           </Row>
         )}
         <Row title="완전 검정 배경" desc="다크 모드에서 OLED 화면용">

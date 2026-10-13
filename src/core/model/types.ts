@@ -107,8 +107,8 @@ export interface Settings {
   amoled: boolean;
   accent: AccentKey;
   fontScale: FontScale;
-  /** 전체 화면 (상태 표시줄·내비게이션 바 숨기기) */
-  fullscreen: boolean;
+  /** 전체 화면 (상태 표시줄·내비게이션 바 숨기기). 기본은 끔 */
+  immersive: boolean;
   /** 언어별로 고른 기기 음성 이름 */
   voices: Record<Lang, string>;
   lastBackupAt?: Millis;
@@ -154,7 +154,7 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   amoled: false,
   accent: 'blue',
-  fullscreen: true,
+  immersive: false,
   fontScale: 'm',
   voices: {},
 };
