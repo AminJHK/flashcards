@@ -10,6 +10,7 @@ import { rebuildFromLogs } from '../../core/scheduler/rebuild';
 import { createScheduler } from '../../core/scheduler/registry';
 import type { Scheduler } from '../../core/scheduler/types';
 import { db, type FlashcardsDB } from './db';
+import type { PackChange } from '../../core/packs/update';
 
 /**
  * 저장소 작업 모음. 화면은 db를 직접 고치지 않고 여기 함수만 부른다.
@@ -140,6 +141,23 @@ export async function installPack(pack: Pack, deps: DeriveDeps, d: FlashcardsDB 
     await d.notes.bulkAdd(notes);
     await d.cards.bulkAdd(cards);
     return deck;
+  });
+}
+
+/**
+ * 준비된 덱이 고쳐졌을 때 이미 넣어 둔 단어에 반영한다 (사용자가 고친 단어는 제외, packChanges 참고).
+ * 복습 기록은 그대로다. 반영한 단어도 "사용자가 안 고친 단어"로 남겨서 다음 업데이트를 또 받을 수 있게 한다.
+ */
+export async function applyPackChanges(changes: readonly PackChange[], d: FlashcardsDB = db): Promise<number> {
+  return d.transaction('rw', [d.notes], async () => {
+    let n = 0;
+    for (const c of changes) {
+      const note = await d.notes.get(c.noteId);
+      if (!note || note.updatedAt !== note.createdAt) continue;
+      await d.notes.put({ ...note, fields: c.fields });
+      n++;
+    }
+    return n;
   });
 }
 

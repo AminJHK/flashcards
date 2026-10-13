@@ -55,6 +55,32 @@ describe('여행 스페인어', () => {
     }
   });
 
+  it('영어 뜻이 서로 겹치지 않는다 (영어 → 스페인어로 볼 때 같은 카드처럼 보이지 않게)', () => {
+    // 쉼표·세미콜론·빗금으로 나눈 뜻 조각(괄호 안 설명 포함)이 두 단어에 똑같이 들어 있으면 안 된다
+    const parts = (s: string) => {
+      const out: string[] = [];
+      let depth = 0;
+      let cur = '';
+      for (const ch of s.toLowerCase()) {
+        if (ch === '(') depth++;
+        if (ch === ')') depth--;
+        if (depth === 0 && /[;,/]/.test(ch)) {
+          out.push(cur.trim());
+          cur = '';
+        } else cur += ch;
+      }
+      out.push(cur.trim());
+      return out.filter(Boolean);
+    };
+    const seen = new Map<string, string>();
+    for (const n of pack.notes) {
+      for (const p of parts(n.fields.back!)) {
+        expect(seen.get(p), `"${p}": ${seen.get(p)} / ${n.fields.front}`).toBeUndefined();
+        seen.set(p, n.fields.front!);
+      }
+    }
+  });
+
   it('명사는 관사와 함께, 동사는 원형(-ar/-er/-ir)으로 들어 있다', () => {
     for (const n of pack.notes) {
       const front = n.fields.front!;

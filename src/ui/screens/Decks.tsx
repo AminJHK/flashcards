@@ -5,7 +5,8 @@ import type { CardType } from '../../core/cardTypes/types';
 import type { AutoplaySide, DeckSettings } from '../../core/model/types';
 import { db } from '../../adapters/storage/db';
 import { loadPinyin } from '../../adapters/pinyin/pinyin';
-import { createDeck, deleteDeck, installPack, updateDeck } from '../../adapters/storage/repo';
+import { applyPackChanges, createDeck, deleteDeck, installPack, updateDeck } from '../../adapters/storage/repo';
+import { packChanges } from '../../core/packs/update';
 import { PACKS } from '../../core/packs/registry';
 import type { Pack } from '../../core/packs/types';
 import { Row, Segmented, Stepper, Switch } from '../components/Controls';
@@ -213,6 +214,11 @@ export function DeckDetail({ id }: { id: string }) {
     await db.notes.where('deckId').equals(id).each((n) => counts.set(n.typeId, (counts.get(n.typeId) ?? 0) + 1));
     return [...counts].sort((a, b) => b[1] - a[1]).map(([t]) => t);
   }, [id]);
+  // 준비된 덱이 고쳐졌으면, 이 덱에 반영할 수 있는 단어들
+  const packFixes = useLiveQuery(async () => {
+    const notes = await db.notes.where('deckId').equals(id).toArray();
+    return PACKS.flatMap((p) => packChanges(p, notes));
+  }, [id]);
   const deck = decks?.find((d) => d.id === id);
   const [name, setName] = useState<string>();
 
@@ -271,6 +277,26 @@ export function DeckDetail({ id }: { id: string }) {
           단어 {noteCount}개 보기
         </button>
       </div>
+
+      {packFixes && packFixes.length > 0 && (
+        <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 20 }}>
+          <span style={{ fontWeight: 600 }}>준비된 덱이 고쳐졌어요</span>
+          <span className="muted small" style={{ lineHeight: 1.6 }}>
+            단어 {packFixes.length}개의 뜻이나 예문이 더 정확하게 바뀌었어요. 내가 직접 고친 단어와 복습 기록은 그대로예요.
+          </span>
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ height: 48 }}
+            onClick={async () => {
+              const n = await applyPackChanges(packFixes);
+              toast(`단어 ${n}개를 고쳤어요`);
+            }}
+          >
+            고친 내용 받기
+          </button>
+        </div>
+      )}
 
       <div className="panel" style={{ padding: 20 }}>
         <MemoryPanel m={memory?.get(deck.id) ?? EMPTY_MEMORY} title="기억 상태" />

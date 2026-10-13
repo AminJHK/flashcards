@@ -97,3 +97,41 @@ test('덱의 "새 단어 카드 종류"를 바꿔도 이미 있는 스페인어 
   await expect(page.getByText('스페인어 단어 보고 영어 뜻 떠올리기', { exact: false })).toBeVisible();
   await expect(page.getByText('발음: 중국어(zh-CN)로 읽어요')).toHaveCount(0);
 });
+
+test('준비된 덱이 고쳐지면 덱 화면에서 받을 수 있고, 내가 고친 단어는 그대로 둔다', async ({ page }) => {
+  await page.goto('/#/decks/new');
+  await page.locator('.panel', { hasText: '여행 스페인어' }).getByRole('button', { name: '이 덱 추가하기' }).click();
+  await expect(page.getByLabel('덱 이름')).toHaveValue('여행 스페인어');
+  await expect(page.getByText('준비된 덱이 고쳐졌어요')).toHaveCount(0);
+
+  // 예전 버전으로 넣은 것처럼 만든다: tener는 옛 뜻, la casa는 사용자가 직접 고친 단어
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const open = indexedDB.open('flashcards');
+        open.onsuccess = () => {
+          const tx = open.result.transaction('notes', 'readwrite');
+          const store = tx.objectStore('notes');
+          store.getAll().onsuccess = (e) => {
+            for (const n of (e.target as IDBRequest).result) {
+              if (n.fields.front === 'tener') store.put({ ...n, fields: { ...n.fields, back: 'to have' } });
+              if (n.fields.front === 'la casa') store.put({ ...n, fields: { ...n.fields, back: 'my house' }, updatedAt: n.createdAt + 1 });
+            }
+          };
+          tx.oncomplete = () => resolve();
+        };
+      }),
+  );
+  await page.reload();
+  await expect(page.getByText('준비된 덱이 고쳐졌어요')).toBeVisible();
+  await expect(page.getByText(/단어 1개의 뜻/)).toBeVisible();
+  await page.getByRole('button', { name: '고친 내용 받기' }).click();
+  await expect(page.getByText('단어 1개를 고쳤어요')).toBeVisible();
+  await expect(page.getByText('준비된 덱이 고쳐졌어요')).toHaveCount(0);
+
+  await page.getByRole('button', { name: /단어 514개 보기/ }).click();
+  await page.getByLabel('단어 찾기').fill('tener');
+  await expect(page.getByText('to have (own, possess)')).toBeVisible();
+  await page.getByLabel('단어 찾기').fill('la casa');
+  await expect(page.getByText('my house')).toBeVisible();
+});
