@@ -31,3 +31,14 @@ npm run e2e        # Playwright 화면 테스트 (Chromium 필요)
 ```
 
 `main` 브랜치에 올리면 GitHub Actions가 검사한 뒤 `gh-pages` 브랜치로 빌드 결과를 올리고, GitHub Pages가 그걸 내보냅니다.
+
+## 다른 AI 도구로 이어서 작업하기
+
+이 저장소만 있으면 어떤 AI 코딩 도구로도 이어서 작업할 수 있습니다.
+
+- **규칙:** `AGENTS.md` (Claude Code는 `CLAUDE.md`, Gemini CLI는 `GEMINI.md`가 이 파일을 불러옵니다)
+- **설계:** `docs/DESIGN.md`
+- **지금 상태와 다음 할 일:** `docs/HANDOFF.md`
+
+새 도구에는 "AGENTS.md와 docs/HANDOFF.md를 먼저 읽고 이어서 작업해 줘"라고 말하면 됩니다.
+카드와 복습 기록은 이 저장소가 아니라 폰에만 있습니다.
