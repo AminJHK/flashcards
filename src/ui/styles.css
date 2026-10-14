@@ -1411,3 +1411,237 @@ textarea.input-sentence {
   font-variant-numeric: tabular-nums;
   min-width: 118px;
 }
+
+/* ---------- PC (넓은 화면) ----------
+   폰 화면은 위에서 그대로 두고, 900px 이상일 때만 바꾼다.
+   왼쪽에 메뉴를 세로로 놓고, 본문은 가운데에 넓게 둔다. */
+@media (min-width: 900px) {
+  .app {
+    max-width: none;
+    margin: 0;
+  }
+
+  /* 메뉴가 있는 화면: [왼쪽 메뉴 | 본문(+ 아래 고정 버튼)] */
+  .app:has(> .tabbar) {
+    display: grid;
+    grid-template-columns: 236px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .app:has(> .tabbar) > * {
+    grid-column: 2;
+  }
+
+  .app:has(> .tabbar) > .screen {
+    grid-row: 1;
+  }
+
+  .app:has(> .tabbar) > .bottom-bar {
+    grid-row: 2;
+  }
+
+  .app:has(> .tabbar) > [role='status'] {
+    grid-row: 1;
+    height: 0;
+  }
+
+  .app:has(> .tabbar) > .tabbar {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    flex-direction: column;
+    gap: 4px;
+    padding: 28px 14px 24px;
+    border-top: none;
+    border-right: 1px solid var(--line);
+  }
+
+  .tabbar::before {
+    content: '플래시카드';
+    padding: 4px 14px 20px;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .tabbar a {
+    flex: none;
+    height: 48px;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 0 14px;
+    border-radius: 12px;
+    font-size: 15px;
+  }
+
+  .tabbar a:hover {
+    background: var(--surface2);
+  }
+
+  .tabbar a[aria-current='page'] {
+    background: var(--accent-soft);
+  }
+
+  /* 본문: 가운데에 읽기 편한 폭으로 */
+  .screen {
+    gap: 20px;
+    padding: 44px max(40px, calc((100% - 880px) / 2)) 48px;
+  }
+
+  .title {
+    font-size: 30px;
+  }
+
+  .title-lg {
+    font-size: 34px;
+  }
+
+  .panel {
+    padding: 28px;
+  }
+
+  /* 덱 목록은 두 칸으로 */
+  .screen div:has(> .deck-row) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .screen div:has(> .deck-row) > :not(.deck-row) {
+    grid-column: 1 / -1;
+  }
+
+  .deck-row + .deck-row {
+    margin-top: 0;
+  }
+
+  .deck-row:hover,
+  .list-row:hover,
+  .btn-soft:hover:not(:disabled),
+  .btn-plain:hover:not(:disabled),
+  .reveal:hover,
+  .grade:hover {
+    filter: brightness(0.97);
+  }
+
+  /* 큰 버튼은 화면 가득이 아니라 적당한 폭으로 */
+  .screen > .btn:not(.btn-dashed),
+  .panel > .btn {
+    max-width: 420px;
+    align-self: center;
+  }
+
+  .btn {
+    height: 52px;
+  }
+
+  /* 알림과 확인 창은 가운데 아래에 */
+  .toast {
+    left: 50%;
+    right: auto;
+    width: min(480px, calc(100% - 32px));
+    transform: translateX(-50%);
+    bottom: 32px;
+  }
+
+  .toast-high {
+    bottom: 32px;
+  }
+
+  .app:has(> .tabbar) .toast {
+    left: calc(50% + 118px);
+  }
+
+  .dialog-backdrop {
+    align-items: center;
+  }
+
+  /* 복습 화면: 카드를 크게, 버튼은 가운데에 모아서 */
+  .app:not(:has(> .tabbar)) {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  .review-top {
+    height: 64px;
+    padding: 16px 16px 0;
+  }
+
+  .card-area {
+    padding: 0 48px;
+    gap: 18px;
+  }
+
+  .b-hanzi.front {
+    font-size: calc(120px * var(--scale));
+  }
+
+  .b-hanzi.back {
+    font-size: calc(80px * var(--scale));
+  }
+
+  .b-pinyin {
+    font-size: calc(30px * var(--scale));
+  }
+
+  .b-word.front {
+    font-size: calc(68px * var(--scale));
+  }
+
+  .b-word.back {
+    font-size: calc(44px * var(--scale));
+  }
+
+  .b-meaning.front {
+    font-size: calc(54px * var(--scale));
+  }
+
+  .b-meaning.back {
+    font-size: calc(36px * var(--scale));
+  }
+
+  .b-sentence.main {
+    font-size: calc(36px * var(--scale));
+  }
+
+  .b-sentence.sub {
+    font-size: calc(22px * var(--scale));
+  }
+
+  .b-memo {
+    font-size: 17px;
+  }
+
+  .b-sentence {
+    max-width: 640px;
+  }
+
+  .b-memo {
+    max-width: 560px;
+  }
+
+  .answer-bar {
+    padding: 16px 24px 40px;
+    max-width: 720px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .bottom-bar {
+    padding: 0 24px 24px;
+    max-width: 720px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .flip-hint {
+    padding-bottom: 16px;
+  }
+}
+
+/* 아주 넓은 화면(큰 모니터)에서는 본문을 조금 더 넓게 */
+@media (min-width: 1500px) {
+  .screen {
+    padding-inline: max(48px, calc((100% - 1000px) / 2));
+  }
+}
