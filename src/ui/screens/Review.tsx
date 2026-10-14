@@ -13,6 +13,7 @@ import { useCards, useDecks, useNotes, useNow, useScheduler, useSettings } from 
 import { go } from '../router';
 import { useToast } from '../toast';
 import { backupToDrive, driveBackupDue, driveErrorMessage } from '../driveBackup';
+import { syncWithDrive } from '../driveSync';
 import { useVoiceAnswer } from '../useVoiceAnswer';
 import { NoteEditor } from './NoteEditor';
 import { withTimeout } from '../../adapters/net';
@@ -245,11 +246,13 @@ export function Review({ deckId }: { deckId?: string }) {
 
   const buttons = settings?.buttons === 4 ? ([1, 2, 3, 4] as Rating[]) : ([1, 3] as Rating[]);
 
-  // PC 키보드: 스페이스/엔터 = 뒤집기, 1~4 = 답
+  // PC 키보드: 스페이스/엔터 = 뒤집기, 1~4 = 답, R = 발음 듣기
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (editing || (e.target as HTMLElement).closest('input, textarea, select')) return;
-      if (!flipped && (e.key === ' ' || e.key === 'Enter')) {
+      if (editing || e.ctrlKey || e.metaKey || e.altKey || (e.target as HTMLElement).closest('input, textarea, select')) return;
+      if (e.key === 'r' || e.key === 'R') {
+        say(flipped ? 'back' : 'front');
+      } else if (!flipped && (e.key === ' ' || e.key === 'Enter')) {
         e.preventDefault();
         flip();
       } else if (flipped) {
@@ -263,7 +266,13 @@ export function Review({ deckId }: { deckId?: string }) {
     };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
-  }, [flipped, flip, rate, editing, settings?.buttons]);
+  }, [flipped, flip, rate, editing, settings?.buttons, say]);
+
+  // 복습을 다 끝내면 Google Drive와 바로 맞춘다 (로그인 창 없이, 받아 둔 토큰이 있을 때만)
+  const finished = !!q && !card && !q.waiting && !unsaved && history.length > 0;
+  useEffect(() => {
+    if (finished) void syncWithDrive({ interactive: false }).catch(() => {});
+  }, [finished]);
 
   if (!settings || !decks || !cards || !notes || !q) return <div className="screen" />;
 
@@ -271,7 +280,10 @@ export function Review({ deckId }: { deckId?: string }) {
     return <NoteEditor mode="edit" noteId={note.id} onDone={() => setEditing(false)} />;
   }
 
-  const close = () => go(deckId ? `decks/${deckId}` : '');
+  const close = () => {
+    if (history.length) void syncWithDrive({ interactive: false }).catch(() => {}); // 나갈 때도 맞춘다
+    go(deckId ? `decks/${deckId}` : '');
+  };
   const remaining = q.counts.review + q.counts.learning + q.counts.newc;
   const doneCount = history.length;
   const pct = doneCount + remaining ? Math.round((doneCount / (doneCount + remaining)) * 100) : 100;
@@ -296,7 +308,7 @@ export function Review({ deckId }: { deckId?: string }) {
       <button type="button" className="icon-btn" aria-label="카드 편집" onClick={() => setEditing(true)} disabled={!note}>
         <Icon name="edit" size={22} />
       </button>
-      <button type="button" className="icon-btn" aria-label="발음 듣기" onClick={() => say(flipped ? 'back' : 'front')} disabled={!view}>
+      <button type="button" className="icon-btn" aria-label="발음 듣기" title="발음 듣기 (R)" onClick={() => say(flipped ? 'back' : 'front')} disabled={!view}>
         <Icon name="speaker" size={22} />
       </button>
     </div>

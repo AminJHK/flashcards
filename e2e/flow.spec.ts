@@ -182,3 +182,30 @@ test('PC 키보드: 스페이스로 정답을 보고, 1·2(4버튼이면 1~4)로
   await page.keyboard.press('1'); // 다시
   await expect(page.getByText('saya', { exact: true })).toBeVisible(); // 다시를 누른 kamu는 기다리고, 다음 새 카드가 나온다
 });
+
+test('PC 키보드: R 키로 발음을 다시 듣는다 (앞면엔 앞면, 정답을 본 뒤엔 뒷면)', async ({ page }) => {
+  await page.addInitScript(() => {
+    const spoken: string[] = [];
+    (window as unknown as { __spoken: string[] }).__spoken = spoken;
+    const fake = {
+      getVoices: () => [{ name: 'fake-id', lang: 'id-ID', localService: true, default: false, voiceURI: 'fake-id' }],
+      speak: (u: { text: string }) => spoken.push(u.text),
+      cancel: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      speaking: false,
+    };
+    Object.defineProperty(window, 'speechSynthesis', { value: fake, configurable: true });
+    (window as unknown as { SpeechSynthesisUtterance: unknown }).SpeechSynthesisUtterance = function (this: { text: string }, t: string) {
+      this.text = t;
+    };
+  });
+  await page.goto('/#/decks/new');
+  await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
+  await page.getByRole('button', { name: '이 덱 복습' }).click();
+  await expect(page.getByText('aku', { exact: true })).toBeVisible();
+  const count = () => page.evaluate(() => (window as unknown as { __spoken: string[] }).__spoken.length);
+  const before = await count();
+  await page.keyboard.press('r');
+  await expect.poll(count).toBeGreaterThan(before);
+});
