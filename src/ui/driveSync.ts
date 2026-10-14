@@ -12,15 +12,45 @@ export interface SyncResult {
 
 let running: Promise<SyncResult | undefined> | undefined;
 
+/** 화면에 보여 줄 동기화 상태 (동기화 중인지, 마지막 시도가 실패했는지) */
+export interface SyncState {
+  syncing: boolean;
+  failed: boolean;
+}
+let state: SyncState = { syncing: false, failed: false };
+const listeners = new Set<() => void>();
+const setState = (patch: Partial<SyncState>) => {
+  state = { ...state, ...patch };
+  listeners.forEach((l) => l());
+};
+export const getSyncState = (): SyncState => state;
+export function subscribeSyncState(l: () => void): () => void {
+  listeners.add(l);
+  return () => listeners.delete(l);
+}
+
 /**
  * Google Drive의 동기화 파일과 이 기기를 합친다: 내려받기 → 합치기 → 올리기.
  * interactive=false면 로그인 창을 띄우지 않고, 이미 받은 토큰이 있을 때만 한다 (없으면 undefined).
  * 동시에 두 번 돌지 않는다.
  */
 export function syncWithDrive(opts: { interactive: boolean }): Promise<SyncResult | undefined> {
-  running ??= run(opts).finally(() => {
-    running = undefined;
-  });
+  if (!running) {
+    setState({ syncing: true });
+    running = run(opts)
+      .then((r) => {
+        if (r) setState({ failed: false });
+        return r;
+      })
+      .catch((e: unknown) => {
+        setState({ failed: true });
+        throw e;
+      })
+      .finally(() => {
+        running = undefined;
+        setState({ syncing: false });
+      });
+  }
   return running;
 }
 

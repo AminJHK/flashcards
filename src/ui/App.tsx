@@ -16,6 +16,7 @@ import { applyTheme } from './theme';
 import { ConfirmHost, ErrorBoundary } from './confirm';
 import { StartSync } from './StartSync';
 import { FirstTapSync } from './FirstTapSync';
+import { useSyncStatus } from './useSyncStatus';
 import { syncWithDrive } from './driveSync';
 import { ToastProvider, useToast } from './toast';
 
@@ -61,6 +62,15 @@ export function App() {
       document.removeEventListener('visibilitychange', onHide);
     };
   }, [driveOn]);
+
+  // 아직 Drive에 못 올린 기록이 있는데 창을 닫으려 하면 브라우저가 한 번 물어본다
+  const unsynced = (useSyncStatus()?.pending ?? 0) > 0;
+  useEffect(() => {
+    if (!unsynced) return;
+    const h = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener('beforeunload', h);
+    return () => window.removeEventListener('beforeunload', h);
+  }, [unsynced]);
 
   // 전체 화면: 브라우저는 탭할 때만 허락하므로, 켜져 있으면 탭할 때마다 확인한다
   const full = settings?.immersive;

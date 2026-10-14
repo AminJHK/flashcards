@@ -9,6 +9,7 @@ import { useDecks, useScheduler, useSettings } from '../hooks';
 import { langName, noVoiceMessage } from '../langs';
 import { ACCENTS, prefersDark } from '../theme';
 import { useToast } from '../toast';
+import { usePwaInstall } from '../usePwaInstall';
 import { DriveSettings } from './DriveSettings';
 import { GeminiSettings, VoiceTest } from './GeminiSettings';
 import { fullscreenSupported } from '../../adapters/display/fullscreen';
@@ -177,6 +178,7 @@ export function Settings() {
       <span className="section-label" style={{ paddingTop: 8 }}>
         데이터
       </span>
+      <InstallRow />
       <DriveSettings s={s} />
       <div className="group">
         <Row title="백업 파일로 저장" desc={backupDays === undefined ? '아직 백업하지 않았어요' : backupDays === 0 ? '오늘 백업했어요' : `마지막 백업 ${backupDays}일 전`}>
@@ -219,6 +221,32 @@ export function Settings() {
       <span className="faint small" style={{ padding: '0 4px', textAlign: 'center' }}>
         버전 {__APP_VERSION__}
       </span>
+    </div>
+  );
+}
+
+/** 컴퓨터·폰에 앱 아이콘으로 설치 (브라우저 주소창 없이 바로 열린다) */
+function InstallRow() {
+  const { installed, canInstall, install } = usePwaInstall();
+  const toast = useToast();
+  return (
+    <div className="group">
+      <Row
+        title="앱으로 설치"
+        desc={
+          installed
+            ? '앱으로 열려 있어요. 이 창이 앱 창이에요.'
+            : canInstall
+              ? '시작 메뉴·바탕화면 아이콘으로 바로 열 수 있어요. 지금까지의 덱과 기록은 그대로 쓰여요.'
+              : '크롬·엣지 주소창 오른쪽의 설치 아이콘(⊕ 또는 모니터 모양)을 누르거나, 메뉴(⋮) › 앱으로 설치를 고르세요.'
+        }
+      >
+        {!installed && canInstall && (
+          <button type="button" className="btn-soft" style={{ border: 'none' }} onClick={async () => toast((await install()) ? '설치했어요' : '설치하지 않았어요')}>
+            설치
+          </button>
+        )}
+      </Row>
     </div>
   );
 }

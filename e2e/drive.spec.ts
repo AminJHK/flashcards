@@ -171,3 +171,32 @@ test('설정에서 「시작 화면에서 로그인」을 켜면 앱을 열 때 
   await expect(page.getByRole('heading', { name: '설정' })).toBeVisible();
 });
 
+
+test('동기화 상태: 복습하면 "아직 올리지 않은 기록"이 뜨고, 동기화하면 "종료해도 돼요"로 바뀐다', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, hasTouch: false, isMobile: false, locale: 'ko-KR' });
+  const page = await context.newPage();
+  await fakeGoogle(page);
+  await page.goto('/#/decks/new');
+  await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
+  await expect(page.getByLabel('덱 이름')).toBeVisible();
+  await page.goto('/#/settings');
+  await page.getByLabel('Google 클라이언트 ID').fill('123-abc.apps.googleusercontent.com');
+  await page.getByRole('button', { name: 'Google로 로그인' }).click();
+  await expect(page.getByText(/연결했어요 · nurse@example.com/)).toBeVisible();
+  const nav = page.getByRole('navigation', { name: '메인 메뉴' });
+  await expect(nav.getByRole('button', { name: /동기화됨 · .* 종료해도 돼요/ })).toBeVisible();
+  // 복습 한 장 → 아직 올리지 않은 기록 (복습을 닫으면 조용히 동기화를 시도하지만, 받아 둔 토큰이 없으면 건너뛴다)
+  await page.goto('/#/decks');
+  await page.getByRole('button', { name: /인도네시아어 구어체/ }).click();
+  await page.getByRole('button', { name: '이 덱 복습' }).click();
+  await page.keyboard.press('Space');
+  await page.keyboard.press('2');
+  await page.getByRole('button', { name: '복습 닫기' }).click();
+  await page.goto('/#/');
+  await page.screenshot({ path: 'test-results/shots/37-sync-badge-pc.png' });
+  await expect(nav.getByRole('button', { name: /동기화됨|올리지 않은 기록/ })).toBeVisible();
+  // 눌러서 동기화 → 종료해도 돼요
+  await page.getByRole('navigation', { name: '메인 메뉴' }).getByRole('button', { name: /동기화/ }).click();
+  await expect(nav.getByRole('button', { name: /동기화됨 · .* 종료해도 돼요/ })).toBeVisible();
+  await context.close();
+});

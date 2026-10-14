@@ -1,3 +1,4 @@
+import { SyncBadge } from '../components/SyncBadge';
 import { useMemo } from 'react';
 import { getCardType } from '../../core/cardTypes/registry';
 import { buildQueue } from '../../core/scheduler/queue';
@@ -86,6 +87,7 @@ export function Home() {
             {dateLabel}
           </span>
           <h1 className="title title-lg">오늘</h1>
+          <SyncBadge className="sync-home" />
         </div>
 
         <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

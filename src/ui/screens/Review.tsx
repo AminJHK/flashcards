@@ -14,6 +14,7 @@ import { go } from '../router';
 import { useToast } from '../toast';
 import { backupToDrive, driveBackupDue, driveErrorMessage } from '../driveBackup';
 import { syncWithDrive } from '../driveSync';
+import { SyncBadge } from '../components/SyncBadge';
 import { useVoiceAnswer } from '../useVoiceAnswer';
 import { NoteEditor } from './NoteEditor';
 import { withTimeout } from '../../adapters/net';
@@ -354,6 +355,7 @@ export function Review({ deckId }: { deckId?: string }) {
           <span className="muted" style={{ fontSize: 15 }}>
             {doneCount ? `${doneCount}장 복습 · 다시 ${againCount}번` : '지금은 볼 카드가 없어요'}
           </span>
+          <SyncBadge />
         </div>
         <div className="answer-bar">
           {doneCount > 0 && driveBackupDue(settings) ? (
