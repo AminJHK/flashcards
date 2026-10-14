@@ -3,6 +3,7 @@ import type { Settings } from '../core/model/types';
 import { clearTokenCache, getAccessToken } from '../adapters/google/auth';
 import { DriveError, downloadText, ensureFolder, listBackups, pruneBackups, uploadJson, userEmail, type DriveFile } from '../adapters/google/drive';
 import { exportBackup, getSettings, importBackup, saveSettings } from '../adapters/storage/repo';
+import { syncWithDrive, type SyncResult } from './driveSync';
 
 /** Drive에 남겨 둘 백업 개수 */
 export const KEEP_BACKUPS = 30;
@@ -23,14 +24,18 @@ async function withToken<T>(fn: (token: string, drive: NonNullable<Settings['goo
   }
 }
 
-/** 처음 연결: 로그인 → 계정 확인 → 폴더 만들기 → 첫 백업 */
-export async function connectDrive(clientId: string): Promise<string | undefined> {
+/**
+ * 처음 연결: 로그인 → 계정 확인 → 폴더 만들기 → (이 기기에 단어가 있으면) 첫 백업 → 다른 기기와 동기화.
+ * 다른 기기에서 이미 쓰던 Drive면 그 데이터를 이 기기로 불러온다.
+ */
+export async function connectDrive(clientId: string): Promise<{ email?: string; sync?: SyncResult }> {
   const token = await getAccessToken(clientId, { forceConsent: true });
   const email = await userEmail(token);
   const folderId = await ensureFolder(token);
   await saveSettings({ googleDrive: { clientId, email, folderId } });
-  await backupToDrive();
-  return email;
+  if ((await exportBackup()).notes.length) await backupToDrive();
+  const sync = await syncWithDrive({ interactive: true });
+  return { email, sync };
 }
 
 export async function backupToDrive(): Promise<void> {

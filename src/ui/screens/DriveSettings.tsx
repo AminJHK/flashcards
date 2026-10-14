@@ -3,7 +3,8 @@ import type { Settings } from '../../core/model/types';
 import { forgetToken } from '../../adapters/google/auth';
 import type { DriveFile } from '../../adapters/google/drive';
 import { saveSettings } from '../../adapters/storage/repo';
-import { Row } from '../components/Controls';
+import { Row, Switch } from '../components/Controls';
+import { syncWithDrive } from '../driveSync';
 import { backupToDrive, connectDrive, driveErrorMessage, listDriveBackups, restoreFromDrive } from '../driveBackup';
 import { useToast } from '../toast';
 import { ask } from '../confirm';
@@ -33,8 +34,8 @@ function Setup() {
     }
     setBusy(true);
     try {
-      const email = await connectDrive(id);
-      toast(`연결했어요${email ? ` · ${email}` : ''}. 첫 백업도 했어요`);
+      const { email, sync } = await connectDrive(id);
+      toast(`연결했어요${email ? ` · ${email}` : ''}. ${sync?.hadRemote ? `다른 기기의 데이터를 불러왔어요 (단어 ${sync.notes}개)` : '이제 다른 기기에서도 이어서 할 수 있어요'}`);
     } catch (e) {
       toast(driveErrorMessage(e));
     } finally {
@@ -45,7 +46,10 @@ function Setup() {
   return (
     <div className="group">
       <Row col title="Google Drive에 백업하기 (무료)" desc="내 Google Drive의 「플래시카드 백업」 폴더에 저장돼요. 폰을 바꾸거나 브라우저 데이터가 지워져도 되살릴 수 있어요.">
-        <span className="row-desc">처음 한 번만, Google에 이 앱을 등록해야 해요 (약 5분, PC에서 하면 편해요).</span>
+        <span className="row-desc">
+          <strong>다른 기기(폰·PC)에서 이미 연결했다면</strong> 아래 1~4단계는 건너뛰세요. 그 기기의 설정 › Google Drive에서 클라이언트 ID를 복사해 맨 아래 칸에 붙여넣고 로그인하면, 그 기기의 덱과 기록을 불러와요.
+        </span>
+        <span className="row-desc">처음이라면 한 번만 Google에 이 앱을 등록해야 해요 (약 5분, PC에서 하면 편해요).</span>
         <ol style={{ margin: 0, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 14, lineHeight: 1.55 }} className="muted">
           <li>
             <a href={CONSOLE} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 600 }}>
@@ -106,7 +110,42 @@ function Connected({ s }: { s: Settings }) {
 
   return (
     <div className="group">
-      <Row title="Google Drive 백업" desc={`${d.email ?? '연결됨'} · 마지막 백업 ${when(d.lastDriveBackupAt)}`}>
+      <Row title="다른 기기와 동기화" desc={`${d.email ?? '연결됨'} · 마지막 동기화 ${when(d.lastSyncAt)}. 폰과 PC에서 같은 덱과 기록을 써요.`}>
+        <button
+          type="button"
+          className="btn-soft"
+          disabled={!!busy}
+          onClick={() =>
+            run('sync', async () => {
+              const r = await syncWithDrive({ interactive: true });
+              toast(r?.hadRemote ? `동기화했어요 · 단어 ${r.notes}개` : 'Drive에 올렸어요. 다른 기기에서 불러올 수 있어요');
+            })
+          }
+        >
+          {busy === 'sync' ? '동기화 중…' : '지금 동기화'}
+        </button>
+      </Row>
+      <Row title="앱을 열 때 로그인해서 동기화" desc="켜 두면 앱을 열 때마다 Google 로그인 화면이 먼저 나와요. 쓰는 동안에는 몇 분마다 자동으로 맞춰요.">
+        <Switch label="앱을 열 때 로그인해서 동기화" checked={d.syncOnStart !== false} onChange={(v) => void saveSettings({ googleDrive: { ...d, syncOnStart: v } })} />
+      </Row>
+      <Row col title="클라이언트 ID" desc="PC 같은 다른 기기에서 연결할 때 이 값을 붙여넣으세요.">
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <code style={{ flex: 1, minWidth: 0, padding: '8px 10px', borderRadius: 10, background: 'var(--surface2)', color: 'var(--text)', fontSize: 13, wordBreak: 'break-all', userSelect: 'all' }}>{d.clientId}</code>
+          <button
+            type="button"
+            className="btn-plain"
+            onClick={() =>
+              navigator.clipboard?.writeText(d.clientId).then(
+                () => toast('클라이언트 ID를 복사했어요'),
+                () => toast('복사하지 못했어요. 길게 눌러 직접 복사해 주세요'),
+              )
+            }
+          >
+            복사
+          </button>
+        </div>
+      </Row>
+      <Row title="Google Drive 백업" desc={`마지막 백업 ${when(d.lastDriveBackupAt)}`}>
         <button type="button" className="btn-soft" disabled={!!busy} onClick={() => run('backup', async () => (await backupToDrive(), toast('Google Drive에 백업했어요')))}>
           {busy === 'backup' ? '백업 중…' : '지금 백업'}
         </button>

@@ -111,4 +111,28 @@ describe('repo', () => {
     const visible = (await d.cards.where('deckId').equals(deck.id).toArray()).filter((c) => !c.hidden);
     expect(visible).toHaveLength(cardiacNursingZh.notes.length); // 역방향은 꺼져 있다
   });
+
+  it('동기화: 다른 기기의 단어와 복습 기록을 합치고, 지운 것은 지운 채로 두고, 카드 상태는 기록으로 다시 계산한다', async () => {
+    const deck = await repo.createDeck('HSK', settings, d);
+    const mine = await repo.addNote(deck.id, 'zh-word', { hanzi: '书', meaning: '책' }, d);
+    const gone = await repo.addNote(deck.id, 'zh-word', { hanzi: '笔', meaning: '펜' }, d);
+    const myCard = (await d.cards.where('noteId').equals(mine.id).toArray())[0]!;
+    await repo.recordReview(myCard.id, 3, undefined, d);
+
+    // 다른 기기: 같은 덱에 단어 하나를 더 넣고, 내 카드도 한 번 복습했다. 이 기기에서는 '笔'를 지운다
+    const other = new FlashcardsDB(`test-${++n}`);
+    const remote = await repo.exportSyncData(d);
+    await repo.deleteNote(gone.id, d);
+    const extra = { ...mine, id: 'other-note', fields: { ...mine.fields, hanzi: '茶', meaning: '차' } };
+    const extraCards = remote.cards.filter((c) => c.noteId === mine.id).map((c) => ({ ...c, id: `${c.id}-o`, noteId: 'other-note' }));
+    const theirLog = { id: 'their-log', cardId: myCard.id, kind: 'review' as const, rating: 3 as const, at: Date.now() + 60_000, tzOffsetMin: 0, scheduler: 'x' };
+    const merged = await repo.mergeIntoLocal({ ...remote, notes: [...remote.notes, extra], cards: [...remote.cards, ...extraCards], reviewLogs: [...remote.reviewLogs, theirLog] }, d);
+
+    const notes = await d.notes.toArray();
+    expect(notes.map((x) => x.fields.hanzi).sort()).toEqual(['书', '茶']);
+    expect(await d.reviewLogs.count()).toBe(2);
+    expect((await d.cards.get(myCard.id))!.reps).toBe(2);
+    expect(merged.tombstones.map((t) => t.id)).toContain(gone.id);
+    other.close();
+  });
 });

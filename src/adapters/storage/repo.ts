@@ -11,6 +11,7 @@ import { createScheduler } from '../../core/scheduler/registry';
 import type { Scheduler } from '../../core/scheduler/types';
 import { db, type FlashcardsDB } from './db';
 import type { PackChange } from '../../core/packs/update';
+import { mergeSync, type SyncData } from '../../core/io/sync';
 
 /**
  * 저장소 작업 모음. 화면은 db를 직접 고치지 않고 여기 함수만 부른다.
@@ -45,7 +46,7 @@ export async function updateDeck(id: Id, patch: { name?: string; settings?: Part
   await d.transaction('rw', [d.decks, d.notes, d.cards, d.settings], async () => {
     const deck = await d.decks.get(id);
     if (!deck) return;
-    const next: Deck = { ...deck, name: patch.name?.trim() || deck.name, settings: { ...deck.settings, ...patch.settings } };
+    const next: Deck = { ...deck, name: patch.name?.trim() || deck.name, settings: { ...deck.settings, ...patch.settings }, updatedAt: Date.now() };
     await d.decks.put(next);
     if (next.settings.reverseEnabled !== deck.settings.reverseEnabled || next.settings.forwardEnabled !== deck.settings.forwardEnabled) {
       const sched = schedulerFor(await getSettings(d));
@@ -59,7 +60,11 @@ export async function updateDeck(id: Id, patch: { name?: string; settings?: Part
 }
 
 export async function deleteDeck(id: Id, d: FlashcardsDB = db): Promise<void> {
-  await d.transaction('rw', [d.decks, d.notes, d.cards], async () => {
+  await d.transaction('rw', [d.decks, d.notes, d.cards, d.tombstones], async () => {
+    // 다른 기기와 동기화할 때 되살아나지 않게 지운 흔적을 남긴다
+    const at = Date.now();
+    const noteIds = (await d.notes.where('deckId').equals(id).primaryKeys()) as Id[];
+    await d.tombstones.bulkPut([{ id, kind: 'deck', at }, ...noteIds.map((n) => ({ id: n, kind: 'note' as const, at }))]);
     await d.cards.where('deckId').equals(id).delete();
     await d.notes.where('deckId').equals(id).delete();
     await d.decks.delete(id);
@@ -108,7 +113,8 @@ export async function updateNote(
 
 /** 노트와 카드를 지운다. 복습 로그는 남긴다 (나중에 파라미터 최적화에 쓸 수 있음). */
 export async function deleteNote(id: Id, d: FlashcardsDB = db): Promise<void> {
-  await d.transaction('rw', [d.notes, d.cards], async () => {
+  await d.transaction('rw', [d.notes, d.cards, d.tombstones], async () => {
+    await d.tombstones.put({ id, kind: 'note', at: Date.now() });
     await d.cards.where('noteId').equals(id).delete();
     await d.notes.delete(id);
   });
@@ -163,7 +169,8 @@ export async function applyPackChanges(changes: readonly PackChange[], d: Flashc
 
 /** "되돌리기"용: 방금 만든 노트를 그대로 되살린다. */
 export async function restoreNote(note: Note, cards: Card[], d: FlashcardsDB = db): Promise<void> {
-  await d.transaction('rw', [d.notes, d.cards], async () => {
+  await d.transaction('rw', [d.notes, d.cards, d.tombstones], async () => {
+    await d.tombstones.delete(note.id);
     await d.notes.put(note);
     await d.cards.bulkPut(cards);
   });
@@ -260,4 +267,46 @@ export async function importBackup(b: Backup, d: FlashcardsDB = db): Promise<voi
     await d.reviewLogs.bulkAdd(b.reviewLogs);
   });
   await rebuildAll(d);
+}
+
+// ---------------- 기기 사이 동기화 ----------------
+
+export async function exportSyncData(d: FlashcardsDB = db): Promise<SyncData> {
+  const [decks, notes, cards, reviewLogs, tombstones] = await Promise.all([d.decks.toArray(), d.notes.toArray(), d.cards.toArray(), d.reviewLogs.toArray(), d.tombstones.toArray()]);
+  return { decks, notes, cards, reviewLogs, tombstones };
+}
+
+/**
+ * 다른 기기의 자료를 이 기기에 합친다 (mergeSync). 합치는 동안 생긴 이 기기의 변경도 잃지 않도록
+ * 지금 저장된 것을 한 트랜잭션 안에서 다시 읽어서 합친다. 반환값은 합친 결과 (Drive에 올릴 것).
+ */
+export async function mergeIntoLocal(remote: SyncData, d: FlashcardsDB = db): Promise<SyncData> {
+  const merged = await d.transaction('rw', [d.decks, d.notes, d.cards, d.reviewLogs, d.tombstones, d.settings], async () => {
+    const local = await exportSyncData(d);
+    const m = mergeSync(local, remote);
+    const sched = schedulerFor(await getSettings(d));
+    const now = Date.now();
+    const keep = <T extends { id: Id }>(xs: T[]) => new Set(xs.map((x) => x.id));
+    const gone = <T extends { id: Id }>(before: T[], after: T[]) => {
+      const ids = keep(after);
+      return before.filter((x) => !ids.has(x.id)).map((x) => x.id);
+    };
+    await d.decks.bulkDelete(gone(local.decks, m.decks));
+    await d.notes.bulkDelete(gone(local.notes, m.notes));
+    await d.cards.bulkDelete(gone(local.cards, m.cards));
+    await d.decks.bulkPut(m.decks);
+    await d.notes.bulkPut(m.notes);
+    await d.cards.bulkPut(m.cards.map((c) => ({ ...c, schedulerId: undefined })));
+    await d.reviewLogs.bulkPut(m.reviewLogs);
+    await d.tombstones.bulkPut(m.tombstones);
+    // 카드 구성 맞추기 (덱 설정에 따른 숨김, 빠진 카드 만들기)
+    const deckById = new Map(m.decks.map((x) => [x.id, x]));
+    const cardsByNote = new Map<Id, Card[]>();
+    for (const c of m.cards) cardsByNote.set(c.noteId, [...(cardsByNote.get(c.noteId) ?? []), c]);
+    const fixed = m.notes.flatMap((n) => cardsForNote(n, cardsByNote.get(n.id) ?? [], deckById.get(n.deckId)!, now, sched));
+    if (fixed.length) await d.cards.bulkPut(fixed);
+    return m;
+  });
+  await rebuildAll(d);
+  return { ...merged, cards: await d.cards.toArray() };
 }

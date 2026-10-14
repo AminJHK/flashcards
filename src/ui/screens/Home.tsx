@@ -3,6 +3,7 @@ import { getCardType } from '../../core/cardTypes/registry';
 import { buildQueue } from '../../core/scheduler/queue';
 import { daysSince, runBackup } from '../backup';
 import { backupToDrive, driveBackupDue, driveErrorMessage } from '../driveBackup';
+import { syncWithDrive } from '../driveSync';
 import { weekColumns } from '../../core/stats/heatmap';
 import { durationLabel, Heatmap, HeatmapNumbers } from '../components/Heatmap';
 import { Icon } from '../components/Icon';
@@ -51,6 +52,27 @@ export function Home() {
             첫 덱 만들기
           </button>
           <span className="faint small">준비된 덱(심장 병동 간호 중국어)도 있어요.</span>
+        </div>
+        <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 20 }}>
+          <strong style={{ fontSize: 17 }}>다른 기기에서 쓰던 덱이 있나요?</strong>
+          <span className="muted small" style={{ lineHeight: 1.6 }}>
+            폰이나 PC에서 Google Drive를 연결해 두었다면, 여기서도 Google로 로그인해서 덱과 복습 기록을 그대로 불러올 수 있어요.
+          </span>
+          <button
+            type="button"
+            className="btn btn-plain"
+            style={{ height: 52 }}
+            onClick={() =>
+              settings.googleDrive?.clientId
+                ? void syncWithDrive({ interactive: true }).then(
+                    (r) => toast(r?.hadRemote ? `불러왔어요 · 단어 ${r.notes}개` : 'Drive에 불러올 데이터가 없어요'),
+                    (e) => toast(driveErrorMessage(e)),
+                  )
+                : go('settings')
+            }
+          >
+            Google로 불러오기
+          </button>
         </div>
       </div>
     );

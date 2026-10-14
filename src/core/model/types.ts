@@ -26,6 +26,8 @@ export interface Deck {
   id: Id;
   name: string;
   createdAt: Millis;
+  /** 이름·설정을 마지막으로 바꾼 시각 (기기 사이 동기화에서 더 새것을 고를 때). 없으면 createdAt */
+  updatedAt?: Millis;
   settings: DeckSettings;
 }
 
@@ -124,6 +126,10 @@ export interface GoogleDriveSettings {
   email?: string;
   folderId?: string;
   lastDriveBackupAt?: Millis;
+  /** 마지막으로 다른 기기와 동기화한 시각 */
+  lastSyncAt?: Millis;
+  /** 앱을 열 때 Google 로그인해서 동기화할지 (없으면 켜짐) */
+  syncOnStart?: boolean;
 }
 
 export interface GeminiSettings {
@@ -135,6 +141,16 @@ export interface GeminiSettings {
   useTts: boolean;
   /** 말하기 답을 Gemini로 받아쓰기 */
   useStt: boolean;
+}
+
+/**
+ * 지운 덱·단어의 흔적. 기기 사이 동기화에서 "다른 기기에는 아직 있는 것"을 되살리지 않으려고 남긴다.
+ * 덱을 지우면 그 덱의 단어도 각각 남긴다.
+ */
+export interface Tombstone {
+  id: Id;
+  kind: 'deck' | 'note';
+  at: Millis;
 }
 
 /** 저장된 음성 파일 (다시 만들 수 있으므로 백업하지 않는다) */

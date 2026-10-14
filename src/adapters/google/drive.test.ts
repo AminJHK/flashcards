@@ -27,8 +27,11 @@ describe('Google Drive', () => {
     expect(init.body).toContain('{"a":1}');
   });
 
-  it('오래된 백업은 지우고 최근 것만 남긴다', async () => {
-    const files = Array.from({ length: 5 }, (_, i) => ({ id: `f${i}`, name: `${i}`, createdTime: '' }));
+  it('오래된 백업은 지우고 최근 것만 남긴다 (동기화 파일은 건드리지 않는다)', async () => {
+    const files = [
+      ...Array.from({ length: 5 }, (_, i) => ({ id: `f${i}`, name: `flashcards-backup-2026101${i}-0900.json`, createdTime: '' })),
+      { id: 'sync', name: 'flashcards-sync.json', createdTime: '' },
+    ];
     const f = vi.fn().mockResolvedValueOnce(json(200, { files })).mockResolvedValue(new Response(null, { status: 204 }));
     vi.stubGlobal('fetch', f);
     expect(await pruneBackups('T', 'FOLDER', 3)).toBe(2);

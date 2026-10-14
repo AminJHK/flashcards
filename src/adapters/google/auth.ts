@@ -87,6 +87,11 @@ export async function getAccessToken(clientId: string, opts: { forceConsent?: bo
   return withTimeout(token, 180_000, 'Google 로그인이 끝나지 않았어요. 다시 시도해 주세요');
 }
 
+/** 로그인 창 없이 쓸 수 있는 토큰이 지금 있으면 돌려준다 (자동 동기화용) */
+export function peekToken(clientId: string): string | undefined {
+  return cached && cached.clientId === clientId && cached.expiresAt > Date.now() + 60_000 ? cached.token : undefined;
+}
+
 export function forgetToken(): void {
   if (cached && window.google?.accounts?.oauth2) window.google.accounts.oauth2.revoke(cached.token);
   cached = undefined;

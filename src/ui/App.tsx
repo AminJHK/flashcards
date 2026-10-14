@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { requestPersistence } from '../adapters/files/share';
 import { dropStaleClips } from '../adapters/speech/speech';
 import { enterFullscreen, exitFullscreen } from '../adapters/display/fullscreen';
@@ -13,6 +13,8 @@ import { Settings } from './screens/Settings';
 import { Stats } from './screens/Stats';
 import { applyTheme } from './theme';
 import { ConfirmHost, ErrorBoundary } from './confirm';
+import { StartSync } from './StartSync';
+import { syncWithDrive } from './driveSync';
 import { ToastProvider, useToast } from './toast';
 
 export function App() {
@@ -29,6 +31,30 @@ export function App() {
     mq.addEventListener('change', h);
     return () => mq.removeEventListener('change', h);
   }, [settings]);
+
+  // 시작할 때 Google 로그인 → 동기화 (Drive를 연결한 기기에서, 켜 둔 경우). 한 번 지나가면 이번 실행 동안은 다시 묻지 않는다
+  // (앱을 연 순간의 설정으로 한 번만 정한다. 쓰는 중에 Drive를 연결해도 시작 화면이 다시 뜨지 않게)
+  const [gate, setGate] = useState<boolean>();
+  useEffect(() => {
+    if (settings && gate === undefined) setGate(!!settings.googleDrive?.clientId && settings.googleDrive.syncOnStart !== false);
+  }, [settings, gate]);
+  const askSync = gate ?? (!!settings?.googleDrive?.clientId && settings.googleDrive.syncOnStart !== false);
+
+  // 쓰는 동안 자동 동기화: 5분마다, 그리고 앱이 뒤로 갈 때. 로그인 창은 띄우지 않는다 (받아 둔 토큰이 있을 때만)
+  const driveOn = !!settings?.googleDrive?.clientId;
+  useEffect(() => {
+    if (!driveOn) return;
+    const quiet = () => void syncWithDrive({ interactive: false }).catch(() => {});
+    const t = setInterval(quiet, 5 * 60_000);
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') quiet();
+    };
+    document.addEventListener('visibilitychange', onHide);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener('visibilitychange', onHide);
+    };
+  }, [driveOn]);
 
   // 전체 화면: 브라우저는 탭할 때만 허락하므로, 켜져 있으면 탭할 때마다 확인한다
   const full = settings?.immersive;
@@ -54,6 +80,17 @@ export function App() {
   const inReview = a === 'review';
   const editingNote = a === 'notes' && c === 'edit';
   const tab = a === 'add' ? 'add' : a === 'decks' ? 'decks' : a === 'settings' ? 'settings' : a === undefined || a === 'stats' ? '' : null;
+
+  if (settings && askSync) {
+    return (
+      <div className="app">
+        <ToastProvider high>
+          <StartSync s={settings} onDone={() => setGate(false)} />
+          <ConfirmHost />
+        </ToastProvider>
+      </div>
+    );
+  }
 
   let screen;
   if (inReview) screen = <Review key={b ?? 'all'} deckId={b} />;

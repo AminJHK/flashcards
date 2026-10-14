@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { AudioClip, Card, Deck, Note, ReviewLog, Settings } from '../../core/model/types';
+import type { AudioClip, Card, Deck, Note, ReviewLog, Settings, Tombstone } from '../../core/model/types';
 
 export class FlashcardsDB extends Dexie {
   decks!: EntityTable<Deck, 'id'>;
@@ -8,6 +8,7 @@ export class FlashcardsDB extends Dexie {
   reviewLogs!: EntityTable<ReviewLog, 'id'>;
   settings!: EntityTable<Settings, 'id'>;
   audio!: EntityTable<AudioClip, 'key'>;
+  tombstones!: EntityTable<Tombstone, 'id'>;
 
   constructor(name = 'flashcards') {
     super(name);
@@ -19,6 +20,7 @@ export class FlashcardsDB extends Dexie {
       settings: 'id',
     });
     this.version(2).stores({ audio: 'key, createdAt' });
+    this.version(3).stores({ tombstones: 'id, at' });
   }
 }
 

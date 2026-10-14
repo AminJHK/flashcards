@@ -85,10 +85,27 @@ export async function uploadJson(token: string, folderId: string, name: string, 
   });
 }
 
+/** 백업 파일 목록 (동기화 파일은 빼고, 최신순) */
 export async function listBackups(token: string, folderId: string): Promise<DriveFile[]> {
   const q = encodeURIComponent(`'${folderId}' in parents and trashed=false and mimeType='application/json'`);
   const r = await call<{ files: DriveFile[] }>(token, `${API}/files?q=${q}&orderBy=createdTime desc&pageSize=50&fields=files(id,name,createdTime,size)`);
-  return r.files;
+  return r.files.filter((f) => f.name.startsWith('flashcards-backup-'));
+}
+
+/** 폴더 안에서 이름으로 파일을 찾는다 */
+export async function findFile(token: string, folderId: string, name: string): Promise<DriveFile | undefined> {
+  const q = encodeURIComponent(`'${folderId}' in parents and trashed=false and name='${name}'`);
+  const r = await call<{ files: DriveFile[] }>(token, `${API}/files?q=${q}&pageSize=1&fields=files(id,name,createdTime,size)`);
+  return r.files[0];
+}
+
+/** 이미 있는 파일의 내용을 바꾼다 */
+export async function updateText(token: string, fileId: string, text: string): Promise<void> {
+  await call<unknown>(token, `${UPLOAD}/files/${fileId}?uploadType=media&fields=id`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: text,
+  });
 }
 
 export function downloadText(token: string, fileId: string): Promise<string> {
