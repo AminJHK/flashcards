@@ -114,15 +114,15 @@ test('폰에서 공부한 덱과 기록을 PC에서 Google로 로그인해 그�
   // 폰에서 단어 하나를 지운다 → 다시 동기화
   await phone.goto('/#/decks');
   await phone.getByRole('button', { name: /인도네시아어 구어체/ }).click();
-  await phone.getByRole('button', { name: /단어 100개 보기/ }).click();
+  await phone.getByRole('button', { name: /단어 500개 보기/ }).click();
   await phone.getByLabel('단어 찾기').fill('mahal');
   await phone.getByRole('button', { name: /mahal/ }).click();
   await phone.getByRole('button', { name: '이 단어 지우기' }).click();
   await phone.getByRole('alertdialog').getByRole('button', { name: '지우기' }).click();
-  await expect(phone.getByRole('heading', { name: '단어 99개' })).toBeVisible();
+  await expect(phone.getByRole('heading', { name: '단어 499개' })).toBeVisible();
   await phone.goto('/#/settings');
   await phone.getByRole('button', { name: '지금 동기화' }).click();
-  await expect(phone.getByText(/동기화했어요 · 단어 99개/)).toBeVisible();
+  await expect(phone.getByText(/동기화했어요 · 단어 499개/)).toBeVisible();
 
   // PC: 처음 여는 브라우저. 같은 클라이언트 ID로 로그인하면 폰의 덱과 기록을 불러온다
   const pc = await browser.newPage();
@@ -132,7 +132,7 @@ test('폰에서 공부한 덱과 기록을 PC에서 Google로 로그인해 그�
   await pc.getByRole('button', { name: 'Google로 불러오기' }).click();
   await pc.getByLabel('Google 클라이언트 ID').fill('123-abc.apps.googleusercontent.com');
   await pc.getByRole('button', { name: 'Google로 로그인' }).click();
-  await expect(pc.getByText(/다른 기기의 데이터를 불러왔어요 \(단어 99개\)/)).toBeVisible();
+  await expect(pc.getByText(/다른 기기의 데이터를 불러왔어요 \(단어 499개\)/)).toBeVisible();
   await pc.goto('/#/stats');
   await expect(pc.getByText('2026년').or(pc.getByText(/\d{4}년/)).first()).toBeVisible();
   await expect(pc.getByText(/· 1장/)).toBeVisible(); // 폰에서 한 복습 기록
@@ -152,7 +152,7 @@ test('폰에서 공부한 덱과 기록을 PC에서 Google로 로그인해 그�
   await expect(phone.getByRole('button', { name: 'Google로 로그인하고 시작' })).toBeVisible();
   await phone.screenshot({ path: 'test-results/shots/23-start-sync.png' });
   await phone.getByRole('button', { name: 'Google로 로그인하고 시작' }).click();
-  await expect(phone.getByText(/불러왔어요 · 단어 99개/)).toBeVisible();
+  await expect(phone.getByText(/불러왔어요 · 단어 499개/)).toBeVisible();
   await phone.goto('/#/stats');
   await expect(phone.getByText(/· 2장/)).toBeVisible();
 });

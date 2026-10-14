@@ -139,7 +139,7 @@ test('준비된 덱이 고쳐지면 덱 화면에서 받을 수 있고, 내가 �
 test('인도네시아어 구어체 덱: 말하는 형태를 보고, 뒷면에서 표준형·어근·예문을 본다', async ({ page }) => {
   await page.goto('/#/decks/new');
   const panel = page.locator('.panel', { hasText: '인도네시아어 구어체' });
-  await expect(panel).toContainText('단어 100개');
+  await expect(panel).toContainText('단어 500개');
   await panel.getByRole('button', { name: '이 덱 추가하기' }).click();
   await expect(page.getByLabel('덱 이름')).toHaveValue('인도네시아어 구어체');
   await page.getByRole('button', { name: '이 덱 복습' }).click();
@@ -152,9 +152,52 @@ test('인도네시아어 구어체 덱: 말하는 형태를 보고, 뒷면에서
   await expect(page.getByText('kamu', { exact: true })).toBeVisible();
   // 표준형·어근이 있는 동사: 단어 목록에서 찾아 확인
   await page.getByRole('button', { name: '복습 닫기' }).click();
-  await page.getByRole('button', { name: /단어 100개 보기/ }).click();
+  await page.getByRole('button', { name: /단어 500개 보기/ }).click();
   await page.getByLabel('단어 찾기').fill('nyari');
   await page.getByRole('button', { name: /nyari/ }).click();
   await expect(page.getByLabel('표준형')).toHaveValue('mencari');
   await expect(page.getByLabel('어근')).toHaveValue('cari');
+});
+
+test('예전에 100장만 받은 인도네시아어 덱: 새 단어 400개를 받으면 뒤에 이어서 들어가고, 복습 기록은 그대로다', async ({ page }) => {
+  await page.goto('/#/decks/new');
+  await page.locator('.panel', { hasText: '인도네시아어 구어체' }).getByRole('button', { name: '이 덱 추가하기' }).click();
+  await expect(page.getByLabel('덱 이름')).toHaveValue('인도네시아어 구어체');
+  // 첫 카드 하나 복습
+  await page.getByRole('button', { name: '이 덱 복습' }).click();
+  await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
+  await page.getByRole('button', { name: /알았음/ }).click();
+  await expect(page.getByText('kamu', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '복습 닫기' }).click();
+  // 예전 버전처럼 앞의 100장만 남긴다 (DB에서 바로 지워서 "사용자가 지운 단어" 기록은 남기지 않는다)
+  await page.evaluate(
+    () =>
+      new Promise<void>((done) => {
+        const open = indexedDB.open('flashcards');
+        open.onsuccess = () => {
+          const tx = open.result.transaction(['notes', 'cards'], 'readwrite');
+          const notes = tx.objectStore('notes');
+          notes.getAll().onsuccess = (e) => {
+            const all = ((e.target as IDBRequest).result as { id: string; createdAt: number }[]).sort((a, b) => a.createdAt - b.createdAt);
+            const drop = new Set(all.slice(100).map((n) => n.id));
+            for (const id of drop) notes.delete(id);
+            const cards = tx.objectStore('cards');
+            cards.getAll().onsuccess = (ev) => {
+              for (const c of (ev.target as IDBRequest).result as { id: string; noteId: string }[]) if (drop.has(c.noteId)) cards.delete(c.id);
+            };
+          };
+          tx.oncomplete = () => done();
+        };
+      }),
+  );
+  await page.reload();
+  await expect(page.getByRole('button', { name: /단어 100개 보기/ })).toBeVisible();
+  await expect(page.getByText('준비된 덱에 새 단어 400개가 생겼어요')).toBeVisible();
+  await page.getByRole('button', { name: '새 단어 받기' }).click();
+  await expect(page.getByText('새 단어 400개를 넣었어요')).toBeVisible();
+  await expect(page.getByRole('button', { name: /단어 500개 보기/ })).toBeVisible();
+  await expect(page.getByText(/새 단어 \d+개가 생겼어요/)).toHaveCount(0);
+  // 복습 기록은 그대로: 다음에 나오는 새 카드는 kamu (aku는 이미 복습함)
+  await page.getByRole('button', { name: '이 덱 복습' }).click();
+  await expect(page.getByText('kamu', { exact: true })).toBeVisible();
 });

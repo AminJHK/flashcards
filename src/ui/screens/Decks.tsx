@@ -5,8 +5,8 @@ import type { CardType } from '../../core/cardTypes/types';
 import type { AutoplaySide, DeckSettings } from '../../core/model/types';
 import { db } from '../../adapters/storage/db';
 import { loadPinyin } from '../../adapters/pinyin/pinyin';
-import { applyPackChanges, createDeck, deleteDeck, installPack, updateDeck } from '../../adapters/storage/repo';
-import { packChanges } from '../../core/packs/update';
+import { addPackNotes, applyPackChanges, createDeck, deleteDeck, installPack, updateDeck } from '../../adapters/storage/repo';
+import { packAdditions, packChanges } from '../../core/packs/update';
 import { PACKS } from '../../core/packs/registry';
 import type { Pack } from '../../core/packs/types';
 import { Row, Segmented, Stepper, Switch } from '../components/Controls';
@@ -219,6 +219,12 @@ export function DeckDetail({ id }: { id: string }) {
     const notes = await db.notes.where('deckId').equals(id).toArray();
     return PACKS.flatMap((p) => packChanges(p, notes));
   }, [id]);
+  // 준비된 덱에 단어가 늘었으면, 이 덱에 더 넣을 수 있는 단어들
+  const packMore = useLiveQuery(async () => {
+    const notes = await db.notes.where('deckId').equals(id).toArray();
+    return PACKS.map((pack) => ({ pack, notes: packAdditions(pack, notes) })).filter((x) => x.notes.length > 0);
+  }, [id]);
+  const [adding, setAdding] = useState(false);
   const deck = decks?.find((d) => d.id === id);
   const [name, setName] = useState<string>();
 
@@ -277,6 +283,34 @@ export function DeckDetail({ id }: { id: string }) {
           단어 {noteCount}개 보기
         </button>
       </div>
+
+      {packMore?.map(({ pack, notes }) => (
+        <div key={pack.id} className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 20 }}>
+          <span style={{ fontWeight: 600 }}>준비된 덱에 새 단어 {notes.length}개가 생겼어요</span>
+          <span className="muted small" style={{ lineHeight: 1.6 }}>
+            지금 단어 뒤에 이어서 들어가요. 지금까지의 단어와 복습 기록은 그대로예요. 새 카드는 하루 {s.newPerDay}개씩 나와요.
+          </span>
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ height: 48 }}
+            disabled={adding}
+            onClick={async () => {
+              setAdding(true);
+              try {
+                const n = await addPackNotes(deck.id, pack, notes, { pinyin: await loadPinyin() });
+                toast(`새 단어 ${n}개를 넣었어요`);
+              } catch {
+                toast('단어를 넣지 못했어요. 다시 시도해 주세요');
+              } finally {
+                setAdding(false);
+              }
+            }}
+          >
+            {adding ? '넣는 중…' : '새 단어 받기'}
+          </button>
+        </div>
+      ))}
 
       {packFixes && packFixes.length > 0 && (
         <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 20 }}>

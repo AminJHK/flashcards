@@ -112,6 +112,20 @@ describe('repo', () => {
     expect(visible).toHaveLength(cardiacNursingZh.notes.length); // 역방향은 꺼져 있다
   });
 
+  it('설치한 준비된 덱에 새 단어를 뒤에 이어서 넣는다 (새 카드도 그 뒤에 나온다)', async () => {
+    const { indonesianColloquial: full } = await import('../../core/packs/indonesianColloquial');
+    const { packAdditions } = await import('../../core/packs/update');
+    const first = { ...full, notes: full.notes.slice(0, 100) };
+    const deck = await repo.installPack(first, { pinyin: (t) => t }, d);
+    const before = await d.notes.where('deckId').equals(deck.id).toArray();
+    const more = packAdditions(full, before);
+    expect(more).toHaveLength(full.notes.length - 100);
+    expect(await repo.addPackNotes(deck.id, full, more, { pinyin: (t) => t }, d)).toBe(more.length);
+    const notes = await d.notes.where('deckId').equals(deck.id).sortBy('createdAt');
+    expect(notes.map((n) => n.fields.word)).toEqual(full.notes.map((n) => n.fields.word));
+    expect(packAdditions(full, notes)).toEqual([]);
+  });
+
   it('동기화: 다른 기기의 단어와 복습 기록을 합치고, 지운 것은 지운 채로 두고, 카드 상태는 기록으로 다시 계산한다', async () => {
     const deck = await repo.createDeck('HSK', settings, d);
     const mine = await repo.addNote(deck.id, 'zh-word', { hanzi: '书', meaning: '책' }, d);

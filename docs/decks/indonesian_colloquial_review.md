@@ -1,7 +1,8 @@
-# 인도네시아어 구어체 덱 · 첫 100장 검수 메모
+# 인도네시아어 구어체 덱 · 500장 검수 메모
 
-- 카드 파일: `indonesian_colloquial_first100.csv` (UTF-8, Anki 가져오기용, 필드 순서는 요청서 그대로)
-- 앱 안의 같은 덱: 덱 › 새 덱 › "인도네시아어 구어체 · 첫 100장" (`src/core/packs/indonesianColloquial.ts`)
+- 카드 파일: `indonesian_colloquial_500.csv` (UTF-8, Anki 가져오기용, 필드 순서는 요청서 그대로)
+- 앱 안의 같은 덱: 덱 › 새 덱 › "인도네시아어 구어체 · 500장" (`src/core/packs/indonesianColloquial.ts`)
+- 예전에 100장을 받은 덱은 덱 화면의 "새 단어 받기"로 나머지 400장을 뒤에 이어서 받는다. 복습 기록은 그대로다.
 - 빈도 근거: OpenSubtitles2018 인도네시아어 단어 빈도표 (orgtre/top-open-subtitles-sentences, `bld/top_words/id_top_words.csv`, 3만 단어)
   - 코드는 CC BY 3.0, 목록은 OpenSubtitles 코퍼스 조건을 따른다.
 
@@ -60,11 +61,28 @@
 | kok, sih, dong, deh, lho | 뜻이 문맥과 억양에 크게 좌우된다. 한국어 뜻은 대표적인 쓰임 하나만 적었다 |
 | 예문 전체 | 짧고 흔한 문장으로 썼지만 현지인이 읽어 보지 않았다 |
 
+## 101~500장 (두 번째 묶음)
+
+- 같은 빈도표에서 앞의 100장에 없는 단어를 골랐다. 기준은 첫 묶음과 같다 (번역체·극중 어휘·잡음은 빼고, 구어형이 있으면 구어형).
+- 518장을 만든 뒤, 덜 급한 추상 명사·중복형(pikir/mikir, kirim/ngirim 등)·드문 형용사 118장을 빼서 400장으로 맞췄다.
+- 순서는 **빈도순**이다. 구어형은 표준형의 순위로 세웠다 (예: cepet → cepat의 순위). 여러 단어 표현은 가장 드문 단어의 순위를 따른다. 빈도표에 없는 은어(kepo, baper, mager, cie)와 ojek은 맨 뒤.
+- 357장은 빈도표에 그 철자 그대로 있다. 43장은 없다: 구어 발음(laper, pedes, rame…), 여러 단어 표현(selamat pagi, rumah sakit…), 은어. CSV에서 `Rank_Source`가 비어 있고 `supplementary_spoken` 또는 `phrase` 태그가 붙는다.
+- 새 태그: `noun`(명사), `adverb`(부사), `number`(숫자).
+- 첫 묶음에서 극중 편향으로 미뤘던 mati는 '(기계·불이) 꺼지다' 뜻이 생활에 흔해서 넣었다. anjing, babi는 욕으로도 쓰인다는 주의를 달았다.
+- 간호 일과 겹치는 몸·증상 단어(pusing, demam, batuk, mual, napas, jantung 등)를 넣었다.
+
+### 더 확인할 것 (두 번째 묶음)
+
+| 카드 | 확인할 점 |
+|---|---|
+| kepo, baper, mager, gabut 계열 | 젊은 층 은어. 나이 든 사람과는 쓰지 않는다 |
+| bete | 어원 설명(BT, bad temper)은 흔한 설명일 뿐 확인하지 않았다 |
+| bokap, nyokap, entar, kelar | 자카르타식. 다른 지역에서는 어색할 수 있다 |
+| bareng ↔ bersama, mending ↔ lebih baik | 뜻만 대응한다 |
+| 예문 전체 | 첫 묶음과 마찬가지로 현지인이 읽어 보지 않았다 |
+
 ## 다음 단계 (요청서 9번)
 
-1. 이 100장을 직접 써 보거나 현지인에게 보여 주고, 어색한 뜻·예문·빠진 단어를 알려 주세요.
-2. 고친 기준으로 500장 단위로 늘린다. 다음 묶음 후보:
-   - 생활 명사: duit, hp, temen, cewek, cowok, warung, kantor
-   - 감정 형용사: seneng, marah, takut, males, bosen
-   - 구어 동사: ngobrol, mikir, inget, nyampe, dateng
-   - 담화표지·감탄사: gini, situ, ntar, sumpah, astaga, waduh
+1. 직접 써 보거나 현지인에게 보여 주고, 어색한 뜻·예문·빠진 단어를 알려 주세요.
+2. 더 늘릴 때는 꾸러미 맨 뒤에 붙인다 (중간에 끼우거나 순서를 바꾸면 이미 받은 덱에서 "새 단어 받기"가 어긋난다).
+   두 번째 묶음에서 뺀 118장(추상 명사, 중복형 등)이 다음 후보다.

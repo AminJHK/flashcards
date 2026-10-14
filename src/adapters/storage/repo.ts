@@ -126,28 +126,48 @@ export async function deleteNote(id: Id, d: FlashcardsDB = db): Promise<void> {
  */
 export async function installPack(pack: Pack, deps: DeriveDeps, d: FlashcardsDB = db): Promise<Deck> {
   return d.transaction('rw', [d.decks, d.notes, d.cards, d.settings], async () => {
-    const now = Date.now();
-    const deck: Deck = { id: newId(), name: pack.deckName, createdAt: now, settings: { ...pack.deckSettings } };
+    const deck: Deck = { id: newId(), name: pack.deckName, createdAt: Date.now(), settings: { ...pack.deckSettings } };
     await d.decks.add(deck);
-    const sched = schedulerFor(await getSettings(d));
-    const notes: Note[] = [];
-    const cards: Card[] = [];
-    pack.notes.forEach((pn, i) => {
-      const type = getCardType(pn.typeId);
-      let fields = { ...pn.fields };
-      for (const src of new Set(type.fields.map((f) => f.autoFrom).filter(Boolean) as string[])) {
-        const patch = type.derive?.(src, fields, deps) ?? {};
-        // 꾸러미에 직접 적힌 값이 있으면 그걸 쓴다
-        fields = { ...fields, ...Object.fromEntries(Object.entries(patch).filter(([k]) => !fields[k]?.trim())) };
-      }
-      const made = createNote(deck, pn.typeId, fields, now + i, sched);
-      notes.push({ ...made.note, tags: [...pn.tags, `pack:${pack.id}`] });
-      cards.push(...made.cards);
-    });
-    await d.notes.bulkAdd(notes);
-    await d.cards.bulkAdd(cards);
+    await addPackNotesTo(deck, pack, pack.notes, deps, d);
     return deck;
   });
+}
+
+/** 준비된 덱에 새로 생긴 단어를 이미 설치한 덱의 뒤에 넣는다 (packAdditions 참고). 넣은 개수를 돌려준다. */
+export async function addPackNotes(deckId: Id, pack: Pack, notes: Pack['notes'], deps: DeriveDeps, d: FlashcardsDB = db): Promise<number> {
+  return d.transaction('rw', [d.decks, d.notes, d.cards, d.settings], async () => {
+    const deck = await d.decks.get(deckId);
+    if (!deck) throw new Error('덱이 없어요');
+    return addPackNotesTo(deck, pack, notes, deps, d);
+  });
+}
+
+async function addPackNotesTo(deck: Deck, pack: Pack, packNotes: Pack['notes'], deps: DeriveDeps, d: FlashcardsDB): Promise<number> {
+  // 덱에 이미 있는 단어보다 항상 뒤에 오도록 (방금 설치한 덱이면 시각이 겹칠 수 있다)
+  let last = 0;
+  await d.notes.where('deckId').equals(deck.id).each((n) => {
+    last = Math.max(last, n.createdAt);
+  });
+  const now = Math.max(Date.now(), last + 1);
+  const sched = schedulerFor(await getSettings(d));
+  const notes: Note[] = [];
+  const cards: Card[] = [];
+  packNotes.forEach((pn, i) => {
+    const type = getCardType(pn.typeId);
+    let fields = { ...pn.fields };
+    for (const src of new Set(type.fields.map((f) => f.autoFrom).filter(Boolean) as string[])) {
+      const patch = type.derive?.(src, fields, deps) ?? {};
+      // 꾸러미에 직접 적힌 값이 있으면 그걸 쓴다
+      fields = { ...fields, ...Object.fromEntries(Object.entries(patch).filter(([k]) => !fields[k]?.trim())) };
+    }
+    // 시각을 하나씩 늘려서 새 카드가 꾸러미 순서대로 나오게 한다
+    const made = createNote(deck, pn.typeId, fields, now + i, sched);
+    notes.push({ ...made.note, tags: [...pn.tags, `pack:${pack.id}`] });
+    cards.push(...made.cards);
+  });
+  await d.notes.bulkAdd(notes);
+  await d.cards.bulkAdd(cards);
+  return notes.length;
 }
 
 /**
