@@ -190,6 +190,14 @@ select:focus-visible {
   color: var(--text3);
 }
 
+/* 긴 설명은 두 줄까지만 */
+.clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* ---------- 버튼 ---------- */
 .btn {
   height: 58px;

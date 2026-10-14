@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('덱별 기억 상태: 덱 목록·덱 화면·복습 기록에 막대와 기억 확률이 보인다', async ({ page }) => {
   await page.goto('/#/decks/new');
-  await page.locator('.panel', { hasText: '여행 스페인어' }).getByRole('button', { name: '이 덱 추가하기' }).click();
+  await page.getByRole('button', { name: /^여행 스페인어.* 추가하기$/ }).click();
   await expect(page.getByLabel('덱 이름')).toHaveValue('여행 스페인어');
   await expect(page.getByText('아직 복습한 카드가 없어요')).toBeVisible();
 
@@ -35,7 +35,7 @@ test('덱별 기억 상태: 덱 목록·덱 화면·복습 기록에 막대와 �
 
 test('단어 목록: 단어마다 기억 단계·확률·다음 복습이 보이고, 약한 순으로 정렬된다', async ({ page }) => {
   await page.goto('/#/decks/new');
-  await page.locator('.panel', { hasText: '여행 스페인어' }).getByRole('button', { name: '이 덱 추가하기' }).click();
+  await page.getByRole('button', { name: /^여행 스페인어.* 추가하기$/ }).click();
   await expect(page.getByLabel('덱 이름')).toHaveValue('여행 스페인어');
   await page.getByRole('button', { name: '이 덱 복습' }).click();
   // 첫 단어(la casa)는 다시, 두 번째(ir)는 알았음

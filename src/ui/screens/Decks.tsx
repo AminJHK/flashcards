@@ -120,22 +120,85 @@ function PackCard({ pack }: { pack: Pack }) {
   };
 
   return (
-    <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 20 }}>
-      <span style={{ fontSize: 17, fontWeight: 600 }}>{pack.name}</span>
-      <span className="muted small" style={{ lineHeight: 1.55 }}>
-        {pack.description}
+    <div className="row" style={{ alignItems: 'flex-start' }}>
+      <span className="row-text">
+        <span className="row-title">{pack.name}</span>
+        <span className="row-desc clamp-2">{pack.description}</span>
+        <span className="row-desc">
+          {speak + listen ? `말하기 ${speak}문장 · 듣기 ${listen}문장` : `단어 ${pack.notes.length}개`} · 하루 {pack.deckSettings.newPerDay}개씩 약 {days}일
+        </span>
       </span>
-      <span className="faint small">
-        {speak + listen ? `말하기 ${speak}문장 · 듣기 ${listen}문장` : `단어 ${pack.notes.length}개`} · 하루 {pack.deckSettings.newPerDay}개씩 약 {days}일
-      </span>
-      <button type="button" className="btn btn-primary" style={{ height: 52 }} onClick={install} disabled={busy}>
-        {busy ? '넣는 중…' : '이 덱 추가하기'}
+      <button type="button" className="btn-soft" style={{ border: 'none', marginTop: 2 }} onClick={install} disabled={busy} aria-label={`${pack.name} 추가하기`}>
+        {busy ? '넣는 중…' : '추가'}
       </button>
     </div>
   );
 }
 
+interface InstalledPack {
+  deckId: string;
+  deckName: string;
+  /** 이 덱에 아직 안 들어간 꾸러미의 새 단어 */
+  more: Pack['notes'];
+}
+
+/** 준비된 덱 중 이미 설치한 것: 그 꾸러미 단어가 가장 많이 든 덱 */
+function useInstalledPacks(): Map<string, InstalledPack> | undefined {
+  const decks = useDecks();
+  const notes = useLiveQuery(() => db.notes.toArray(), []);
+  return useMemo(() => {
+    if (!decks || !notes) return undefined;
+    const out = new Map<string, InstalledPack>();
+    for (const pack of PACKS) {
+      const tag = `pack:${pack.id}`;
+      const byDeck = new Map<string, typeof notes>();
+      for (const n of notes) if (n.tags.includes(tag)) byDeck.set(n.deckId, [...(byDeck.get(n.deckId) ?? []), n]);
+      const best = [...byDeck].sort((a, b) => b[1].length - a[1].length)[0];
+      const deck = best && decks.find((d) => d.id === best[0]);
+      if (deck) out.set(pack.id, { deckId: deck.id, deckName: deck.name, more: packAdditions(pack, best[1]) });
+    }
+    return out;
+  }, [decks, notes]);
+}
+
+/** 이미 추가한 준비된 덱: 한 줄로. 꾸러미에 새 단어가 생겼으면 그 덱에 바로 넣는다 */
+function InstalledPackRow({ pack, info }: { pack: Pack; info: InstalledPack }) {
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const add = async () => {
+    setBusy(true);
+    try {
+      const n = await addPackNotes(info.deckId, pack, info.more, { pinyin: await loadPinyin() });
+      toast(`「${info.deckName}」 덱에 새 단어 ${n}개를 넣었어요`);
+    } catch {
+      toast('단어를 넣지 못했어요. 다시 시도해 주세요');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="row" style={{ flexWrap: 'wrap' }}>
+      <span className="row-text">
+        <span className="row-title">{pack.name}</span>
+        <span className="row-desc">{info.more.length ? `「${info.deckName}」 덱에 새 단어 ${info.more.length}개를 넣을 수 있어요` : `「${info.deckName}」 덱으로 추가했어요`}</span>
+      </span>
+      {info.more.length > 0 ? (
+        <button type="button" className="btn-soft" style={{ border: 'none' }} disabled={busy} onClick={add}>
+          {busy ? '넣는 중…' : '기존 덱에 넣기'}
+        </button>
+      ) : (
+        <button type="button" className="btn-plain" style={{ border: 'none' }} onClick={() => go(`decks/${info.deckId}`)}>
+          열기
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function DeckNew() {
+  const installed = useInstalledPacks();
+  const fresh = PACKS.filter((p) => installed && !installed.has(p.id));
+  const done = PACKS.filter((p) => installed?.has(p.id));
   const [preset, setPreset] = useState(PRESETS[0]!);
   const [name, setName] = useState(PRESETS[0]!.name);
   const toast = useToast();
@@ -160,10 +223,26 @@ export function DeckNew() {
         <div className="screen-head">
           <h1 className="title">새 덱</h1>
         </div>
-        <span className="section-label">준비된 덱</span>
-        {PACKS.map((p) => (
-          <PackCard key={p.id} pack={p} />
-        ))}
+        {fresh.length > 0 && <span className="section-label">준비된 덱</span>}
+        {fresh.length > 0 && (
+          <div className="group">
+            {fresh.map((p) => (
+              <PackCard key={p.id} pack={p} />
+            ))}
+          </div>
+        )}
+        {done.length > 0 && (
+          <>
+            <span className="section-label" style={{ paddingTop: 8 }}>
+              이미 추가한 준비된 덱
+            </span>
+            <div className="group">
+              {done.map((p) => (
+                <InstalledPackRow key={p.id} pack={p} info={installed!.get(p.id)!} />
+              ))}
+            </div>
+          </>
+        )}
         <span className="section-label" style={{ paddingTop: 8 }}>
           빈 덱 만들기
         </span>

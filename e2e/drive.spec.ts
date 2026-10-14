@@ -99,7 +99,7 @@ test('폰에서 공부한 덱과 기록을 PC에서 Google로 로그인해 그�
   await fakeGoogle(phone, drive);
   // 폰: 덱을 넣고 한 장 복습, Drive 연결 (연결하면 동기화 파일이 올라간다)
   await phone.goto('/#/decks/new');
-  await phone.locator('.panel', { hasText: '인도네시아어 구어체' }).getByRole('button', { name: '이 덱 추가하기' }).click();
+  await phone.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
   await expect(phone.getByRole('button', { name: '이 덱 복습' })).toBeVisible();
   await phone.getByRole('button', { name: '이 덱 복습' }).click();
   await phone.getByRole('button', { name: '정답 보기', exact: true }).last().click();

@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('긴 화면에서도 버튼·찾기 칸이 줄어들지 않고, 카드 종류 버튼은 잘리지 않는다', async ({ page }) => {
   await page.goto('/#/decks/new');
-  await page.locator('.panel', { hasText: '여행 스페인어' }).getByRole('button', { name: '이 덱 추가하기' }).click();
+  await page.getByRole('button', { name: /^여행 스페인어.* 추가하기$/ }).click();
   await expect(page.getByLabel('덱 이름')).toHaveValue('여행 스페인어');
 
   const del = page.getByRole('button', { name: '덱 지우기' });

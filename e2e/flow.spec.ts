@@ -135,7 +135,7 @@ test('백업 내보내기 → 복원', async ({ page }) => {
 
 test('저장이 느려도 누르는 즉시 다음 카드로 넘어가고, 방금 답한 카드는 다시 나오지 않는다', async ({ page }) => {
   await page.goto('/#/decks/new');
-  await page.locator('.panel', { hasText: '인도네시아어 구어체' }).getByRole('button', { name: '이 덱 추가하기' }).click();
+  await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
   await expect(page.getByRole('button', { name: '이 덱 복습' })).toBeVisible();
   await page.getByRole('button', { name: '이 덱 복습' }).click();
   await expect(page.getByText('aku', { exact: true })).toBeVisible();
@@ -171,7 +171,7 @@ test('저장이 느려도 누르는 즉시 다음 카드로 넘어가고, 방금
 
 test('PC 키보드: 스페이스로 정답을 보고, 1·2(4버튼이면 1~4)로 답한다', async ({ page }) => {
   await page.goto('/#/decks/new');
-  await page.locator('.panel', { hasText: '인도네시아어 구어체' }).getByRole('button', { name: '이 덱 추가하기' }).click();
+  await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
   await page.getByRole('button', { name: '이 덱 복습' }).click();
   await expect(page.getByText('aku', { exact: true })).toBeVisible();
   await page.keyboard.press('Space');
