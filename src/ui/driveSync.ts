@@ -28,7 +28,7 @@ async function run({ interactive }: { interactive: boolean }): Promise<SyncResul
   const s = await getSettings();
   const drive = s.googleDrive;
   if (!drive?.clientId) throw new Error('Google Drive가 연결되어 있지 않아요');
-  let token = interactive ? await getAccessToken(drive.clientId) : peekToken(drive.clientId);
+  let token = interactive ? await getAccessToken(drive.clientId, { email: drive.email }) : peekToken(drive.clientId);
   if (!token) return undefined;
   const attempt = async (t: string): Promise<SyncResult> => {
     const folderId = await ensureFolder(t, drive.folderId);
@@ -57,7 +57,7 @@ async function run({ interactive }: { interactive: boolean }): Promise<SyncResul
     if (e instanceof DriveError && e.status === 401) {
       clearTokenCache();
       if (!interactive) return undefined;
-      token = await getAccessToken(drive.clientId);
+      token = await getAccessToken(drive.clientId, { email: drive.email });
       return attempt(token);
     }
     throw e;

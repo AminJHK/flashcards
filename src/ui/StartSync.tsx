@@ -53,7 +53,7 @@ export function StartSync({ s, onDone }: { s: Settings; onDone: () => void }) {
         로그인 없이 이 기기 데이터로 시작
       </button>
       <span className="faint small" style={{ lineHeight: 1.6 }}>
-        시작한 뒤에도 앱을 쓰는 동안 몇 분마다, 그리고 앱을 닫을 때 자동으로 맞춰요. 설정 › Google Drive에서 끌 수 있어요.
+        시작한 뒤에도 앱을 쓰는 동안 몇 분마다, 그리고 앱을 닫을 때 자동으로 맞춰요. 이 화면은 설정 › Google Drive › 「시작 화면에서 로그인」에서 끌 수 있어요.
       </span>
     </div>
   );

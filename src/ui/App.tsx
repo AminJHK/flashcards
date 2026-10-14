@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { Settings as SettingsData } from '../core/model/types';
 import { requestPersistence } from '../adapters/files/share';
 import { dropStaleClips } from '../adapters/speech/speech';
 import { enterFullscreen, exitFullscreen } from '../adapters/display/fullscreen';
@@ -14,8 +15,12 @@ import { Stats } from './screens/Stats';
 import { applyTheme } from './theme';
 import { ConfirmHost, ErrorBoundary } from './confirm';
 import { StartSync } from './StartSync';
+import { FirstTapSync } from './FirstTapSync';
 import { syncWithDrive } from './driveSync';
 import { ToastProvider, useToast } from './toast';
+
+/** 시작 화면을 보여 줄지: Drive를 연결했고, 설정에서 켠 경우만 */
+const wantsGate = (s: SettingsData | undefined) => !!s?.googleDrive?.clientId && s.googleDrive.startScreen === true;
 
 export function App() {
   const route = useRoute();
@@ -32,13 +37,14 @@ export function App() {
     return () => mq.removeEventListener('change', h);
   }, [settings]);
 
-  // 시작할 때 Google 로그인 → 동기화 (Drive를 연결한 기기에서, 켜 둔 경우). 한 번 지나가면 이번 실행 동안은 다시 묻지 않는다
+  // 시작 화면("Google로 로그인하고 시작")은 설정에서 켠 경우에만. 기본은 바로 열고, 처음 누를 때 뒤에서 동기화한다 (FirstTapSync)
   // (앱을 연 순간의 설정으로 한 번만 정한다. 쓰는 중에 Drive를 연결해도 시작 화면이 다시 뜨지 않게)
   const [gate, setGate] = useState<boolean>();
   useEffect(() => {
-    if (settings && gate === undefined) setGate(!!settings.googleDrive?.clientId && settings.googleDrive.syncOnStart !== false);
+    if (settings && gate === undefined) setGate(wantsGate(settings));
   }, [settings, gate]);
-  const askSync = gate ?? (!!settings?.googleDrive?.clientId && settings.googleDrive.syncOnStart !== false);
+  const askSync = gate ?? wantsGate(settings);
+  const tapSync = settings?.googleDrive?.clientId && settings.googleDrive.syncOnStart !== false ? settings.googleDrive.clientId : undefined;
 
   // 쓰는 동안 자동 동기화: 5분마다, 그리고 앱이 뒤로 갈 때. 로그인 창은 띄우지 않는다 (받아 둔 토큰이 있을 때만)
   const driveOn = !!settings?.googleDrive?.clientId;
@@ -111,6 +117,7 @@ export function App() {
       <ToastProvider high={!showTabs}>
         <ErrorBoundary resetKey={route.join('/')}>{screen}</ErrorBoundary>
         {showTabs && <TabBar current={tab ?? ''} />}
+        {tapSync && <FirstTapSync clientId={tapSync} />}
         <GlobalErrors />
         <ConfirmHost />
       </ToastProvider>

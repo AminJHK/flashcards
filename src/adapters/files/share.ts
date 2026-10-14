@@ -1,3 +1,5 @@
+import { markActivationUsed } from '../activation';
+
 /** 파일을 내보낸다. 안드로이드에서는 공유 시트(Drive 저장 등)를 먼저 시도하고, 안 되면 다운로드한다. */
 export async function saveFile(name: string, text: string, type = 'application/json'): Promise<'shared' | 'downloaded' | 'cancelled'> {
   const blob = new Blob([text], { type });
@@ -32,6 +34,7 @@ export function pickTextFile(accept = 'application/json,.json'): Promise<string 
       const f = input.files?.[0];
       resolve(f ? await f.text() : null);
     };
+    markActivationUsed();
     input.click();
   });
 }

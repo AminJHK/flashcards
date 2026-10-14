@@ -129,8 +129,11 @@ function Connected({ s }: { s: Settings }) {
           {busy === 'sync' ? '동기화 중…' : '지금 동기화'}
         </button>
       </Row>
-      <Row title="앱을 열 때 로그인해서 동기화" desc="켜 두면 앱을 열 때마다 Google 로그인 화면이 먼저 나와요. 쓰는 동안에는 몇 분마다 자동으로 맞춰요.">
-        <Switch label="앱을 열 때 로그인해서 동기화" checked={d.syncOnStart !== false} onChange={(v) => void saveSettings({ googleDrive: { ...d, syncOnStart: v } })} />
+      <Row title="자동으로 동기화" desc="앱을 연 뒤 처음 누를 때 Google 로그인 창이 잠깐 떴다 닫히면서 맞춰요. 그 뒤로는 몇 분마다, 그리고 앱을 닫을 때 맞춰요.">
+        <Switch label="자동으로 동기화" checked={d.syncOnStart !== false} onChange={(v) => void saveSettings({ googleDrive: { ...d, syncOnStart: v } })} />
+      </Row>
+      <Row title="시작 화면에서 로그인" desc="켜면 앱을 열 때마다 「Google로 로그인하고 시작」 화면이 먼저 나와요. 다른 기기 기록을 꼭 먼저 받고 시작하고 싶을 때.">
+        <Switch label="시작 화면에서 로그인" checked={d.startScreen === true} onChange={(v) => void saveSettings({ googleDrive: { ...d, startScreen: v } })} />
       </Row>
       <Row col title="클라이언트 ID" desc="PC 같은 다른 기기에서 연결할 때 이 값을 붙여넣으세요.">
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>

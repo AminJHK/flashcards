@@ -147,12 +147,27 @@ test('폰에서 공부한 덱과 기록을 PC에서 Google로 로그인해 그�
   await pc.getByRole('button', { name: '지금 동기화' }).click();
   await expect(pc.getByText(/동기화했어요/)).toBeVisible();
 
-  // 폰을 다시 열면: 시작 화면에서 로그인 → PC 기록까지 합쳐진다
+  // 폰을 다시 열면: 로그인 화면 없이 바로 열리고, 처음 누를 때 뒤에서 맞춘다 → PC 기록까지 합쳐진다
   await phone.reload();
-  await expect(phone.getByRole('button', { name: 'Google로 로그인하고 시작' })).toBeVisible();
-  await phone.screenshot({ path: 'test-results/shots/23-start-sync.png' });
-  await phone.getByRole('button', { name: 'Google로 로그인하고 시작' }).click();
-  await expect(phone.getByText(/불러왔어요 · 단어 499개/)).toBeVisible();
+  await expect(phone.getByRole('button', { name: 'Google로 로그인하고 시작' })).toHaveCount(0);
+  await expect(phone.getByRole('heading', { name: '설정' })).toBeVisible();
+  await phone.getByRole('heading', { name: '설정' }).click();
+  await expect(phone.getByText('다른 기기와 맞췄어요')).toBeVisible();
   await phone.goto('/#/stats');
   await expect(phone.getByText(/· 2장/)).toBeVisible();
 });
+
+test('설정에서 「시작 화면에서 로그인」을 켜면 앱을 열 때 로그인 화면이 먼저 나온다', async ({ page }) => {
+  await fakeGoogle(page);
+  await page.goto('/#/settings');
+  await page.getByLabel('Google 클라이언트 ID').fill('123-abc.apps.googleusercontent.com');
+  await page.getByRole('button', { name: 'Google로 로그인' }).click();
+  await expect(page.getByText(/연결했어요 · nurse@example.com/)).toBeVisible();
+  await page.getByRole('switch', { name: '시작 화면에서 로그인' }).click();
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Google로 로그인하고 시작' })).toBeVisible();
+  await page.screenshot({ path: 'test-results/shots/23-start-sync.png' });
+  await page.getByRole('button', { name: 'Google로 로그인하고 시작' }).click();
+  await expect(page.getByRole('heading', { name: '설정' })).toBeVisible();
+});
+
