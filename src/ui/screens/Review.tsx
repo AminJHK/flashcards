@@ -442,13 +442,16 @@ export function Review({ deckId }: { deckId?: string }) {
             </button>
           ) : (
             <button type="button" className="reveal" onClick={flip}>
-              정답 보기
+              정답 보기<kbd className="key-hint">Space</kbd>
             </button>
           )
         ) : (
           buttons.map((r) => (
             <button key={r} type="button" className={`grade grade-${r}`} onClick={() => rate(r)}>
-              <span className="grade-label">{LABELS[r]}</span>
+              <span className="grade-label">
+                {LABELS[r]}
+                <kbd className="key-hint">{settings.buttons === 4 ? r : r === 1 ? 1 : 2}</kbd>
+              </span>
               <span className="grade-iv">{previews?.[r]}</span>
             </button>
           ))

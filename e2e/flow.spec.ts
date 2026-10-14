@@ -168,3 +168,17 @@ test('저장이 느려도 누르는 즉시 다음 카드로 넘어가고, 방금
   await page.locator('.review-top').getByRole('button', { name: '되돌리기' }).click();
   await expect(page.getByText('kamu', { exact: true }).first()).toBeVisible();
 });
+
+test('PC 키보드: 스페이스로 정답을 보고, 1·2(4버튼이면 1~4)로 답한다', async ({ page }) => {
+  await page.goto('/#/decks/new');
+  await page.locator('.panel', { hasText: '인도네시아어 구어체' }).getByRole('button', { name: '이 덱 추가하기' }).click();
+  await page.getByRole('button', { name: '이 덱 복습' }).click();
+  await expect(page.getByText('aku', { exact: true })).toBeVisible();
+  await page.keyboard.press('Space');
+  await expect(page.getByText('Aku capek banget.')).toBeVisible();
+  await page.keyboard.press('2'); // 알았음
+  await expect(page.getByText('kamu', { exact: true })).toBeVisible();
+  await page.keyboard.press('Space');
+  await page.keyboard.press('1'); // 다시
+  await expect(page.getByText('saya', { exact: true })).toBeVisible(); // 다시를 누른 kamu는 기다리고, 다음 새 카드가 나온다
+});

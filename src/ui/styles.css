@@ -1639,6 +1639,26 @@ textarea.input-sentence {
   }
 }
 
+/* 키보드 단축키 표시는 마우스가 있는 기기에서만 */
+.key-hint {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .key-hint {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 7px;
+    border: 1px solid currentColor;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.55;
+    vertical-align: 2px;
+  }
+}
+
 /* 아주 넓은 화면(큰 모니터)에서는 본문을 조금 더 넓게 */
 @media (min-width: 1500px) {
   .screen {
