@@ -1657,6 +1657,44 @@ textarea.input-sentence {
   }
 }
 
+/* ---------- 업데이트 알림 ---------- */
+.update-banner {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  right: 16px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px 6px 16px;
+  min-height: 52px;
+  border-radius: 16px;
+  background: var(--toast-bg);
+  color: var(--toast-fg);
+  font-size: 15px;
+}
+
+.update-banner-low {
+  /* 복습·입력 중에는 맨 위 버튼 줄(닫기·되돌리기)을 가리지 않게 그 아래에 */
+  top: 68px;
+}
+
+.update-banner span {
+  flex: 1;
+}
+
+.update-banner button {
+  height: 40px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 10px;
+  background: var(--toast-accent);
+  color: var(--toast-bg);
+  font-size: 15px;
+  font-weight: 600;
+}
+
 /* ---------- 동기화 상태 ---------- */
 .sync-badge {
   display: flex;

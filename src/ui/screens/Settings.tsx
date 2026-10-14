@@ -10,6 +10,7 @@ import { langName, noVoiceMessage } from '../langs';
 import { ACCENTS, prefersDark } from '../theme';
 import { useToast } from '../toast';
 import { usePwaInstall } from '../usePwaInstall';
+import { applyUpdate, currentVersion, fetchLatestVersion } from '../../adapters/update/update';
 import { DriveSettings } from './DriveSettings';
 import { GeminiSettings, VoiceTest } from './GeminiSettings';
 import { fullscreenSupported } from '../../adapters/display/fullscreen';
@@ -218,9 +219,35 @@ export function Settings() {
       <span className="faint small" style={{ padding: '4px 4px 0', lineHeight: 1.6 }}>
         카드와 복습 기록은 이 기기에만 저장돼요. 다른 기기로 옮기려면 백업 파일을 쓰세요.
       </span>
-      <span className="faint small" style={{ padding: '0 4px', textAlign: 'center' }}>
-        버전 {__APP_VERSION__}
-      </span>
+      <UpdateRow />
+    </div>
+  );
+}
+
+/** 지금 깔린 버전과 업데이트 확인. 새 버전이 있으면 바로 받아서 다시 연다 (덱·기록은 그대로) */
+function UpdateRow() {
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const check = async () => {
+    setBusy(true);
+    const latest = await fetchLatestVersion();
+    if (!latest) {
+      toast('버전을 확인하지 못했어요. 인터넷 연결을 확인해 주세요');
+    } else if (latest === currentVersion()) {
+      toast('최신 버전이에요');
+    } else {
+      toast(`새 버전(${latest})으로 업데이트해요`);
+      await applyUpdate(latest);
+      return;
+    }
+    setBusy(false);
+  };
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '0 4px' }}>
+      <span className="faint small">버전 {currentVersion()}</span>
+      <button type="button" className="btn-plain" style={{ border: 'none', height: 36 }} onClick={check} disabled={busy}>
+        {busy ? '확인 중…' : '업데이트 확인'}
+      </button>
     </div>
   );
 }

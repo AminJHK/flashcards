@@ -11,8 +11,10 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './ui/App';
 import { applyCachedTheme } from './ui/theme';
+import { cleanVersionParam } from './adapters/update/update';
 
 applyCachedTheme();
+cleanVersionParam();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

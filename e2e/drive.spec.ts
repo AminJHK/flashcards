@@ -178,7 +178,7 @@ test('동기화 상태: 복습하면 "아직 올리지 않은 기록"이 뜨고,
   await fakeGoogle(page);
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
-  await expect(page.getByLabel('덱 이름')).toBeVisible();
+  await expect(page.getByText('단어 500개를 넣었어요')).toBeVisible();
   await page.goto('/#/settings');
   await page.getByLabel('Google 클라이언트 ID').fill('123-abc.apps.googleusercontent.com');
   await page.getByRole('button', { name: 'Google로 로그인' }).click();

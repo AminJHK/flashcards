@@ -1,5 +1,5 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { execSync } from 'node:child_process';
@@ -15,11 +15,22 @@ function version(): string {
 
 // base를 상대 경로('./')로 두면 GitHub Pages(/flashcards/)와 다른 경로 어디에 올려도 동작한다.
 // 화면 이동은 해시(#/...)로 하므로 서버 설정이 필요 없다.
+const APP_VERSION = version();
+
+// 앱이 "새 버전이 있나?"를 확인할 수 있게 빌드 버전을 파일로도 내보낸다 (서비스 워커가 못 갱신해도 알 수 있다)
+const versionFile = (): Plugin => ({
+  name: 'version-file',
+  generateBundle() {
+    this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ version: APP_VERSION }) });
+  },
+});
+
 export default defineConfig({
   base: './',
-  define: { __APP_VERSION__: JSON.stringify(version()) },
+  define: { __APP_VERSION__: JSON.stringify(APP_VERSION) },
   plugins: [
     react(),
+    versionFile(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false,
