@@ -160,3 +160,23 @@ export function applyReview(card: Card, rating: Rating, at: Millis, scheduler: S
   const next = scheduler.apply(stateOf(card), rating, at);
   return withState(card, { ...next, firstReviewAt: card.firstReviewAt ?? at }, scheduler.id);
 }
+
+/**
+ * 방금 답했지만 저장소의 카드 목록에는 아직 반영되지 않은 카드를 "답한 것"으로 간주한다.
+ * 폰이 느리면 목록 갱신이 늦게 오는데, 그 사이 낡은 목록으로 다음 카드를 고르면 방금 답한 카드가 또 나온다.
+ * answered: 카드 id → 답한 시각. 목록의 lastReviewAt이 그 시각 이상이면 이미 반영된 것이라 그대로 둔다.
+ * 반영 전 카드는 오늘 다시 나오지 않게(먼 미래로) 두고, 오늘 본 카드로 쳐서 형제 카드·새 카드 한도도 지킨다.
+ */
+export function assumeAnswered(cards: readonly Card[], answered: Readonly<Record<Id, Millis>>): Card[] {
+  if (!Object.keys(answered).length) return cards as Card[];
+  return cards.map((c) => {
+    const at = answered[c.id];
+    if (at === undefined || (c.lastReviewAt ?? 0) >= at) return c;
+    return { ...c, isNew: false, phase: 'review', due: at + 365 * 86_400_000, lastReviewAt: at, firstReviewAt: c.firstReviewAt ?? at };
+  });
+}
+
+/** 아직 목록에 반영되지 않은 답이 있는지 */
+export function hasUnsavedAnswers(cards: readonly Card[], answered: Readonly<Record<Id, Millis>>): boolean {
+  return cards.some((c) => answered[c.id] !== undefined && (c.lastReviewAt ?? 0) < answered[c.id]!);
+}

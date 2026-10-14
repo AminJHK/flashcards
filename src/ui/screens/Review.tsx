@@ -3,7 +3,7 @@ import { compareAnswer, type AnswerComparison } from '../../core/answer/compare'
 import { getCardType } from '../../core/cardTypes/registry';
 import type { Rating } from '../../core/model/types';
 import { formatInterval } from '../../core/scheduler/format';
-import { buildQueue, stateOf } from '../../core/scheduler/queue';
+import { assumeAnswered, buildQueue, hasUnsavedAnswers, stateOf } from '../../core/scheduler/queue';
 import { recordReview, undoReview } from '../../adapters/storage/repo';
 import { play, stopAll } from '../../adapters/speech/speech';
 import { CardFace } from '../components/CardFace';
@@ -41,8 +41,11 @@ export function Review({ deckId }: { deckId?: string }) {
   const [flipped, setFlipped] = useState(false);
   const [shownAt, setShownAt] = useState(() => Date.now());
   const [history, setHistory] = useState<Done[]>([]);
-  /** 방금 답한 카드. 저장소가 갱신되기 전의 낡은 대기열에서 같은 카드를 다시 고르지 않으려고 */
-  const [pending, setPending] = useState<{ cardId: string; at: number }>();
+  /**
+   * 방금 답한 카드 → 답한 시각. 저장소 목록이 갱신되기 전(폰이 느릴 때)에도 같은 카드를 다시 고르지 않게
+   * 대기열을 만들 때 "답한 것"으로 간주한다 (assumeAnswered).
+   */
+  const [answered, setAnswered] = useState<Record<string, number>>({});
   const [editing, setEditing] = useState(false);
   const [answer, setAnswer] = useState('');
   const [checked, setChecked] = useState<AnswerComparison>();
@@ -54,8 +57,18 @@ export function Review({ deckId }: { deckId?: string }) {
 
   const q = useMemo(() => {
     if (!settings || !decks || !cards) return undefined;
-    return buildQueue({ now, tzOffsetMin: new Date(now).getTimezoneOffset(), dayStartHour: settings.dayStartHour, cards, decks, scheduler, deckId, learnAheadMs: settings.learnAheadMin * 60_000 });
-  }, [settings, decks, cards, scheduler, now, deckId]);
+    return buildQueue({
+      now,
+      tzOffsetMin: new Date(now).getTimezoneOffset(),
+      dayStartHour: settings.dayStartHour,
+      cards: assumeAnswered(cards, answered),
+      decks,
+      scheduler,
+      deckId,
+      learnAheadMs: settings.learnAheadMin * 60_000,
+    });
+  }, [settings, decks, cards, answered, scheduler, now, deckId]);
+  const unsaved = !!cards && hasUnsavedAnswers(cards, answered);
 
   const show = useCallback((id: string | undefined, side = false) => {
     setCurrentId(id);
@@ -65,23 +78,30 @@ export function Review({ deckId }: { deckId?: string }) {
     setChecked(undefined);
   }, []);
 
-  // 다음 카드 고르기
+  // 다음 카드 고르기 (방금 답한 카드는 목록 갱신 전이라도 고르지 않는다)
   useEffect(() => {
-    if (!q || !cards || currentId) return;
-    if (pending) {
-      const c = cards.find((x) => x.id === pending.cardId);
-      if (c && (c.lastReviewAt ?? 0) < pending.at) return; // 아직 저장소 갱신 전
-      setPending(undefined);
-    }
+    if (!q || currentId) return;
     if (q.next) show(q.next.id);
-  }, [q, cards, currentId, pending, show]);
+  }, [q, currentId, show]);
 
-  // 저장소 갱신 소식이 늦거나 오지 않아도 빈 화면에 멈춰 있지 않게
+  // 목록에 반영된 답은 기억에서 지운다. 아주 오래(10초) 반영되지 않으면 그냥 놓아준다 (저장 실패는 따로 알림이 뜬다)
   useEffect(() => {
-    if (!pending) return;
-    const t = setTimeout(() => setPending(undefined), 1500);
+    if (!cards) return;
+    const done = Object.entries(answered).filter(([id, at]) => {
+      const c = cards.find((x) => x.id === id);
+      return !c || (c.lastReviewAt ?? 0) >= at || Date.now() - at > 10_000;
+    });
+    if (done.length) {
+      setAnswered((a) => {
+        const next = { ...a };
+        for (const [id] of done) delete next[id];
+        return next;
+      });
+    }
+    if (done.length === Object.keys(answered).length) return;
+    const t = setTimeout(() => setAnswered((a) => ({ ...a })), 10_500);
     return () => clearTimeout(t);
-  }, [pending]);
+  }, [cards, answered]);
 
   const card = currentId ? cards?.find((c) => c.id === currentId) : undefined;
   const note = card ? notes?.find((n) => n.id === card.noteId) : undefined;
@@ -176,7 +196,7 @@ export function Review({ deckId }: { deckId?: string }) {
           '저장이 너무 오래 걸려요. 앱을 완전히 닫았다가 다시 열어 주세요',
         );
         setHistory((h) => [...h, { logId, cardId: card.id, rating: r }]);
-        setPending({ cardId: card.id, at });
+        setAnswered((a) => ({ ...a, [card.id]: at }));
         show(undefined);
       } catch (e) {
         toast(`저장하지 못했어요 · ${e instanceof Error ? e.message : String(e)}`);
@@ -197,7 +217,11 @@ export function Review({ deckId }: { deckId?: string }) {
     try {
       await withTimeout(undoReview(last.logId), 6000, '되돌리기가 너무 오래 걸려요');
       setHistory((h) => h.slice(0, -1));
-      setPending(undefined);
+      setAnswered((a) => {
+        const next = { ...a };
+        delete next[last.cardId];
+        return next;
+      });
       show(last.cardId, true);
     } catch (e) {
       toast(`되돌리지 못했어요 · ${e instanceof Error ? e.message : String(e)}`);
@@ -293,7 +317,7 @@ export function Review({ deckId }: { deckId?: string }) {
         </>
       );
     }
-    if (pending) return <>{topBar}</>;
+    if (unsaved) return <>{topBar}</>; // 방금 답한 것이 저장소에 반영되는 중
     return (
       <>
         {topBar}

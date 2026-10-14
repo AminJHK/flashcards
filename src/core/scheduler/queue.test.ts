@@ -3,7 +3,7 @@ import { createNote, cardsForNote } from '../model/notes';
 import type { Card } from '../model/types';
 import { DAY, KST, MIN, T0, deck } from '../testUtil';
 import { createFsrs6 } from './fsrs6';
-import { applyReview, buildQueue } from './queue';
+import { applyReview, assumeAnswered, buildQueue, hasUnsavedAnswers } from './queue';
 
 const sched = createFsrs6({ desiredRetention: 0.9 });
 
@@ -97,5 +97,30 @@ describe('buildQueue', () => {
     expect(changed).toHaveLength(1);
     expect(changed[0]!.hidden).toBe(false);
     expect(changed[0]!.id).toBe(cards.find((c) => c.templateId === 'reverse')!.id);
+  });
+});
+
+describe('방금 답한 카드 (목록 갱신이 늦을 때)', () => {
+  it('목록에 아직 반영되지 않았으면 같은 카드를 다시 고르지 않는다', () => {
+    const d = deck('d', { newPerDay: 5 });
+    const cards = words(d, 3).filter((c) => !c.hidden);
+    const first = q(cards, [d]).next!;
+    // 답했지만 목록은 아직 예전 그대로
+    const answered = { [first.id]: T0 };
+    expect(hasUnsavedAnswers(cards, answered)).toBe(true);
+    const r = q(assumeAnswered(cards, answered), [d]);
+    expect(r.next?.id).toBeDefined();
+    expect(r.next?.id).not.toBe(first.id);
+    expect(r.counts.newc).toBe(2); // 오늘 소개한 새 카드로 센다
+  });
+
+  it('목록에 반영되면 진짜 상태를 쓴다 (10분 뒤 학습 카드)', () => {
+    const d = deck('d', { newPerDay: 1 });
+    const cards = words(d, 1).filter((c) => !c.hidden);
+    const saved = [applyReview(cards[0]!, 3, T0, sched)];
+    const answered = { [cards[0]!.id]: T0 };
+    expect(hasUnsavedAnswers(saved, answered)).toBe(false);
+    expect(assumeAnswered(saved, answered)[0]).toBe(saved[0]);
+    expect(q(saved, [d], saved[0]!.due).next?.id).toBe(cards[0]!.id);
   });
 });
