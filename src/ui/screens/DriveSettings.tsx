@@ -28,8 +28,12 @@ function Setup() {
 
   const connect = async () => {
     const id = clientId.trim();
+    if (!id) {
+      toast('먼저 클라이언트 ID를 칸에 붙여넣어 주세요. 처음이라면 위의 1~5단계로 만들어요');
+      return;
+    }
     if (!/\.apps\.googleusercontent\.com$/.test(id)) {
-      toast('클라이언트 ID는 ….apps.googleusercontent.com 으로 끝나요');
+      toast('클라이언트 ID가 아니에요. ….apps.googleusercontent.com 으로 끝나는 값을 통째로 복사해 주세요');
       return;
     }
     setBusy(true);
