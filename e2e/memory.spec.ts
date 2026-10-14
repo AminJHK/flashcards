@@ -44,7 +44,9 @@ test('단어 목록: 단어마다 기억 단계·확률·다음 복습이 보이
   await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
   await page.getByRole('button', { name: /알았음/ }).click();
   await page.getByRole('button', { name: '복습 닫기' }).click();
-
+  await expect(page.getByRole('heading', { name: '오늘' })).toBeVisible(); // 복습을 닫으면 메인 화면
+  await page.goto('/#/decks');
+  await page.getByRole('button', { name: /여행 스페인어/ }).click();
   await page.getByRole('button', { name: /단어 514개 보기/ }).click();
   await page.getByRole('group', { name: '정렬' }).getByRole('button', { name: '기억 약한 순' }).click();
   const rows = page.locator('.list-row');

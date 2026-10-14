@@ -283,7 +283,7 @@ export function Review({ deckId }: { deckId?: string }) {
 
   const close = () => {
     if (history.length) void syncWithDrive({ interactive: false }).catch(() => {}); // 나갈 때도 맞춘다
-    go(deckId ? `decks/${deckId}` : '');
+    go(''); // 복습을 닫으면(끝났든 중간이든) 메인 화면으로
   };
   const remaining = q.counts.review + q.counts.learning + q.counts.newc;
   const doneCount = history.length;

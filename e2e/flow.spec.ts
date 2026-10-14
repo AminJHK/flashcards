@@ -233,3 +233,12 @@ test('새 버전이 배포되면 자동으로 업데이트되고(복습 중에�
   await page.goto('/#/settings');
   await expect(page.getByRole('button', { name: '업데이트 확인' })).toBeVisible();
 });
+
+test('덱 복습을 닫으면 그 덱 화면이 아니라 메인(오늘) 화면으로 간다', async ({ page }) => {
+  await page.goto('/#/decks/new');
+  await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
+  await expect(page.getByText('단어 500개를 넣었어요')).toBeVisible();
+  await page.getByRole('button', { name: '이 덱 복습' }).click();
+  await page.getByRole('button', { name: '복습 닫기' }).click();
+  await expect(page.getByRole('heading', { name: '오늘' })).toBeVisible();
+});

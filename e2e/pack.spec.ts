@@ -152,6 +152,9 @@ test('인도네시아어 구어체 덱: 말하는 형태를 보고, 뒷면에서
   await expect(page.getByText('kamu', { exact: true })).toBeVisible();
   // 표준형·어근이 있는 동사: 단어 목록에서 찾아 확인
   await page.getByRole('button', { name: '복습 닫기' }).click();
+  await expect(page.getByRole('heading', { name: '오늘' })).toBeVisible(); // 복습을 닫으면 메인 화면
+  await page.goto('/#/decks');
+  await page.getByRole('button', { name: /인도네시아어 구어체/ }).click();
   await page.getByRole('button', { name: /단어 500개 보기/ }).click();
   await page.getByLabel('단어 찾기').fill('nyari');
   await page.getByRole('button', { name: /nyari/ }).click();
@@ -192,13 +195,13 @@ test('예전에 100장만 받은 인도네시아어 덱: 새 단어 400개를 �
   );
   await page.reload();
   // 새 덱 화면: 이미 추가한 덱은 아래에 한 줄로, 새 단어를 기존 덱에 넣을 수 있다고 알려 준다
-  const back = page.url();
   await page.goto('/#/decks/new');
   await expect(page.getByText('이미 추가한 준비된 덱')).toBeVisible();
   await expect(page.getByText('「인도네시아어 구어체」 덱에 새 단어 400개를 넣을 수 있어요')).toBeVisible();
   await expect(page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ })).toHaveCount(0);
   await page.screenshot({ path: 'test-results/shots/24-installed-packs.png' });
-  await page.goto(back);
+  await page.goto('/#/decks');
+  await page.getByRole('button', { name: /인도네시아어 구어체/ }).click();
   await expect(page.getByRole('button', { name: /단어 100개 보기/ })).toBeVisible();
   await expect(page.getByText('준비된 덱에 새 단어 400개가 생겼어요')).toBeVisible();
   await page.getByRole('button', { name: '새 단어 받기' }).click();
