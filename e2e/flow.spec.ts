@@ -132,3 +132,39 @@ test('백업 내보내기 → 복원', async ({ page }) => {
   await page.getByRole('alertdialog').getByRole('button', { name: '복원' }).click();
   await expect(page.getByText('복원했어요 · 단어 1개')).toBeVisible();
 });
+
+test('저장이 느려도 누르는 즉시 다음 카드로 넘어가고, 방금 답한 카드는 다시 나오지 않는다', async ({ page }) => {
+  await page.goto('/#/decks/new');
+  await page.locator('.panel', { hasText: '인도네시아어 구어체' }).getByRole('button', { name: '이 덱 추가하기' }).click();
+  await expect(page.getByRole('button', { name: '이 덱 복습' })).toBeVisible();
+  await page.getByRole('button', { name: '이 덱 복습' }).click();
+  await expect(page.getByText('aku', { exact: true })).toBeVisible();
+
+  // 다른 연결이 cards 저장소를 3초 동안 붙잡아서 앱의 저장을 늦춘다
+  await page.evaluate(() => {
+    const open = indexedDB.open('flashcards');
+    open.onsuccess = () => {
+      const tx = open.result.transaction('cards', 'readwrite');
+      const store = tx.objectStore('cards');
+      const until = Date.now() + 3000;
+      const spin = () => {
+        if (Date.now() < until) store.count().onsuccess = spin;
+      };
+      spin();
+    };
+  });
+  await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
+  await page.getByRole('button', { name: /알았음/ }).click();
+  // 저장이 끝나기 전인데도 바로 다음 카드
+  await expect(page.getByText('kamu', { exact: true })).toBeVisible({ timeout: 1500 });
+  await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
+  await page.getByRole('button', { name: /알았음/ }).click();
+  await expect(page.getByText('saya', { exact: true })).toBeVisible({ timeout: 1500 });
+  // 저장이 다 끝난 뒤에도 앞의 카드는 다시 나오지 않는다
+  await page.waitForTimeout(3500);
+  await expect(page.getByText('saya', { exact: true })).toBeVisible();
+  await expect(page.getByText('aku', { exact: true })).toHaveCount(0);
+  // 되돌리기는 저장이 끝난 답부터
+  await page.locator('.review-top').getByRole('button', { name: '되돌리기' }).click();
+  await expect(page.getByText('kamu', { exact: true }).first()).toBeVisible();
+});

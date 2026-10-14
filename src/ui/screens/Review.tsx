@@ -23,7 +23,8 @@ const warned = new Set<string>();
 const LABELS: Record<Rating, string> = { 1: '다시', 2: '어려움', 3: '알았음', 4: '쉬움' };
 
 interface Done {
-  logId: string;
+  /** 저장이 끝나기 전에는 없다 (되돌리기는 저장이 끝난 뒤에) */
+  logId?: string;
   cardId: string;
   rating: Rating;
 }
@@ -89,7 +90,7 @@ export function Review({ deckId }: { deckId?: string }) {
     if (!cards) return;
     const done = Object.entries(answered).filter(([id, at]) => {
       const c = cards.find((x) => x.id === id);
-      return !c || (c.lastReviewAt ?? 0) >= at || Date.now() - at > 10_000;
+      return !c || (c.lastReviewAt ?? 0) >= at || (!saving.current.has(id) && Date.now() - at > 10_000);
     });
     if (done.length) {
       setAnswered((a) => {
@@ -169,16 +170,21 @@ export function Review({ deckId }: { deckId?: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card?.id, card?.due, card?.reps, scheduler]);
 
+  /** 저장이 끝나지 않은 답 (카드 id) */
+  const saving = useRef(new Set<string>());
+
+  /**
+   * 답하기. 누르는 즉시 다음 카드로 넘어가고, 저장은 뒤에서 한다.
+   * (저장을 기다리는 동안 같은 카드가 화면에 남아 있으면, 저장이 끝나는 순간 버튼 간격이 바뀌어
+   *  "같은 카드가 또 나온 것"처럼 보이고 한 번 더 누르게 된다.)
+   * 저장에 실패하면 알리고, 그 카드는 다시 대기열로 돌아간다.
+   */
   const rate = useCallback(
-    async (r: Rating) => {
-      if (!card) return;
-      if (isBusy()) {
-        toast('저장하는 중이에요. 잠깐만요');
-        return;
-      }
-      busySince.current = Date.now();
+    (r: Rating) => {
+      if (!card || saving.current.has(card.id)) return;
+      const id = card.id;
       const at = Date.now();
-      // 소리·마이크 정리는 실패해도 저장을 막지 않게 따로 한다
+      // 소리·마이크 정리는 실패해도 답하기를 막지 않게 따로 한다
       try {
         stopAll();
       } catch {
@@ -189,20 +195,22 @@ export function Review({ deckId }: { deckId?: string }) {
       } catch {
         /* 무시 */
       }
-      try {
-        const logId = await withTimeout(
-          recordReview(card.id, r, Math.min(at - shownAt, 120_000)),
-          6000,
-          '저장이 너무 오래 걸려요. 앱을 완전히 닫았다가 다시 열어 주세요',
-        );
-        setHistory((h) => [...h, { logId, cardId: card.id, rating: r }]);
-        setAnswered((a) => ({ ...a, [card.id]: at }));
-        show(undefined);
-      } catch (e) {
-        toast(`저장하지 못했어요 · ${e instanceof Error ? e.message : String(e)}`);
-      } finally {
-        busySince.current = 0;
-      }
+      saving.current.add(id);
+      setAnswered((a) => ({ ...a, [id]: at }));
+      setHistory((h) => [...h, { cardId: id, rating: r }]);
+      show(undefined);
+      withTimeout(recordReview(id, r, Math.min(at - shownAt, 120_000)), 30_000, '저장이 너무 오래 걸려요. 앱을 완전히 닫았다가 다시 열어 주세요')
+        .then((logId) => setHistory((h) => h.map((d) => (d.cardId === id && !d.logId ? { ...d, logId } : d))))
+        .catch((e: unknown) => {
+          setHistory((h) => h.filter((d) => !(d.cardId === id && !d.logId)));
+          setAnswered((a) => {
+            const next = { ...a };
+            delete next[id];
+            return next;
+          });
+          toast(`저장하지 못했어요 · 이 카드는 다시 나와요 · ${e instanceof Error ? e.message : String(e)}`);
+        })
+        .finally(() => saving.current.delete(id));
     },
     [card, shownAt, show, toast, voice],
   );
@@ -213,9 +221,14 @@ export function Review({ deckId }: { deckId?: string }) {
       toast('되돌릴 복습이 없어요');
       return;
     }
+    if (!last.logId) {
+      toast('방금 답한 것을 저장하는 중이에요. 잠깐 뒤에 다시 눌러 주세요');
+      return;
+    }
+    const logId = last.logId;
     busySince.current = Date.now();
     try {
-      await withTimeout(undoReview(last.logId), 6000, '되돌리기가 너무 오래 걸려요');
+      await withTimeout(undoReview(logId), 6000, '되돌리기가 너무 오래 걸려요');
       setHistory((h) => h.slice(0, -1));
       setAnswered((a) => {
         const next = { ...a };
