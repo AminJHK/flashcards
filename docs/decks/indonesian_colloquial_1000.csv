@@ -499,3 +499,503 @@ ID-0497,,cie,오~ (놀리는 소리),cie,,"Cie, yang punya pacar baru!",오~ 새
 ID-0498,,kepo,"참견 많은, 궁금해하는",ingin tahu,,Kepo banget sih.,너 참 궁금한 것도 많다.,구어,젊은 층 은어. 남의 일을 꼬치꼬치 캐묻는 사람.,,adjective supplementary_spoken
 ID-0499,,baper,"감정 이입한, 쉽게 서운한",bawa perasaan,,Jangan baper.,너무 마음에 담아 두지 마.,구어,bawa perasaan(감정을 가져가다)의 줄임말. 젊은 층 은어.,,adjective supplementary_spoken
 ID-0500,,mager,귀찮아서 움직이기 싫은,malas gerak,,Lagi mager.,움직이기 귀찮아.,구어,malas gerak의 줄임말.,,adjective supplementary_spoken
+ID-0501,7,dan,"그리고, ~와",dan,,Aku dan kamu.,나랑 너.,일반,"말할 때는 sama, terus를 더 자주 쓴다.",1433616,connector
+ID-0502,2595,bakal,~할 거야 (미래),akan,,Aku bakal dateng kok.,나 갈 거야.,구어,akan의 구어 대응어. 'Bakal hujan nih' 비 오겠다.,3411,verb
+ID-0503,37,semua,"모두, 다",semua,,Semua orang tahu.,다들 알아.,일반,,353209,adverb
+ID-0504,52,pada,다들 (~하다); ~에,pada,,Mereka pada pergi.,걔들 다 갔어.,구어,구어에서 동사 앞의 pada는 '여럿이 다 같이'. 표준에서는 '~에'.,264045,connector
+ID-0505,54,sangat,매우,sangat,,Sangat penting.,아주 중요해요.,일반,격식 있는 말. 친구끼리는 banget을 쓴다.,248521,adverb
+ID-0506,65,saat,"~할 때, 순간",saat,,Saat itu aku masih kecil.,그때 나 아직 어렸어.,일반,"말로는 pas, waktu도 흔하다.",202188,connector
+ID-0507,70,hal,"일, 것",hal,,Hal kecil.,작은 일이야.,일반,,191764,noun
+ID-0508,75,sesuatu,무언가,sesuatu,,Ada sesuatu?,무슨 일 있어?,일반,,182981,noun
+ID-0509,79,terjadi,일어나다,terjadi,jadi,Apa yang terjadi?,무슨 일이야?,일반,,176152,verb
+ID-0510,20054,ngelakuin,하다,melakukan,laku,Kamu ngelakuin apa?,너 뭐 하는 거야?,구어,melakukan의 구어형. 자막에서는 lakukan이 아주 흔하다.,164,verb
+ID-0511,85,hei,"야, 저기",hei,,"Hei, tunggu!","야, 기다려!",구어,부를 때. 어른에게는 쓰지 않는다.,163544,interjection
+ID-0512,88,tentang,~에 대해,tentang,,Cerita tentang apa?,무슨 이야기야?,일반,말로는 soal도 쓴다.,159110,connector
+ID-0513,94,tempat,"장소, 곳",tempat,,Tempatnya enak.,여기 분위기 좋다.,일반,'tempat duduk' 자리.,146495,place
+ID-0514,323,nak,얘야,anak,,"Nak, sini.","얘야, 이리 와.",일반,어른이 아이를 부를 때.,39296,address
+ID-0515,103,sekali,한 번; 매우,sekali,,Enak sekali!,정말 맛있어요!,일반,형용사 뒤에서 '매우'. 말로는 banget을 더 쓴다.,133628,adverb
+ID-0516,,nyampe,도착하다,sampai,sampai,Udah nyampe?,도착했어?,구어,sampai의 구어 동사형.,,verb supplementary_spoken
+ID-0517,112,hidup,살다; 삶,hidup,,Hidup di Jakarta susah.,자카르타 생활은 힘들어.,일반,,121838,verb
+ID-0518,122,beberapa,"몇몇, 몇",beberapa,,Beberapa hari lagi.,며칠 더.,일반,,113930,adverb
+ID-0519,126,salah,틀린; 잘못,salah,,"Maaf, salah orang.","죄송해요, 사람 잘못 봤어요.",일반,'Salah siapa?' 누구 잘못이야?,108715,adjective
+ID-0520,142,pikir,생각하다,pikir,,Aku pikir kamu udah pulang.,너 집에 간 줄 알았어.,일반,'Aku pikir ~' 내 생각엔 ~(인 줄 알았어).,96420,verb
+ID-0521,144,tentu,물론,tentu,,Tentu aja!,물론이지!,일반,,93282,adverb
+ID-0522,157,seseorang,누군가,seseorang,orang,Ada seseorang di luar.,밖에 누가 있어.,일반,,85750,pronoun
+ID-0523,158,setelah,~한 후에,setelah,,"Setelah makan, kita jalan.",밥 먹고 나서 나가자.,일반,말로는 abis(habis)를 더 쓴다.,85283,connector
+ID-0524,159,baik-baik,"잘, 무사히",baik-baik,baik,Baik-baik aja kok.,잘 지내.,일반,'Baik-baik ya' 잘 지내(헤어질 때).,83607,adverb
+ID-0525,160,dunia,세상,dunia,,Kecil banget dunia ini.,세상 참 좁다.,일반,,83330,noun
+ID-0526,168,apa-apa,아무것도,apa-apa,,Nggak ada apa-apa.,아무것도 없어.,일반,부정문에서 '아무것도'.,80850,noun
+ID-0527,172,bahkan,심지어,bahkan,,Bahkan dia nggak tahu.,심지어 걔도 몰라.,일반,,80159,adverb
+ID-0528,183,sebagai,~로서,sebagai,,Kerja sebagai perawat.,간호사로 일해요.,일반,perawat = 간호사.,76590,connector
+ID-0529,193,mari,~하자 (정중),mari,,Mari makan.,드세요. / 같이 먹어요.,일반,yuk보다 정중하다. 식사 권할 때 흔하다.,73259,discourse
+ID-0530,197,selama,~동안,selama,,Selama tiga hari.,3일 동안.,일반,,71729,connector
+ID-0531,199,diri,자신,diri,,Jaga diri baik-baik.,몸 잘 챙겨.,일반,'sendiri'(혼자)와 다르다.,70844,noun
+ID-0532,20206,ngambil,"가지러 가다, 가져오다",mengambil,ambil,Aku ngambil tas dulu.,가방 좀 가져올게.,구어,,162,verb
+ID-0533,214,tanpa,~없이,tanpa,,Kopi tanpa gula.,설탕 없는 커피.,일반,,64184,connector
+ID-0534,217,siap,준비된; 네! (알겠습니다),siap,,"Siap, Pak!","네, 알겠습니다!",일반,지시에 대한 대답으로 '네!'처럼 쓴다.,62494,adjective
+ID-0535,223,buruk,나쁜,buruk,,Cuacanya buruk.,날씨가 안 좋아.,일반,말로는 jelek을 더 쓴다.,60363,adjective
+ID-0536,27392,nyoba,해 보다,mencoba,coba,Mau nyoba?,해 볼래?,구어,,94,verb
+ID-0537,229,sial,젠장,sial,,"Sial, ketinggalan bis!","젠장, 버스 놓쳤어!",속어,가벼운 욕. 어른 앞에서는 쓰지 않는다.,58025,interjection
+ID-0538,230,polisi,경찰,polisi,,Panggil polisi!,경찰 불러!,일반,,57637,noun
+ID-0539,234,segera,"곧, 즉시",segera,,Segera datang.,곧 갈게요.,일반,가게·문자에서 많이 보인다.,56208,adverb
+ID-0540,,apa pun,무엇이든,apa pun,,Apa pun boleh.,아무거나 괜찮아.,일반,붙여서 apapun으로도 쓴다.,,phrase
+ID-0541,,siapa pun,누구든,siapa pun,,Siapa pun boleh ikut.,누구든 와도 돼.,일반,,,phrase
+ID-0542,238,manusia,"인간, 사람",manusia,,Namanya juga manusia.,사람이니까 그럴 수 있지.,일반,'Namanya juga ~' ~이니까 그렇지.,55537,noun
+ID-0543,246,yah,에이 (실망),yah,,"Yah, udah tutup.","에이, 벌써 닫았네.",구어,실망했을 때.,53940,interjection
+ID-0544,624,harusnya,원래 ~했어야,seharusnya,harus,Harusnya kamu bilang.,말을 했어야지.,구어,seharusnya의 구어형.,17784,adverb
+ID-0545,251,terakhir,마지막,terakhir,akhir,Ini yang terakhir.,이게 마지막이야.,일반,,52437,adjective
+ID-0546,255,berhasil,성공하다,berhasil,hasil,Akhirnya berhasil!,드디어 성공!,일반,,51361,verb
+ID-0547,260,bodoh,바보 같은,bodoh,,Jangan bodoh.,바보같이 굴지 마.,일반,말로는 bego도 들린다(거친 말).,49847,adjective
+ID-0548,264,sungguh,정말로,sungguh,,Sungguh?,정말?,일반,"말로는 beneran, serius를 더 쓴다.",48899,adverb
+ID-0549,266,bagian,부분,bagian,bagi,Bagian mana?,어느 부분?,일반,,48807,noun
+ID-0550,525,bantu,돕다,membantu,bantu,Bisa bantu?,도와줄 수 있어요?,구어,,21673,verb
+ID-0551,270,cinta,사랑,cinta,,Aku cinta kamu.,사랑해.,일반,말로는 'Aku sayang kamu'가 더 흔하다.,48311,noun
+ID-0552,277,hebat,대단한,hebat,,Hebat!,대단해!,일반,,46160,adjective
+ID-0553,278,tepat,정확한; 딱,tepat,,Tepat waktu.,시간 딱 맞춰.,일반,,45790,adjective
+ID-0554,279,hai,안녕,hai,,"Hai, apa kabar?","안녕, 잘 지내?",일반,,45544,greeting
+ID-0555,286,kehilangan,잃다,kehilangan,hilang,Aku kehilangan dompet.,지갑 잃어버렸어.,일반,dompet = 지갑.,44184,verb
+ID-0556,291,bagi,~에게; 나누다,bagi,,Bagi dua aja.,반씩 나누자.,일반,,43219,verb
+ID-0557,299,seluruh,전체,seluruh,,Seluruh keluarga ikut.,가족 다 같이 가.,일반,,41977,adjective
+ID-0558,307,tenang,"조용한, 침착한",tenang,,Tenang aja.,걱정 마.,일반,,40708,adjective
+ID-0559,308,terbaik,최고의,terbaik,baik,Ini yang terbaik.,이게 제일 좋아.,일반,,40609,adjective
+ID-0560,311,peduli,신경 쓰다,peduli,,Nggak peduli.,상관없어.,일반,,40263,verb
+ID-0561,315,tua,"늙은, 오래된",tua,,Kota tua.,구시가지.,일반,,40114,adjective
+ID-0562,316,astaga,맙소사,astaga,,"Astaga, lupa!","아이고, 깜빡했다!",일반,,40095,interjection
+ID-0563,318,anak-anak,아이들,anak-anak,anak,Anak-anak lagi main.,애들 노는 중이야.,일반,,40060,noun
+ID-0564,319,berdua,둘이서,berdua,dua,Kita berdua aja.,우리 둘만.,일반,,39820,number
+ID-0565,23760,ninggalin,"두고 가다, 떠나다",meninggalkan,tinggal,Jangan ninggalin aku.,나 두고 가지 마.,구어,meninggalkan의 구어형.,122,verb
+ID-0566,16382,diem,조용히 해; 가만히,diam,,Diem dulu!,좀 조용히 해!,구어,diam의 구어 발음.,229,verb
+ID-0567,338,sejak,"~부터, ~이래로",sejak,,Sejak kapan?,언제부터?,일반,,36284,connector
+ID-0568,341,kawan,"친구, 동료",kawan,,Kawan lama.,오랜 친구.,일반,teman보다 조금 딱딱하거나 동지 느낌.,35965,noun
+ID-0569,343,berarti,의미하다; 그러니까,berarti,arti,Berarti besok libur?,그럼 내일 쉬는 거야?,일반,"대화에서 '그러면, 그 말은'으로 자주 쓴다.",35800,connector
+ID-0570,344,sebelumnya,그 전에,sebelumnya,belum,Makasih sebelumnya.,미리 감사드려요.,일반,부탁할 때 끝에 붙이는 인사.,35695,adverb
+ID-0571,349,soal,문제; ~에 대해,soal,,"Soal itu, nanti aja.",그건 나중에 얘기하자.,구어,'Nggak soal' 상관없어.,34691,noun
+ID-0572,352,tim,팀,tim,,Satu tim.,같은 팀이야.,일반,,34263,noun
+ID-0573,355,hati,마음,hati,,Baik hati.,마음씨가 착해.,일반,hati-hati(조심해)와 같은 말이다.,33868,noun
+ID-0574,357,jatuh,"떨어지다, 넘어지다",jatuh,,"Hati-hati, jatuh!","조심해, 넘어진다!",일반,,33156,verb
+ID-0575,1190,supaya,~하도록,agar,,Supaya cepet.,빨리 하려고.,일반,,8548,connector
+ID-0576,362,kesempatan,기회,kesempatan,sempat,Kesempatan bagus.,좋은 기회야.,일반,,32966,noun
+ID-0577,368,kuat,강한,kuat,,Kamu kuat kok.,너 강해.,일반,'Kuat nggak?' 버틸 수 있어?,32173,adjective
+ID-0578,373,kata,"말, 단어",kata,,Kata ini artinya apa?,이 단어 뜻이 뭐예요?,일반,'kata dia' 걔 말로는.,31847,noun
+ID-0579,383,berubah,변하다,berubah,ubah,Kamu berubah.,너 변했어.,일반,,31024,verb
+ID-0580,384,jelas,분명한,jelas,,Udah jelas?,이해됐어?,일반,,30998,adjective
+ID-0581,388,menarik,흥미로운,menarik,tarik,Menarik juga.,재밌네.,일반,,30772,adjective
+ID-0582,389,lari,달리다,lari,,Lari!,뛰어!,일반,,30713,verb
+ID-0583,391,lainnya,다른 것,lainnya,lain,Yang lainnya mana?,나머지는 어디 있어?,일반,,30491,adjective
+ID-0584,394,keras,"딱딱한; 세게, 크게",keras,,Jangan keras-keras.,너무 세게 하지 마.,일반,'Ngomong keras' 크게 말해.,30345,adjective
+ID-0585,395,alasan,"이유, 핑계",alasan,,Alasannya apa?,이유가 뭐야?,일반,,30312,noun
+ID-0586,398,demi,~를 위해,demi,,Demi kamu.,너를 위해서.,일반,,29929,connector
+ID-0587,,nyelametin,구하다,menyelamatkan,selamat,Dia nyelametin aku.,걔가 나를 구해 줬어.,구어,,,verb supplementary_spoken
+ID-0588,402,satu-satunya,유일한,satu-satunya,satu,Ini satu-satunya.,이게 유일해.,일반,,29517,adjective
+ID-0589,414,menuju,~로 향하다,menuju,tuju,Menuju bandara.,공항으로 가는 중.,일반,,28347,verb
+ID-0590,418,ruang,"공간, ~실",ruang,,Ruang tunggu.,대기실.,일반,"ruang tamu 거실, ruang tunggu 대기실.",28099,place
+ID-0591,924,tanya,묻다,bertanya,tanya,Boleh tanya?,뭐 좀 물어봐도 돼요?,구어,,11216,verb
+ID-0592,423,indah,아름다운,indah,,Pemandangannya indah.,경치가 아름다워.,일반,pemandangan = 경치.,27873,adjective
+ID-0593,424,dasar,기초; 이 ~야! (나무랄 때),dasar,,Dasar pelit!,이 구두쇠야!,구어,사람 앞에 붙이면 나무라는 말이 된다.,27839,discourse
+ID-0594,425,paham,이해하다,paham,,Udah paham?,이해했어?,일반,ngerti와 비슷하다.,27825,verb
+ID-0595,427,bantuan,도움,bantuan,bantu,Butuh bantuan?,도움 필요해요?,일반,,27780,noun
+ID-0596,435,kedua,두 번째,kedua,dua,Yang kedua.,두 번째 거.,일반,,27445,number
+ID-0597,436,buku,책,buku,,Bukunya bagus.,책 좋다.,일반,,27439,noun
+ID-0598,441,rencana,계획,rencana,,Rencananya gimana?,계획이 어떻게 돼?,일반,,26945,noun
+ID-0599,442,daripada,~보다 (차라리),daripada,,"Daripada bosen, jalan yuk.",심심한데 차라리 나가자.,일반,,26799,connector
+ID-0600,443,berusaha,노력하다,berusaha,usaha,Aku udah berusaha.,나 노력했어.,일반,,26765,verb
+ID-0601,448,berharap,바라다,berharap,harap,Aku berharap bisa ketemu lagi.,다시 만나면 좋겠어.,일반,,26092,verb
+ID-0602,450,meninggal,돌아가시다,meninggal,tinggal,Kakeknya udah meninggal.,할아버지는 돌아가셨어.,일반,사람이 죽을 때 정중한 말. mati는 동물·사물에.,25970,verb
+ID-0603,454,pertanyaan,질문,pertanyaan,tanya,Ada pertanyaan?,질문 있어요?,일반,,25601,noun
+ID-0604,458,penuh,가득 찬,penuh,,Udah penuh.,이미 꽉 찼어요.,일반,,25316,adjective
+ID-0605,462,wow,와우,wow,,"Wow, keren!","와, 멋지다!",일반,,25075,interjection
+ID-0606,465,muda,젊은,muda,,Masih muda.,아직 젊어.,일반,,24998,adjective
+ID-0607,467,perjalanan,"여행, 여정",perjalanan,jalan,Perjalanannya lama.,가는 길이 오래 걸려.,일반,,24899,noun
+ID-0608,470,menang,이기다,menang,,Kita menang!,우리가 이겼어!,일반,,24797,verb
+ID-0609,,ngebiarin,내버려 두다,membiarkan,biar,Jangan ngebiarin dia sendirian.,걔를 혼자 두지 마.,구어,,,verb supplementary_spoken
+ID-0610,1693,lawan,상대; 맞서다,melawan,lawan,Lawan siapa?,누구랑 붙어?,일반,,5735,verb
+ID-0611,475,negara,나라,negara,,Negara mana?,어느 나라요?,일반,,24670,noun
+ID-0612,477,suara,"소리, 목소리",suara,,Suaranya kecil.,소리가 작아.,일반,,24637,noun
+ID-0613,478,ide,아이디어,ide,,Ide bagus!,좋은 생각이야!,일반,,24629,noun
+ID-0614,479,sendirian,혼자서,sendirian,sendiri,Jangan pulang sendirian.,혼자 집에 가지 마.,일반,,24511,adverb
+ID-0615,480,antara,사이,antara,,Antara kita aja.,우리끼리 얘기야.,일반,,24462,connector
+ID-0616,482,berdiri,서다,berdiri,diri,Berdiri di situ.,거기 서 있어.,일반,,24398,verb
+ID-0617,486,rahasia,비밀,rahasia,,Ini rahasia ya.,이거 비밀이야.,일반,,24199,noun
+ID-0618,487,guru,선생님,guru,,Guru aku baik.,우리 선생님 좋아.,일반,,24181,noun
+ID-0619,493,anjing,개,anjing,,Ada anjing.,개 있어.,일반,사람에게 쓰면 심한 욕이다.,23670,noun
+ID-0620,494,tanah,땅,tanah,,Jatuh ke tanah.,땅에 떨어졌어.,일반,,23571,noun
+ID-0621,,nerima,받다,menerima,terima,Udah nerima paketnya?,택배 받았어?,구어,paket = 택배.,,verb supplementary_spoken
+ID-0622,496,kecuali,~만 빼고,kecuali,,"Semua boleh, kecuali ini.",이거 빼고 다 돼.,일반,,23211,connector
+ID-0623,497,pilihan,선택,pilihan,pilih,Nggak ada pilihan.,선택의 여지가 없어.,일반,,23188,noun
+ID-0624,499,api,불,api,,Ada api?,불 있어요?,일반,,22929,noun
+ID-0625,503,akhir,끝,akhir,,Akhir minggu.,주말.,일반,'akhir pekan' 주말.,22722,time
+ID-0626,505,tiba,도착하다,tiba,,Tiba di bandara jam lima.,5시에 공항에 도착해요.,일반,"말로는 sampe, nyampe를 더 쓴다.",22654,verb
+ID-0627,507,rasanya,~한 것 같아; 맛이,rasanya,rasa,Rasanya pernah ketemu.,만난 적 있는 것 같아.,일반,,22593,adverb
+ID-0628,510,waktunya,~할 시간이야,waktunya,waktu,Udah waktunya pulang.,집에 갈 시간이야.,일반,,22483,time
+ID-0629,,nunjukin,보여 주다,menunjukkan,tunjuk,Nunjukin jalan dong.,길 좀 알려 줘.,구어,,,verb supplementary_spoken
+ID-0630,25206,milih,고르다,memilih,pilih,Susah milih.,고르기 어려워.,구어,,110,verb
+ID-0631,522,bertahan,버티다,bertahan,tahan,Bertahan sedikit lagi.,조금만 더 버텨.,일반,,21702,verb
+ID-0632,526,kira,"~인 줄 알다, 생각하다",kira,,Aku kira kamu marah.,너 화난 줄 알았어.,일반,'Aku kira ~' ~인 줄 알았어.,21633,verb
+ID-0633,529,pesta,파티,pesta,,Ada pesta.,파티 있어.,일반,,21515,noun
+ID-0634,536,sepanjang,~내내; ~을 따라,sepanjang,panjang,Sepanjang hari hujan.,하루 종일 비 와.,일반,,21207,connector
+ID-0635,540,mundur,뒤로 가다,mundur,,"Mundur dikit, Pak.",조금만 뒤로요.,일반,주차할 때 자주 듣는다.,20985,verb
+ID-0636,542,kesalahan,실수,kesalahan,salah,"Maaf, ada kesalahan.","죄송해요, 착오가 있었어요.",일반,,20864,noun
+ID-0637,546,terbang,날다,terbang,,Pesawatnya terbang jam berapa?,비행기 몇 시에 떠요?,일반,,20694,verb
+ID-0638,554,bahagia,행복한,bahagia,,Semoga bahagia.,행복하길 바라.,일반,,20313,adjective
+ID-0639,557,sementara,임시로; 한편,sementara,,Sementara di sini dulu.,당분간 여기 있을게.,일반,,20230,adverb
+ID-0640,566,tahan,"참다, 견디다",tahan,,Nggak tahan panasnya.,더워서 못 참겠어.,일반,'Tahan dulu' 잠깐 참아.,20055,verb
+ID-0641,569,sempurna,완벽한,sempurna,,Nggak ada yang sempurna.,완벽한 사람은 없어.,일반,,19840,adjective
+ID-0642,573,film,영화,film,,Film apa?,무슨 영화?,일반,,19729,noun
+ID-0643,579,muncul,나타나다,muncul,,Tiba-tiba dia muncul.,갑자기 걔가 나타났어.,일반,,19510,verb
+ID-0644,580,sebaiknya,~하는 게 좋겠어,sebaiknya,baik,Sebaiknya istirahat.,쉬는 게 좋겠어요.,일반,조언할 때 정중하다. 친구끼리는 mending.,19343,adverb
+ID-0645,582,laut,바다,laut,,Lautnya biru.,바다가 파래.,일반,,19285,place
+ID-0646,4084,untung,다행이다; 이익,beruntung,untung,Untung nggak hujan.,비 안 와서 다행이다.,구어,'Untung ~' ~라서 다행이야.,1854,adjective
+ID-0647,584,bayi,아기,bayi,,Bayinya lucu.,아기 귀엽다.,일반,,19172,noun
+ID-0648,586,perusahaan,회사,perusahaan,usaha,Kerja di perusahaan apa?,무슨 회사 다녀요?,일반,,19119,noun
+ID-0649,588,setuju,동의하다,setuju,,Aku setuju.,나도 찬성.,일반,,19003,verb
+ID-0650,589,awal,"처음, 초",awal,,Awal bulan.,월초.,일반,,18965,time
+ID-0651,8699,minimal,최소한,setidaknya,,Minimal bilang dulu.,최소한 말은 해야지.,구어,setidaknya보다 말로 흔하다.,639,adverb
+ID-0652,592,surat,편지; 서류,surat,,Surat dokter.,진단서.,일반,surat dokter = 진단서·소견서.,18771,noun
+ID-0653,594,jahat,"나쁜, 못된",jahat,,Jahat banget kamu.,너 진짜 못됐다.,일반,장난으로도 쓴다.,18689,adjective
+ID-0654,1852,game,게임,permainan,,Main game yuk.,게임하자.,구어,permainan보다 말로 흔하다.,5088,noun
+ID-0655,670,jaga,"지키다, 돌보다",menjaga,jaga,Jaga diri ya.,몸조심해.,구어,,16193,verb
+ID-0656,,nyuri,훔치다,mencuri,curi,Ada yang nyuri HP aku.,누가 내 폰을 훔쳐 갔어.,구어,,,verb supplementary_spoken
+ID-0657,609,berikutnya,다음의,berikutnya,ikut,Minggu berikutnya.,그다음 주.,일반,,18202,adjective
+ID-0658,611,tanda,"표시, 신호",tanda,,Tanda tangan di sini.,여기에 서명해 주세요.,일반,tanda tangan = 서명.,18130,noun
+ID-0659,616,kelas,"수업, 반",kelas,,Ada kelas pagi.,아침 수업 있어.,일반,,18091,noun
+ID-0660,620,mimpi,꿈; 꿈꾸다,mimpi,,Mimpi apa semalem?,어젯밤 무슨 꿈 꿨어?,일반,,17833,noun
+ID-0661,628,berani,용감한; 감히,berani,,Berani nggak?,할 수 있겠어?,일반,'Berani-beraninya!' 감히!,17590,adjective
+ID-0662,630,berita,뉴스,berita,,Liat berita?,뉴스 봤어?,일반,,17569,noun
+ID-0663,634,tugas,"숙제, 임무",tugas,,Tugasnya banyak.,과제가 많아.,일반,,17417,noun
+ID-0664,637,semacam,~같은 것,semacam,macam,Semacam kue.,과자 같은 거야.,일반,,17320,noun
+ID-0665,,nangkep,잡다,menangkap,tangkap,Nangkep ikan.,물고기를 잡아.,구어,tangkap의 구어 발음.,,verb supplementary_spoken
+ID-0666,642,arah,방향,arah,,Arahnya ke mana?,어느 방향이에요?,일반,,17247,noun
+ID-0667,643,saudara,형제자매; 친척,saudara,,Dia saudara aku.,걔 내 친척이야.,일반,친척 전반을 가리키기도 한다.,17244,noun
+ID-0668,653,bisnis,사업,bisnis,,Bisnis apa?,무슨 사업 해요?,일반,,16674,noun
+ID-0669,654,saling,서로,saling,,Saling bantu ya.,서로 돕자.,일반,,16645,adverb
+ID-0670,656,selamanya,영원히,selamanya,lama,Teman selamanya.,평생 친구.,일반,,16525,adverb
+ID-0671,,ngirim,보내다,mengirim,kirim,Udah ngirim?,보냈어?,구어,,,verb supplementary_spoken
+ID-0672,1396,baca,읽다,membaca,baca,Udah baca?,읽었어?,구어,,7081,verb
+ID-0673,663,hubungan,관계,hubungan,hubung,Hubungannya gimana?,둘 사이 어때?,일반,,16368,noun
+ID-0674,664,milik,~의 것; 소유,milik,,Ini milik siapa?,이건 누구 거예요?,일반,말로는 punya를 더 쓴다.,16361,noun
+ID-0675,667,pikiran,생각,pikiran,pikir,Banyak pikiran.,생각이 많아.,일반,'Banyak pikiran' 걱정이 많다.,16286,noun
+ID-0676,668,hadiah,선물,hadiah,,Ini hadiah buat kamu.,이거 너 줄 선물이야.,일반,말로 kado도 흔하다.,16286,noun
+ID-0677,669,saatnya,~할 때야,saatnya,saat,Saatnya makan!,밥 먹을 시간이야!,일반,,16220,time
+ID-0678,1426,walaupun,"~지만, 비록",meskipun,,"Walaupun capek, tetep jalan.",피곤해도 계속 가.,일반,,6935,connector
+ID-0679,680,bebas,자유로운,bebas,,Hari ini bebas.,오늘은 자유야.,일반,'bebas rokok' 금연.,16000,adjective
+ID-0680,688,keadaan,"상황, 상태",keadaan,ada,Keadaannya gimana?,상태가 어때요?,일반,환자 상태를 물을 때도 쓴다.,15841,noun
+ID-0681,695,Inggris,영국; 영어,Inggris,,Bisa ngomong Inggris?,영어 할 줄 알아?,일반,bahasa Inggris = 영어.,15728,noun
+ID-0682,,ngikutin,따라가다,mengikuti,ikut,Kok ngikutin aku terus?,왜 자꾸 나 따라와?,구어,,,verb supplementary_spoken
+ID-0683,,ngerasain,"느끼다, 맛보다",merasakan,rasa,Coba ngerasain ini.,이거 맛 좀 봐.,구어,,,verb supplementary_spoken
+ID-0684,700,informasi,정보,informasi,,Minta informasinya.,정보 좀 주세요.,일반,줄여서 info도 흔하다.,15675,noun
+ID-0685,27774,mikirin,~에 대해 생각하다,memikirkan,pikir,Lagi mikirin kamu.,너 생각하고 있었어.,구어,,92,verb
+ID-0686,706,bukti,증거,bukti,,Mana buktinya?,증거 있어?,일반,,15569,noun
+ID-0687,713,musim,"계절, 철",musim,,Musim hujan.,우기.,일반,인도네시아는 musim hujan(우기)과 musim kemarau(건기).,15489,time
+ID-0688,714,berat,무거운; 힘든,berat,,Berat banget.,너무 무거워.,일반,,15487,adjective
+ID-0689,716,mampu,~할 능력이 있다,mampu,,Nggak mampu beli.,살 형편이 안 돼.,일반,,15443,verb
+ID-0690,,nulis,쓰다,menulis,tulis,Tolong nulis di sini.,여기 써 주세요.,구어,tulis의 구어 동사형.,,verb supplementary_spoken
+ID-0691,,mutusin,결정하다; 헤어지다,memutuskan,putus,Dia mutusin pacarnya.,걔 애인이랑 헤어졌어.,구어,연애에서는 '헤어지다'.,,verb supplementary_spoken
+ID-0692,723,lagu,노래,lagu,,Lagunya enak.,노래 좋다.,일반,노래가 좋을 때도 enak을 쓴다.,15332,noun
+ID-0693,7566,gabung,합류하다,bergabung,gabung,Boleh gabung?,나도 껴도 돼?,구어,,791,verb
+ID-0694,2184,muka,얼굴,wajah,,Mukanya merah.,얼굴이 빨개.,구어,wajah보다 말로 흔하다.,4230,noun
+ID-0695,731,lantai,바닥; 층,lantai,,Lantai berapa?,몇 층이에요?,일반,,15156,noun
+ID-0696,732,batu,돌,batu,,"Hati-hati, ada batu.","조심해, 돌 있어.",일반,,15116,noun
+ID-0697,734,selain,~외에,selain,,"Selain ini, ada lagi?",이거 말고 또 있어요?,일반,,15065,connector
+ID-0698,25993,nyerah,포기하다,menyerah,serah,Jangan nyerah!,포기하지 마!,구어,,104,verb
+ID-0699,18192,nelpon,전화하다,menelepon,telepon,Nanti aku nelpon.,이따 전화할게.,구어,,193,verb
+ID-0700,744,detik,초,detik,,Sedetik.,1초만.,일반,,14828,time
+ID-0701,746,anggota,"회원, 멤버",anggota,,Anggota keluarga.,가족 구성원.,일반,,14743,noun
+ID-0702,750,panggil,부르다,memanggil,panggil,Panggil aja Kak.,그냥 언니라고 불러.,구어,,14704,verb
+ID-0703,751,benci,싫어하다,benci,,Aku benci macet.,차 막히는 거 진짜 싫어.,일반,,14688,verb
+ID-0704,,ngabisin,다 써 버리다,menghabiskan,habis,Ngabisin duit.,돈을 다 써 버려.,구어,,,verb supplementary_spoken
+ID-0705,753,sadar,깨닫다; 의식이 있는,sadar,,Pasiennya udah sadar.,환자가 의식을 찾았어요.,일반,병원에서 '의식이 있다'.,14663,adjective
+ID-0706,756,pribadi,개인적인,pribadi,,Ini urusan pribadi.,개인적인 일이야.,일반,,14519,adjective
+ID-0707,757,bos,사장님; 상사,bos,,"Siap, Bos!","네, 사장님!",구어,친근한 장난 호칭으로도 쓴다.,14517,address
+ID-0708,759,pindah,"옮기다, 이사하다",pindah,,Pindah ke Jakarta.,자카르타로 이사해.,일반,,14495,verb
+ID-0709,760,utara,북쪽,utara,,Jakarta Utara.,북자카르타.,일반,,14408,place
+ID-0710,765,posisi,위치,posisi,,Posisi di mana?,지금 어디야?,구어,문자로 '어디야?'를 물을 때 흔하다.,14300,noun
+ID-0711,,nyesel,후회하다,menyesal,sesal,Nggak bakal nyesel.,후회 안 할 거야.,구어,,,verb supplementary_spoken
+ID-0712,770,burung,새,burung,,Ada burung.,새가 있어.,일반,,14228,noun
+ID-0713,,ngalamin,겪다,mengalami,alami,Aku juga pernah ngalamin.,나도 겪어 봤어.,구어,,,verb supplementary_spoken
+ID-0714,773,mohon,부탁드립니다,mohon,,Mohon tunggu sebentar.,잠시만 기다려 주세요.,일반,안내 방송·공문에서 정중한 부탁.,14110,discourse
+ID-0715,776,kabur,도망가다; 흐린,kabur,,Dia kabur.,걔 도망갔어.,일반,눈이 흐릴 때도 '(penglihatan) kabur'.,13961,verb
+ID-0716,,nikahan,결혼식,pernikahan,nikah,Mau ke nikahan temen.,친구 결혼식 가.,구어,,,noun supplementary_spoken
+ID-0717,778,tengah,가운데,tengah,,Di tengah.,가운데에.,일반,,13896,place
+ID-0718,781,kalah,지다,kalah,,Kalah lagi.,또 졌어.,일반,,13834,verb
+ID-0719,788,jujur,솔직한,jujur,,Jujur aja.,솔직히 말해.,일반,"'Jujur, ~' 솔직히 말하면 ~.",13631,adjective
+ID-0720,790,matahari,해,matahari,,Panas mataharinya.,햇볕이 뜨거워.,일반,,13588,noun
+ID-0721,792,bola,공; 축구,bola,,Nonton bola.,축구 봐.,일반,'main bola' 축구하다.,13525,noun
+ID-0722,794,maksud,"뜻, 의도",maksud,,Maksudnya apa?,무슨 뜻이야?,일반,'Maksud aku ~' 내 말은 ~.,13448,noun
+ID-0723,796,akal,"머리, 꾀",akal,,Pake akal dong.,머리 좀 써.,일반,,13433,noun
+ID-0724,797,terbuka,열린,terbuka,buka,Pintunya terbuka.,문이 열려 있어.,일반,,13402,adjective
+ID-0725,798,tujuan,"목적, 목적지",tujuan,tuju,Tujuannya ke mana?,어디로 가세요?,일반,기사가 목적지를 물을 때.,13388,noun
+ID-0726,800,pukul,~시 (정각); 때리다,pukul,,Pukul tujuh pagi.,오전 7시.,일반,시간을 정중하게 말할 때. 말로는 jam.,13297,time
+ID-0727,801,periksa,검사하다,periksa,,Periksa ke dokter.,병원 가서 진찰받아.,일반,,13285,verb
+ID-0728,804,korban,피해자,korban,,Korban kecelakaan.,사고 피해자.,일반,,13202,noun
+ID-0729,806,ruangan,"방, 실내",ruangan,ruang,Ruangannya dingin.,방이 추워.,일반,,13200,place
+ID-0730,808,utama,주요한,utama,,Pintu utama.,정문.,일반,,13152,adjective
+ID-0731,809,hutan,숲,hutan,,Masuk hutan.,숲에 들어가.,일반,,13121,place
+ID-0732,,temen-temen,친구들,teman-teman,teman,Temen-temen aku dateng.,내 친구들이 와.,구어,,,noun supplementary_spoken
+ID-0733,813,petugas,"직원, 담당자",petugas,tugas,Tanya petugasnya.,담당자한테 물어봐.,일반,,13008,noun
+ID-0734,,pantes,당연하지; 어울리는,pantas,,Pantes aja!,어쩐지!,구어,'Pantes' 어쩐지 그렇더라.,,discourse supplementary_spoken
+ID-0735,816,bintang,별,bintang,,Banyak bintang.,별이 많아.,일반,,12963,noun
+ID-0736,818,khusus,특별한,khusus,,Khusus buat kamu.,너만을 위해서.,일반,,12805,adjective
+ID-0737,822,operasi,수술,operasi,,Besok operasi.,내일 수술이에요.,일반,,12739,noun
+ID-0738,825,ahli,전문가,ahli,,Ahli jantung.,심장 전문의.,일반,,12692,noun
+ID-0739,826,selanjutnya,그다음,selanjutnya,lanjut,Selanjutnya gimana?,그다음엔 어떻게 해요?,일반,,12692,adverb
+ID-0740,827,perhatian,"관심, 주의",perhatian,hati,Dia perhatian banget.,걔 진짜 자상해.,일반,사람에게 쓰면 '세심하게 챙겨 주는'.,12672,noun
+ID-0741,828,kecelakaan,사고,kecelakaan,celaka,Ada kecelakaan.,사고 났어.,일반,,12667,noun
+ID-0742,831,musik,음악,musik,,Suka musik apa?,무슨 음악 좋아해?,일반,,12639,noun
+ID-0743,837,kuda,말,kuda,,Naik kuda.,말 타.,일반,,12419,noun
+ID-0744,838,berguna,쓸모 있는,berguna,guna,Berguna banget.,진짜 유용해.,일반,,12398,adjective
+ID-0745,839,menurut,~에 따르면; ~ 생각엔,menurut,turut,Menurut kamu gimana?,네 생각엔 어때?,일반,'Menurut aku ~' 내 생각엔 ~.,12392,connector
+ID-0746,843,hah,뭐? (못 들었을 때),hah,,Hah? Apa?,응? 뭐라고?,구어,되묻는 소리. 어른에게는 'Maaf?'가 정중하다.,12323,interjection
+ID-0747,847,entah,"글쎄, 모르겠다",entah,,Entah lah.,글쎄.,일반,'Entah kenapa' 왠지 모르게.,12273,discourse
+ID-0748,849,tertarik,관심 있는,tertarik,tarik,Tertarik nggak?,관심 있어?,일반,,12213,adjective
+ID-0749,851,keberatan,"싫다, 불편하다",keberatan,berat,Keberatan nggak?,괜찮으세요?,일반,부탁할 때 '혹시 불편하지 않으세요?'.,12185,verb
+ID-0750,855,catatan,"메모, 기록",catatan,catat,Ada catatan?,메모 있어요?,일반,,12140,noun
+ID-0751,860,pohon,나무,pohon,,Pohon kelapa.,야자나무.,일반,,12090,noun
+ID-0752,861,mabuk,취한; 멀미,mabuk,,Mabuk laut.,뱃멀미.,일반,'mabuk darat' 차멀미.,12069,adjective
+ID-0753,863,maju,앞으로 가다,maju,,Maju dikit.,조금만 앞으로.,일반,,12057,verb
+ID-0754,864,bahaya,위험,bahaya,,"Bahaya, jangan ke sana!","위험해, 거기 가지 마!",일반,형용사 berbahaya(위험한)도 흔하다.,12037,noun
+ID-0755,866,hantu,귀신,hantu,,Takut hantu.,귀신이 무서워.,일반,,12013,noun
+ID-0756,878,kotak,상자,kotak,,Masukin ke kotak.,상자에 넣어.,일반,,11807,noun
+ID-0757,879,situasi,상황,situasi,,Situasinya gimana?,상황이 어때?,일반,,11806,noun
+ID-0758,882,gambar,그림,gambar,,Liat gambarnya.,그림 봐.,일반,사진을 가리킬 때도 쓴다.,11761,noun
+ID-0759,887,emas,금,emas,,Kalung emas.,금목걸이.,일반,,11715,noun
+ID-0760,888,gedung,건물,gedung,,Gedung yang tinggi itu.,저 높은 건물.,일반,,11685,place
+ID-0761,890,angkat,들다; (전화를) 받다,angkat,,Kok nggak angkat telpon?,왜 전화 안 받아?,일반,,11678,verb
+ID-0762,892,sejarah,역사,sejarah,,Museum sejarah.,역사박물관.,일반,,11614,noun
+ID-0763,894,gelap,어두운,gelap,,Udah gelap.,벌써 어두워.,일반,,11604,adjective
+ID-0764,897,harapan,희망,harapan,harap,Masih ada harapan.,아직 희망이 있어.,일반,,11578,noun
+ID-0765,899,selatan,남쪽,selatan,,Jakarta Selatan.,남자카르타.,일반,줄여서 Jaksel.,11553,place
+ID-0766,906,alam,자연,alam,,Alamnya indah.,자연이 아름다워.,일반,,11454,noun
+ID-0767,910,berangkat,출발하다,berangkat,angkat,Jam berapa berangkat?,몇 시에 출발해?,일반,,11386,verb
+ID-0768,911,pusat,중심,pusat,,Pusat kota.,시내 중심.,일반,,11370,place
+ID-0769,912,bank,은행,bank,,Bank-nya tutup.,은행 닫았어.,일반,,11366,place
+ID-0770,916,kejadian,"일어난 일, 사건",kejadian,jadi,Kejadiannya kapan?,그 일 언제 일어났어?,일반,,11261,noun
+ID-0771,919,sesuai,~에 맞게,sesuai,,Sesuai pesanan.,주문하신 대로요.,일반,,11248,adjective
+ID-0772,934,kemungkinan,가능성,kemungkinan,mungkin,Kemungkinan besar besok.,아마 내일일 거야.,일반,,11008,noun
+ID-0773,938,keputusan,결정,keputusan,putus,Keputusannya gimana?,결정은 어떻게 됐어?,일반,,10972,noun
+ID-0774,2871,ganggu,방해하다,mengganggu,ganggu,Maaf ganggu.,방해해서 죄송해요.,구어,연락할 때 '실례지만'처럼 쓴다.,2982,verb
+ID-0775,945,awas,조심해!,awas,,"Awas, panas!","조심해, 뜨거워!",일반,,10915,interjection
+ID-0776,954,sampah,쓰레기,sampah,,Buang sampah di sini.,쓰레기는 여기 버려.,일반,,10786,noun
+ID-0777,958,otak,뇌,otak,,Otaknya pinter.,머리가 좋아.,일반,,10750,noun
+ID-0778,959,pulau,섬,pulau,,Pulau Bali.,발리섬.,일반,,10743,place
+ID-0779,962,bunga,꽃,bunga,,Bunganya cantik.,꽃이 예뻐.,일반,,10722,noun
+ID-0780,965,tarik,당기다,tarik,,"Tarik, jangan dorong.","당겨요, 밀지 말고.",일반,"문에 tarik(당기시오), dorong(미시오)이 적혀 있다.",10693,verb
+ID-0781,969,pertemuan,"모임, 회의",pertemuan,temu,Pertemuan jam dua.,2시에 모임이야.,일반,,10612,noun
+ID-0782,970,latihan,연습,latihan,latih,Latihan tiap hari.,매일 연습해.,일반,,10606,noun
+ID-0783,971,hancur,"부서진, 망가진",hancur,,Hancur semua.,다 망가졌어.,일반,'Hatiku hancur' 마음이 무너졌어.,10601,adjective
+ID-0784,973,kulit,피부; 껍질,kulit,,Kulitnya gatal.,피부가 가려워.,일반,,10576,noun
+ID-0785,974,lubang,구멍,lubang,,Ada lubang.,구멍이 있어.,일반,,10575,noun
+ID-0786,975,layak,자격이 있는,layak,,Kamu layak dapet itu.,넌 그럴 자격 있어.,일반,,10559,adjective
+ID-0787,979,apa-apaan,이게 뭐야! (황당),apa-apaan,apa,Apa-apaan ini?,이게 다 뭐야?,구어,어이없거나 화날 때.,10528,interjection
+ID-0788,983,daftar,목록; 등록하다,daftar,,Daftar dulu di sana.,저기서 먼저 접수하세요.,일반,병원 접수도 daftar.,10479,noun
+ID-0789,984,daerah,지역,daerah,,Daerah mana?,어느 지역이에요?,일반,,10447,noun
+ID-0790,985,kaya,부자인,kaya,,Orang kaya.,부자.,일반,kayak(~같은)과 헷갈리기 쉽다.,10427,adjective
+ID-0791,990,lahir,태어나다,lahir,,Lahir di mana?,어디서 태어났어요?,일반,,10389,verb
+ID-0792,992,bangga,자랑스러운,bangga,,Aku bangga sama kamu.,네가 자랑스러워.,일반,,10383,adjective
+ID-0793,,keluarin,꺼내,keluarkan,keluar,Keluarin KTP-nya.,신분증 꺼내 주세요.,구어,KTP = 신분증.,,verb supplementary_spoken
+ID-0794,997,urusan,"볼일, 일",urusan,urus,Bukan urusan kamu.,네 일 아니야.,일반,'Ada urusan' 볼일이 있어.,10308,noun
+ID-0795,998,dewasa,어른,dewasa,,Udah dewasa.,이제 어른이야.,일반,,10294,noun
+ID-0796,999,normal,정상인,normal,,Hasilnya normal.,결과가 정상이에요.,일반,,10281,adjective
+ID-0797,27883,nemuin,만나러 가다,menemui,temu,Mau nemuin siapa?,누구 만나러 왔어요?,구어,nemu(찾아내다)와 다르다.,91,verb
+ID-0798,1004,gunung,산,gunung,,Naik gunung.,등산해.,일반,,10251,place
+ID-0799,1005,tamu,손님,tamu,,Ada tamu.,손님 왔어.,일반,,10246,noun
+ID-0800,1010,minggir,비켜; 옆에 세워 주세요,minggir,pinggir,"Minggir dulu, Pak.",잠깐 옆에 세워 주세요.,일반,길에서 '비켜'라는 뜻도 된다.,10204,verb
+ID-0801,,pastiin,확실히 하다,memastikan,pasti,Pastiin dulu.,먼저 확인해.,구어,,,verb supplementary_spoken
+ID-0802,1013,lemah,약한,lemah,,Badannya lemah.,몸이 약해.,일반,,10197,adjective
+ID-0803,,macem,"종류, ~같은",macam,,Macem-macem.,이것저것.,구어,macam의 구어 발음.,,noun supplementary_spoken
+ID-0804,1015,terkenal,유명한,terkenal,kenal,Terkenal banget.,엄청 유명해.,일반,,10167,adjective
+ID-0805,1018,hewan,동물,hewan,,Suka hewan?,동물 좋아해?,일반,binatang도 같은 뜻.,10161,noun
+ID-0806,1019,tumbuh,자라다,tumbuh,,Cepet tumbuh.,빨리 자라.,일반,,10156,verb
+ID-0807,1020,pegang,잡다,memegang,pegang,Pegang ini.,이거 잡아.,구어,,10153,verb
+ID-0808,1023,tiba-tiba,갑자기,tiba-tiba,tiba,Tiba-tiba hujan.,갑자기 비가 와.,일반,,10074,adverb
+ID-0809,1025,desa,"마을, 시골",desa,,Tinggal di desa.,시골에 살아.,일반,,10063,place
+ID-0810,1036,langkah,"걸음, 단계",langkah,,Langkah pertama.,첫걸음.,일반,,9988,noun
+ID-0811,,jelasin,설명해,menjelaskan,jelas,Jelasin lagi dong.,다시 설명해 줘.,구어,,,verb supplementary_spoken
+ID-0812,1039,kode,"코드, 번호",kode,,Kode OTP-nya berapa?,인증번호가 뭐예요?,일반,,9900,noun
+ID-0813,1043,jawaban,"대답, 정답",jawaban,jawab,Jawabannya apa?,답이 뭐야?,일반,,9854,noun
+ID-0814,1047,rambut,머리카락,rambut,,Potong rambut.,머리 잘라.,일반,,9831,noun
+ID-0815,1049,hasil,결과,hasil,,Hasilnya kapan?,결과는 언제 나와요?,일반,'hasil lab' 검사 결과.,9808,noun
+ID-0816,1054,sebagian,일부,sebagian,bagi,Sebagian udah dateng.,일부는 왔어.,일반,,9760,adverb
+ID-0817,1055,warga,주민,warga,,Warga sini.,이 동네 사람.,일반,,9751,noun
+ID-0818,1057,aturan,규칙,aturan,atur,Aturannya gimana?,규칙이 어떻게 돼?,일반,,9743,noun
+ID-0819,1058,langit,하늘,langit,,Langitnya cerah.,하늘이 맑아.,일반,,9739,noun
+ID-0820,25887,nari,춤추다,menari,tari,Suka nari?,춤 좋아해?,구어,,105,verb
+ID-0821,,ngejar,쫓다,mengejar,kejar,Ngejar bis.,버스를 쫓아가.,구어,,,verb supplementary_spoken
+ID-0822,1069,berjuang,"싸우다, 애쓰다",berjuang,juang,Terus berjuang!,계속 힘내!,일반,,9655,verb
+ID-0823,1071,bahan,재료,bahan,,Bahannya apa aja?,재료가 뭐예요?,일반,,9606,noun
+ID-0824,1075,sobat,친구,sobat,,Sobat aku dari kecil.,어릴 때부터 친구야.,구어,,9524,noun
+ID-0825,1077,pihak,"측, 쪽",pihak,,Pihak rumah sakit.,병원 측.,일반,,9510,noun
+ID-0826,2242,tembok,벽,dinding,,Nempel di tembok.,벽에 붙어 있어.,구어,dinding보다 말로 흔하다.,4073,noun
+ID-0827,,ngumpet,숨다,bersembunyi,umpet,Ngumpet di mana?,어디 숨었어?,구어,,,verb supplementary_spoken
+ID-0828,14286,keliatan,~해 보이다,kelihatan,lihat,Kamu keliatan capek.,너 피곤해 보여.,구어,kelihatan의 구어 발음.,288,verb
+ID-0829,,nolak,거절하다,menolak,tolak,Dia nolak.,걔가 거절했어.,구어,,,verb supplementary_spoken
+ID-0830,1093,sungai,강,sungai,,Sungainya kotor.,강이 더러워.,일반,,9353,place
+ID-0831,1095,ketiga,세 번째,ketiga,tiga,Yang ketiga.,세 번째 거.,일반,,9320,number
+ID-0832,1096,kacau,엉망인,kacau,,Kacau banget.,완전 엉망이야.,구어,,9315,adjective
+ID-0833,1099,negeri,나라,negeri,,Luar negeri.,외국.,일반,luar negeri = 해외.,9282,noun
+ID-0834,1107,timur,동쪽,timur,,Jawa Timur.,동부 자바.,일반,,9227,place
+ID-0835,1109,titik,"점, 마침표",titik,,Titik kumpul.,집결지.,일반,,9198,noun
+ID-0836,1111,ketua,"대표, 회장",ketua,tua,Ketua RT.,반장(동네 대표).,일반,RT = 동네 최소 행정 단위.,9195,noun
+ID-0837,1114,biru,파란,biru,,Langit biru.,파란 하늘.,일반,,9177,adjective
+ID-0838,,nyimpen,보관하다,menyimpan,simpan,Nyimpen di mana?,어디에 보관해?,구어,,,verb supplementary_spoken
+ID-0839,21519,mukul,때리다,memukul,pukul,Jangan mukul!,때리지 마!,구어,,145,verb
+ID-0840,1120,mirip,닮은,mirip,,Mirip banget sama mamanya.,엄마랑 진짜 닮았다.,일반,,9078,adjective
+ID-0841,1121,angin,바람,angin,,Anginnya kenceng.,바람이 세다.,일반,kenceng = 센(구어).,9064,noun
+ID-0842,1138,barat,서쪽,barat,,Orang barat.,서양 사람.,일반,,8952,place
+ID-0843,,semalem,어젯밤,semalam,malam,Semalem nggak bisa tidur.,어젯밤에 잠을 못 잤어.,구어,,,time supplementary_spoken
+ID-0844,1152,sederhana,"간단한, 소박한",sederhana,,Hidup sederhana.,소박하게 살아.,일반,,8821,adjective
+ID-0845,1154,adil,공평한,adil,,Nggak adil!,불공평해!,일반,,8810,adjective
+ID-0846,,ngadepin,"마주하다, 상대하다",menghadapi,hadap,Gimana ngadepin dia?,걔를 어떻게 상대하지?,구어,,,verb supplementary_spoken
+ID-0847,1158,palsu,가짜,palsu,,Uangnya palsu.,위조지폐야.,일반,,8798,adjective
+ID-0848,1159,kue,"과자, 케이크",kue,,Kue ulang tahun.,생일 케이크.,일반,,8797,noun
+ID-0849,,kejebak,갇히다,terjebak,jebak,Kejebak macet.,차 막혀서 갇혔어.,구어,,,verb supplementary_spoken
+ID-0850,1162,komputer,컴퓨터,komputer,,Komputernya lemot.,컴퓨터가 느려.,일반,lemot = 느린(구어).,8772,noun
+ID-0851,,bayangin,상상해 봐,bayangkan,bayang,Bayangin aja.,상상해 봐.,구어,,,verb supplementary_spoken
+ID-0852,,perhatiin,주의해서 봐,perhatikan,hati,Perhatiin baik-baik.,잘 봐.,구어,,,verb supplementary_spoken
+ID-0853,1170,video,영상,video,,Liat videonya.,영상 봐.,일반,,8737,noun
+ID-0854,1176,termasuk,포함하여,termasuk,masuk,Termasuk pajak?,세금 포함이에요?,일반,,8695,connector
+ID-0855,1177,putus,끊기다; 헤어지다,putus,,Udah putus.,헤어졌어.,일반,전화·연결이 끊길 때도 쓴다.,8691,verb
+ID-0856,1178,kucing,고양이,kucing,,Kucingnya lucu.,고양이 귀엽다.,일반,,8648,noun
+ID-0857,,nikmatin,즐기다,menikmati,nikmat,Nikmatin aja.,그냥 즐겨.,구어,,,verb supplementary_spoken
+ID-0858,1184,jendela,창문,jendela,,Buka jendela.,창문 열어.,일반,,8611,noun
+ID-0859,1191,pisau,칼,pisau,,Pisaunya tajam.,칼이 날카로워.,일반,,8548,noun
+ID-0860,1193,kakek,할아버지,kakek,,Kakek tinggal di desa.,할아버지는 시골에 사셔.,일반,,8532,noun
+ID-0861,1198,suruh,시키다,suruh,,Siapa yang suruh?,누가 시켰어?,일반,,8505,verb
+ID-0862,1199,perubahan,변화,perubahan,ubah,Ada perubahan jadwal.,일정이 바뀌었어요.,일반,,8503,noun
+ID-0863,1201,betul,맞아,betul,,Betul juga.,그것도 맞네.,일반,bener와 비슷하다.,8492,adjective
+ID-0864,1205,kemampuan,능력,kemampuan,mampu,Sesuai kemampuan.,능력껏.,일반,,8456,noun
+ID-0865,,turunin,내려 줘,turunkan,turun,Turunin di depan ya.,앞에서 내려 주세요.,구어,,,verb supplementary_spoken
+ID-0866,,nyentuh,만지다,menyentuh,sentuh,Jangan nyentuh!,만지지 마!,구어,,,verb supplementary_spoken
+ID-0867,,motong,자르다,memotong,potong,Motong rambut.,머리 잘라.,구어,,,verb supplementary_spoken
+ID-0868,1219,lepas,놓다; 벗다; 풀리다,lepas,,Lepas sepatu dulu.,신발 먼저 벗어.,일반,,8345,verb
+ID-0869,1220,darurat,응급,darurat,,Pintu darurat.,비상구.,일반,'UGD' 응급실.,8345,noun
+ID-0870,1225,jumlah,"합계, 수",jumlah,,Jumlahnya berapa?,총 얼마예요?,일반,,8314,noun
+ID-0871,1228,cincin,반지,cincin,,Cincin kawin.,결혼반지.,일반,,8296,noun
+ID-0872,1231,mulut,입,mulut,,Buka mulutnya.,입 벌려 보세요.,일반,,8248,noun
+ID-0873,1233,terasa,느껴지다,terasa,rasa,Terasa dingin.,춥게 느껴져.,일반,,8247,verb
+ID-0874,1236,gigi,"이, 치아",gigi,,Sakit gigi.,이가 아파.,일반,"'sikat gigi' 칫솔, 양치.",8232,noun
+ID-0875,5180,teriak,소리치다,berteriak,teriak,Jangan teriak-teriak.,소리 지르지 마.,구어,,1351,verb
+ID-0876,1246,Jepang,일본,Jepang,,Makanan Jepang.,일본 음식.,일반,,8184,noun
+ID-0877,1256,sisa,남은 것,sisa,,Sisa berapa?,몇 개 남았어요?,일반,,8120,noun
+ID-0878,1258,bukannya,~아니었어?,bukannya,bukan,Bukannya kamu udah pulang?,너 집에 간 거 아니었어?,구어,의외일 때 '~ 아니었어?'.,8078,discourse
+ID-0879,1259,data,데이터,data,,Datanya ilang.,데이터가 없어졌어.,일반,'paket data' 모바일 데이터.,8071,noun
+ID-0880,1266,fokus,집중,fokus,,Fokus dulu.,일단 집중해.,일반,,8046,verb
+ID-0881,1274,tulang,뼈,tulang,,Tulangnya patah.,뼈가 부러졌어요.,일반,patah = 부러지다.,7966,noun
+ID-0882,1275,kotor,더러운,kotor,,Kotor banget.,너무 더러워.,일반,,7957,adjective
+ID-0883,4192,dek,얘야 (어린 사람 호칭),adik,,"Dek, ini berapa?","얘, 이거 얼마야?",구어,어린 점원이나 아이를 부를 때.,1792,address
+ID-0884,1282,seminggu,일주일,seminggu,minggu,Seminggu sekali.,일주일에 한 번.,일반,,7865,time
+ID-0885,1283,tukang,"~하는 사람 (기사, 일꾼)",tukang,,Tukang ojek.,오젝 기사.,일반,"tukang parkir 주차 안내원, tukang sayur 채소 장수.",7860,noun
+ID-0886,,ngurus,"처리하다, 돌보다",mengurus,urus,Lagi ngurus visa.,비자 처리하는 중이야.,구어,,,verb supplementary_spoken
+ID-0887,,lupain,잊어,melupakan,lupa,Lupain aja.,그냥 잊어버려.,구어,,,verb supplementary_spoken
+ID-0888,1305,konyol,우스꽝스러운,konyol,,Konyol banget.,진짜 웃기다.,일반,,7722,adjective
+ID-0889,3579,kaget,놀라다,terkejut,,Aku kaget!,깜짝 놀랐어!,구어,terkejut보다 말로 흔하다.,2191,adjective
+ID-0890,12687,maling,도둑,pencuri,,Awas maling.,도둑 조심.,구어,pencuri보다 말로 흔하다.,352,noun
+ID-0891,,nyakitin,"아프게 하다, 상처 주다",menyakiti,sakit,Jangan nyakitin dia.,걔한테 상처 주지 마.,구어,,,verb supplementary_spoken
+ID-0892,1314,jari,손가락,jari,,Jarinya luka.,손가락을 다쳤어.,일반,,7643,noun
+ID-0893,1315,listrik,전기,listrik,,Mati listrik.,정전이야.,일반,,7630,noun
+ID-0894,,seneng-seneng,즐겁게 놀다,bersenang-senang,senang,Seneng-seneng aja.,그냥 즐겁게 놀아.,구어,,,verb supplementary_spoken
+ID-0895,1319,rendah,낮은,rendah,,Gulanya rendah.,혈당이 낮아요.,일반,gula darah 혈당.,7603,adjective
+ID-0896,1320,bakar,구운,bakar,,Jagung bakar.,군옥수수.,일반,,7592,adjective
+ID-0897,,santuy,느긋하게,santai,,Santuy aja.,편하게 해.,구어,santai를 장난스럽게 바꾼 말.,,adjective supplementary_spoken
+ID-0898,1329,gereja,교회,gereja,,Ke gereja hari Minggu.,일요일에 교회 가.,일반,,7519,place
+ID-0899,1330,sebut,"말하다, 이름을 대다",sebut,,Sebut namanya.,이름을 말해 주세요.,일반,,7516,verb
+ID-0900,,benerin,고치다,memperbaiki,benar,Bisa benerin ini?,이거 고칠 수 있어요?,구어,,,verb supplementary_spoken
+ID-0901,1335,tes,"테스트, 검사",tes,,Tes darah.,피검사.,일반,,7478,noun
+ID-0902,1338,kencan,데이트,kencan,,Kencan pertama.,첫 데이트.,일반,말로는 'nge-date'도 쓴다.,7470,noun
+ID-0903,1339,Natal,크리스마스,Natal,,Selamat Natal!,메리 크리스마스!,일반,,7450,noun
+ID-0904,1341,pasangan,"짝, 커플",pasangan,pasang,Pasangan baru.,새 커플.,일반,,7447,noun
+ID-0905,1342,umum,일반적인; 공공,umum,,Toilet umum.,공중화장실.,일반,,7438,adjective
+ID-0906,1344,penyakit,병,penyakit,sakit,Penyakit apa?,무슨 병이에요?,일반,,7419,noun
+ID-0907,1352,anggap,여기다,menganggap,anggap,Anggap aja rumah sendiri.,내 집처럼 편하게 있어.,일반,손님에게 하는 인사로 흔하다.,7387,verb
+ID-0908,1358,jarak,거리,jarak,,Jaraknya jauh.,거리가 멀어.,일반,,7356,noun
+ID-0909,,ngatur,"정리하다, 조절하다",mengatur,atur,Biar aku yang ngatur.,내가 정리할게.,구어,,,verb supplementary_spoken
+ID-0910,1366,kejutan,깜짝 선물,kejutan,kejut,Ada kejutan!,깜짝 선물이 있어!,일반,,7278,noun
+ID-0911,1369,halaman,페이지; 마당,halaman,,Halaman berapa?,몇 페이지예요?,일반,,7262,noun
+ID-0912,1370,persis,"정확히, 똑같이",persis,,Persis kayak kamu.,딱 너 같아.,일반,,7255,adverb
+ID-0913,2319,lompat,뛰다,melompat,lompat,Lompat!,뛰어!,일반,,3890,verb
+ID-0914,1373,gunanya,쓸모,gunanya,guna,Apa gunanya?,무슨 소용이야?,일반,,7239,noun
+ID-0915,1375,pemain,선수,pemain,main,Pemain bola.,축구 선수.,일반,,7233,noun
+ID-0916,1379,kondisi,상태,kondisi,,Kondisinya stabil.,상태가 안정적이에요.,일반,,7213,noun
+ID-0917,1380,pasien,환자,pasien,,Pasiennya udah makan.,환자분 식사하셨어요.,일반,,7203,noun
+ID-0918,1384,isi,내용; 채우다,isi,,Isi formulirnya.,서류를 작성하세요.,일반,'isi bensin' 주유하다.,7164,verb
+ID-0919,1387,mantan,전 애인; 전~,mantan,,Mantan pacar.,전 애인.,일반,,7137,noun
+ID-0920,,bersihin,청소하다,membersihkan,bersih,Bersihin kamar.,방 청소해.,구어,,,verb supplementary_spoken
+ID-0921,1389,pilih,골라,pilih,,Pilih yang mana?,어느 걸로 골라?,일반,,7123,verb
+ID-0922,1393,Cina,중국,Cina,,Makanan Cina.,중국 음식.,일반,공식적으로는 Tiongkok이라고도 한다.,7101,noun
+ID-0923,1394,jalanan,길거리,jalanan,jalan,Jalanan macet.,길이 막혀.,일반,,7096,place
+ID-0924,,ngucapin,말하다 (인사·축하),mengucapkan,ucap,Ngucapin selamat.,축하한다고 말해.,구어,,,verb supplementary_spoken
+ID-0925,1412,kebanyakan,대부분; 너무 많이,kebanyakan,banyak,Kebanyakan gula.,설탕이 너무 많아.,일반,,6984,adverb
+ID-0926,25171,balikin,돌려줘,kembalikan,balik,Balikin HP aku.,내 폰 돌려줘.,구어,,110,verb
+ID-0927,1418,bir,맥주,bir,,Satu bir dingin.,시원한 맥주 하나요.,일반,,6972,noun
+ID-0928,1423,kebetulan,우연히,kebetulan,betul,Kebetulan banget!,이런 우연이!,일반,,6952,adverb
+ID-0929,1433,celana,바지,celana,,Celana pendek.,반바지.,일반,,6906,noun
+ID-0930,,siapin,준비하다,siapkan,siap,Siapin semuanya.,다 준비해.,구어,,,verb supplementary_spoken
+ID-0931,1438,kasar,"거친, 무례한",kasar,,Jangan kasar.,거칠게 굴지 마.,일반,,6889,adjective
+ID-0932,1442,duluan,먼저,duluan,dulu,Aku duluan ya.,나 먼저 갈게.,구어,헤어질 때 인사로 흔하다.,6867,adverb
+ID-0933,1446,tangga,계단,tangga,,Naik tangga.,계단으로 올라가.,일반,,6855,noun
+ID-0934,1465,bro,"형, 친구 (부를 때)",bro,,"Santai, bro.","진정해, 친구.",자카르타식,영어 brother에서. 젊은 남자끼리.,6752,address
+ID-0935,,ya Allah,"맙소사, 세상에",ya Allah,,"Ya Allah, capek banget.","아이고, 너무 피곤해.",일반,무슬림이 많아 감탄사로 아주 흔하다.,,interjection phrase
+ID-0936,,ngawasin,지켜보다,mengawasi,awas,Tolong ngawasin anak aku.,우리 애 좀 봐 줘.,구어,,,verb supplementary_spoken
+ID-0937,,buktiin,증명해 봐,membuktikan,bukti,Buktiin dong.,증명해 봐.,구어,,,verb supplementary_spoken
+ID-0938,1735,kadang,가끔,kadang-kadang,,Kadang aku lupa.,가끔 까먹어.,구어,kadang-kadang의 준말.,5545,adverb
+ID-0939,1489,lapangan,"운동장, 광장",lapangan,lapang,Main di lapangan.,운동장에서 놀아.,일반,,6651,place
+ID-0940,1492,berdoa,기도하다,berdoa,doa,Berdoa dulu.,먼저 기도하자.,일반,,6632,verb
+ID-0941,1495,tekanan,압력,tekanan,tekan,Tekanan darahnya tinggi.,혈압이 높아요.,일반,tekanan darah = 혈압. 말로는 tensi도 쓴다.,6619,noun
+ID-0942,1496,tanggal,날짜,tanggal,,Tanggal berapa?,며칠이에요?,일반,,6610,time
+ID-0943,1498,semangat,힘내!; 열정,semangat,,Semangat ya!,힘내!,일반,응원할 때 아주 흔하다.,6588,interjection
+ID-0944,1501,pelajaran,"수업, 교훈",pelajaran,ajar,Jadi pelajaran.,교훈이 됐어.,일반,,6585,noun
+ID-0945,,ceritain,이야기해 줘,menceritakan,cerita,Ceritain dong!,얘기해 줘!,구어,,,verb supplementary_spoken
+ID-0946,,malu-maluin,창피하게 만드는,memalukan,malu,Malu-maluin aja.,창피해 죽겠네.,구어,,,adjective supplementary_spoken
+ID-0947,1517,penerbangan,항공편,penerbangan,terbang,Penerbangannya ditunda.,항공편이 지연됐어요.,일반,,6519,noun
+ID-0948,1521,kesulitan,어려움,kesulitan,sulit,Ada kesulitan?,어려운 점 있어요?,일반,,6481,noun
+ID-0949,1522,taman,공원,taman,,Jalan-jalan di taman.,공원에서 산책해.,일반,,6481,place
+ID-0950,2998,cium,뽀뽀하다; 냄새 맡다,mencium,cium,Cium tangan.,손등에 인사해.,일반,어른 손등에 코·이마를 대는 인사(salim)를 cium tangan이라고 한다.,2809,verb
+ID-0951,1530,kehabisan,다 떨어지다,kehabisan,habis,Kehabisan tiket.,표가 매진됐어.,일반,,6441,verb
+ID-0952,1533,setahun,1년,setahun,tahun,Setahun yang lalu.,1년 전.,일반,,6429,time
+ID-0953,,nolong,돕다,menolong,tolong,Makasih udah nolong.,도와줘서 고마워.,구어,,,verb supplementary_spoken
+ID-0954,1537,keduanya,둘 다,keduanya,dua,Keduanya bagus.,둘 다 좋아.,일반,,6403,number
+ID-0955,1542,sengaja,일부러,sengaja,,Nggak sengaja.,일부러 그런 거 아니야.,일반,'Nggak sengaja' 실수로.,6380,adverb
+ID-0956,1550,sayangnya,안타깝게도,sayangnya,sayang,Sayangnya udah abis.,아쉽게도 다 떨어졌어요.,일반,,6341,adverb
+ID-0957,,ngehargain,소중히 여기다,menghargai,harga,Makasih udah ngehargain.,알아줘서 고마워.,구어,,,verb supplementary_spoken
+ID-0958,1565,kertas,종이,kertas,,Ada kertas?,종이 있어요?,일반,,6273,noun
+ID-0959,1566,Korea,한국,Korea,,Saya dari Korea.,저는 한국에서 왔어요.,일반,Korea Selatan 남한.,6272,noun
+ID-0960,,nyebelin,짜증 나게 하는,menyebalkan,sebal,Nyebelin banget!,진짜 짜증 나!,구어,,,adjective supplementary_spoken
+ID-0961,1585,meski,~하더라도,meski,,"Meski capek, tetep kerja.",피곤해도 일해.,일반,meskipun의 준말.,6178,connector
+ID-0962,1587,izin,허락; 결석·조퇴,izin,,Izin pulang duluan.,먼저 가 볼게요.,일반,직장에서 '조퇴/결근 신청'도 izin.,6177,noun
+ID-0963,1615,peta,지도,peta,,Liat di peta.,지도에서 봐.,일반,,6040,noun
+ID-0964,1630,roti,빵,roti,,Roti bakar.,토스트.,일반,,5982,noun
+ID-0965,25064,taro,"두다, 놓다",menaruh,taruh,Taro di meja aja.,그냥 탁자에 둬.,구어,taruh의 구어 발음.,111,verb
+ID-0966,22664,lebay,오버하는,berlebihan,lebih,Lebay banget!,너무 오버한다!,구어,,133,adjective
+ID-0967,2456,senyum,미소 짓다,tersenyum,senyum,Senyum dong!,좀 웃어 봐!,구어,,3631,verb
+ID-0968,,tanggung jawab,책임,tanggung jawab,,Itu tanggung jawab aku.,그건 내 책임이야.,일반,,,phrase
+ID-0969,1843,kebakaran,화재,kebakaran,bakar,Ada kebakaran!,불이야!,일반,,5136,noun
+ID-0970,1905,sembuh,낫다,sembuh,,Udah sembuh?,다 나았어?,일반,,4908,verb
+ID-0971,1967,sumpah,맹세해; 진짜야,sumpah,,"Sumpah, aku nggak bohong!","진짜야, 나 거짓말 안 해!",구어,'Sumpah?' 진짜?,4751,discourse
+ID-0972,1986,samping,옆,samping,,Di samping hotel.,호텔 옆에.,일반,,4717,place
+ID-0973,1987,pendek,"짧은, 키 작은",pendek,,Rambutnya pendek.,머리가 짧아.,일반,,4714,adjective
+ID-0974,2031,ukuran,사이즈,ukuran,ukur,Ada ukuran lain?,다른 사이즈 있어요?,일반,,4578,noun
+ID-0975,2149,sapi,소,sapi,,Daging sapi.,소고기.,일반,,4306,noun
+ID-0976,2152,basah,젖은,basah,,Bajunya basah.,옷이 젖었어.,일반,,4289,adjective
+ID-0977,,ngajar,가르치다,mengajar,ajar,Dia ngajar di sekolah.,걔 학교에서 가르쳐.,구어,,,verb supplementary_spoken
+ID-0978,2360,lanjut,계속하다,lanjut,,Lanjut!,계속 가자!,일반,,3805,verb
+ID-0979,2370,barusan,방금,barusan,baru,Barusan dia telpon.,걔가 방금 전화했어.,구어,,3789,time
+ID-0980,2508,kuning,노란,kuning,,Yang kuning.,노란 거요.,일반,,3553,adjective
+ID-0981,2652,ringan,가벼운,ringan,,Yang ringan aja.,가벼운 걸로.,일반,,3315,adjective
+ID-0982,2758,gelas,잔,gelas,,Dua gelas.,두 잔이요.,일반,,3145,noun
+ID-0983,,nyalain,켜다,menyalakan,nyala,Nyalain AC dong.,에어컨 좀 켜 줘.,구어,AC(아쎄) = 에어컨.,,verb supplementary_spoken
+ID-0984,2859,apalagi,"더구나, 게다가",apalagi,,Apalagi kalo hujan.,비라도 오면 더하지.,일반,,2992,connector
+ID-0985,3195,piring,접시,piring,,Satu piring lagi.,한 접시 더요.,일반,,2582,noun
+ID-0986,3204,kira-kira,대략,kira-kira,kira,Kira-kira berapa lama?,대략 얼마나 걸려요?,일반,,2578,adverb
+ID-0987,7469,siap-siap,준비하다,bersiap-siap,siap,Siap-siap dulu.,먼저 준비해.,구어,,808,verb
+ID-0988,3741,justru,오히려,justru,,Justru bagus.,오히려 좋아.,일반,,2083,adverb
+ID-0989,3978,goreng,"튀긴, 볶은",goreng,,Pisang goreng.,바나나 튀김.,일반,,1910,adjective
+ID-0990,5168,sendok,숟가락,sendok,,Minta sendok.,숟가락 주세요.,일반,,1356,noun
+ID-0991,5444,banjir,홍수,banjir,,Jalanan banjir.,길이 침수됐어.,일반,우기에 자주 듣는다.,1263,noun
+ID-0992,5680,mal,쇼핑몰,mal,,Ketemu di mal.,몰에서 만나.,일반,mall로도 쓴다.,1194,place
+ID-0993,,kedengeran,들리다,kedengaran,dengar,Kedengeran nggak?,들려?,구어,,,verb supplementary_spoken
+ID-0994,,serem,"무서운, 섬뜩한",seram,,Filmnya serem.,영화 무섭다.,구어,seram의 구어 발음.,,adjective supplementary_spoken
+ID-0995,11190,satpam,경비원,satuan pengamanan,,Tanya satpam aja.,경비원한테 물어봐.,일반,satuan pengamanan의 줄임말. 건물·주차장 어디에나 있다.,432,noun
+ID-0996,,ngasih tau,알려 주다,memberi tahu,kasih,Nanti aku ngasih tau.,이따 알려 줄게.,구어,kasih tahu와 같다.,,phrase
+ID-0997,23731,cas,충전하다,mengisi daya,,Boleh cas di sini?,여기서 충전해도 돼요?,구어,영어 charge에서 왔다. 'ngecas'로도 쓴다.,122,verb
+ID-0998,,omong-omong,그런데 (화제 전환),ngomong-ngomong,omong,"Omong-omong, kamu kerja di mana?",그런데 너 어디서 일해?,일반,"ngomong-ngomong, btw(베테웨)라고도 한다.",,discourse supplementary_spoken
+ID-0999,,gabut,할 일 없이 심심한,,,Lagi gabut.,할 일 없어 심심해.,구어,젊은 층 은어. 표준형은 하나로 대응하지 않는다.,,adjective supplementary_spoken
+ID-1000,,bete,기분이 꿀꿀한,,,Lagi bete.,기분 별로야.,구어,BT(bad temper)에서 왔다는 설명이 흔하다.,,adjective supplementary_spoken

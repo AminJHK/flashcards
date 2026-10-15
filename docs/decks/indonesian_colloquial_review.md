@@ -1,8 +1,8 @@
-# 인도네시아어 구어체 덱 · 500장 검수 메모
+# 인도네시아어 구어체 덱 · 1000장 검수 메모
 
-- 카드 파일: `indonesian_colloquial_500.csv` (UTF-8, Anki 가져오기용, 필드 순서는 요청서 그대로)
-- 앱 안의 같은 덱: 덱 › 새 덱 › "인도네시아어 구어체 · 500장" (`src/core/packs/indonesianColloquial.ts`)
-- 예전에 100장을 받은 덱은 덱 화면의 "새 단어 받기"로 나머지 400장을 뒤에 이어서 받는다. 복습 기록은 그대로다.
+- 카드 파일: `indonesian_colloquial_1000.csv` (UTF-8, Anki 가져오기용, 필드 순서는 요청서 그대로)
+- 앱 안의 같은 덱: 덱 › 새 덱 › "인도네시아어 구어체 · 1000장" (`src/core/packs/indonesianColloquial.ts`)
+- 예전에 100장·500장을 받은 덱은 덱 화면의 "새 단어 받기"(또는 새 덱 화면의 "기존 덱에 넣기")로 나머지를 뒤에 이어서 받는다. 복습 기록은 그대로다.
 - 빈도 근거: OpenSubtitles2018 인도네시아어 단어 빈도표 (orgtre/top-open-subtitles-sentences, `bld/top_words/id_top_words.csv`, 3만 단어)
   - 코드는 CC BY 3.0, 목록은 OpenSubtitles 코퍼스 조건을 따른다.
 
@@ -80,6 +80,14 @@
 | bokap, nyokap, entar, kelar | 자카르타식. 다른 지역에서는 어색할 수 있다 |
 | bareng ↔ bersama, mending ↔ lebih baik | 뜻만 대응한다 |
 | 예문 전체 | 첫 묶음과 마찬가지로 현지인이 읽어 보지 않았다 |
+
+## 501~1000장 (세 번째 묶음)
+
+- 두 번째 묶음에서 뺐던 118장 + 같은 빈도표의 다음 단어(대략 1500위 안쪽)로 433장을 새로 써서 551장을 만든 뒤, 덜 급한 51장(raksasa, takdir, 무기·전쟁 쪽, 추상 명사 등)을 빼 500장으로 맞췄다.
+- 순서는 이 묶음 안에서 빈도순 (규칙은 두 번째 묶음과 같음). 1~500장의 순서는 바꾸지 않았다.
+- 393장은 빈도표에 그 철자 그대로 있고, 107장은 없다(대부분 ng-/ny- 구어 동사형: nyelametin, ngikutin, nolak…, 여러 단어 표현, 은어). 이런 구어 동사는 표준형(menyelamatkan 등)의 순위로 줄 세웠다.
+- 자막 빈도표라 극중 어휘(polisi, pistol, 감옥 등)가 많아서 생활 단어를 우선했다. 간호 일과 겹치는 단어(pasien, operasi, tekanan darah, darurat, sadar, kondisi, hasil, tes darah, tulang patah)를 넣었다.
+- 속어 표시: sial(가벼운 욕). dasar는 사람 앞에 붙으면 나무라는 말.
 
 ## 다음 단계 (요청서 9번)
 

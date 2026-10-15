@@ -139,7 +139,7 @@ test('준비된 덱이 고쳐지면 덱 화면에서 받을 수 있고, 내가 �
 test('인도네시아어 구어체 덱: 말하는 형태를 보고, 뒷면에서 표준형·어근·예문을 본다', async ({ page }) => {
   await page.goto('/#/decks/new');
   const panel = page.locator('.row', { hasText: '인도네시아어 구어체' });
-  await expect(panel).toContainText('단어 500개');
+  await expect(panel).toContainText('단어 1000개');
   await panel.getByRole('button', { name: /추가하기$/ }).click();
   await expect(page.getByLabel('덱 이름')).toHaveValue('인도네시아어 구어체');
   await page.getByRole('button', { name: '이 덱 복습' }).click();
@@ -155,14 +155,14 @@ test('인도네시아어 구어체 덱: 말하는 형태를 보고, 뒷면에서
   await expect(page.getByRole('heading', { name: '오늘' })).toBeVisible(); // 복습을 닫으면 메인 화면
   await page.goto('/#/decks');
   await page.getByRole('button', { name: /인도네시아어 구어체/ }).click();
-  await page.getByRole('button', { name: /단어 500개 보기/ }).click();
+  await page.getByRole('button', { name: /단어 1000개 보기/ }).click();
   await page.getByLabel('단어 찾기').fill('nyari');
   await page.getByRole('button', { name: /nyari/ }).click();
   await expect(page.getByLabel('표준형')).toHaveValue('mencari');
   await expect(page.getByLabel('어근')).toHaveValue('cari');
 });
 
-test('예전에 100장만 받은 인도네시아어 덱: 새 단어 400개를 받으면 뒤에 이어서 들어가고, 복습 기록은 그대로다', async ({ page }) => {
+test('예전에 100장만 받은 인도네시아어 덱: 새 단어 900개를 받으면 뒤에 이어서 들어가고, 복습 기록은 그대로다', async ({ page }) => {
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
   await expect(page.getByLabel('덱 이름')).toHaveValue('인도네시아어 구어체');
@@ -197,16 +197,16 @@ test('예전에 100장만 받은 인도네시아어 덱: 새 단어 400개를 �
   // 새 덱 화면: 이미 추가한 덱은 아래에 한 줄로, 새 단어를 기존 덱에 넣을 수 있다고 알려 준다
   await page.goto('/#/decks/new');
   await expect(page.getByText('이미 추가한 준비된 덱')).toBeVisible();
-  await expect(page.getByText('「인도네시아어 구어체」 덱에 새 단어 400개를 넣을 수 있어요')).toBeVisible();
+  await expect(page.getByText('「인도네시아어 구어체」 덱에 새 단어 900개를 넣을 수 있어요')).toBeVisible();
   await expect(page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ })).toHaveCount(0);
   await page.screenshot({ path: 'test-results/shots/24-installed-packs.png' });
   await page.goto('/#/decks');
   await page.getByRole('button', { name: /인도네시아어 구어체/ }).click();
   await expect(page.getByRole('button', { name: /단어 100개 보기/ })).toBeVisible();
-  await expect(page.getByText('준비된 덱에 새 단어 400개가 생겼어요')).toBeVisible();
+  await expect(page.getByText('준비된 덱에 새 단어 900개가 생겼어요')).toBeVisible();
   await page.getByRole('button', { name: '새 단어 받기' }).click();
-  await expect(page.getByText('새 단어 400개를 넣었어요')).toBeVisible();
-  await expect(page.getByRole('button', { name: /단어 500개 보기/ })).toBeVisible();
+  await expect(page.getByText('새 단어 900개를 넣었어요')).toBeVisible();
+  await expect(page.getByRole('button', { name: /단어 1000개 보기/ })).toBeVisible();
   await expect(page.getByText(/새 단어 \d+개가 생겼어요/)).toHaveCount(0);
   // 복습 기록은 그대로: 다음에 나오는 새 카드는 kamu (aku는 이미 복습함)
   await page.getByRole('button', { name: '이 덱 복습' }).click();
