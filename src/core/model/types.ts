@@ -176,5 +176,6 @@ export const DEFAULT_SETTINGS: Settings = {
   accent: 'blue',
   immersive: false,
   fontScale: 'm',
+  storyAutoplay: true,
   voices: {},
 };
