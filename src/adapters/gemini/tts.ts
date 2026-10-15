@@ -44,16 +44,33 @@ export function ttsPrompt(text: string, lang: string): string {
   return `Say in ${name}: ${t}`;
 }
 
-export async function synthesize(text: string, lang: string, voice: string, model: string, key: string): Promise<Blob> {
-  const r = await generate(model, key, {
-    contents: [{ parts: [{ text: ttsPrompt(text, lang) }] }],
+/**
+ * Gemini 3.8: text는 실제 읽을 대사만 보낸다. 말투는 speech_metadata에 따로 지정한다.
+ * 구버전: 기존 프롬프트 방식 유지. 3.8은 이미 WAV를 보낼 수 있으므로 중복 헤더를 씌우지 않는다.
+ */
+export function ttsBody(text: string, lang: string, voice: string, model: string, style?: 'story') {
+  const modern = model.includes('3.8');
+  return {
+    contents: [{ parts: [{
+      text: modern ? text.trim() : ttsPrompt(text, lang),
+      ...(modern && style === 'story' ? { speech_metadata: { style: 'casual, friendly, natural conversational Indonesian' } } : {}),
+    }] }],
     generationConfig: {
       responseModalities: ['AUDIO'],
       speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } },
     },
-  });
+  };
+}
+
+export function isWav(bytes: Uint8Array): boolean {
+  return bytes.length >= 12 && String.fromCharCode(...bytes.subarray(0, 4)) === 'RIFF' && String.fromCharCode(...bytes.subarray(8, 12)) === 'WAVE';
+}
+
+export async function synthesize(text: string, lang: string, voice: string, model: string, key: string, style?: 'story'): Promise<Blob> {
+  const r = await generate(model, key, ttsBody(text, lang, voice, model, style));
   const part = r.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
   if (!part?.inlineData?.data) throw new GeminiError('음성을 만들지 못했어요', 'empty');
-  const wav = pcm16ToWav(base64ToBytes(part.inlineData.data), sampleRateOf(part.inlineData.mimeType));
+  const bytes = base64ToBytes(part.inlineData.data);
+  const wav = isWav(bytes) ? bytes : pcm16ToWav(bytes, sampleRateOf(part.inlineData.mimeType));
   return new Blob([wav.buffer as ArrayBuffer], { type: 'audio/wav' });
 }
