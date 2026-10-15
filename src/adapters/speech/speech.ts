@@ -20,25 +20,50 @@ export function geminiOn(s: Settings | undefined): s is Settings & { gemini: Non
 
 /** 음성을 만드는 글(프롬프트)을 바꾸면 올린다. 그러면 예전 방식으로 만든 음성은 쓰지 않고 새로 만든다. */
 const CLIP_VERSION = 'v2';
+const MODERN_CLIP_VERSION = 'v3'; // Gemini 3.8: WAV·메타데이터·짧은 단어 프롬프트 수정
 
 export function clipKey(item: Speech, s: Settings & { gemini: NonNullable<Settings['gemini']> }): string {
-  return `${CLIP_VERSION}|${s.gemini.ttsModel}|${s.gemini.voice}|${item.lang}|${item.text}`;
+  const version = s.gemini.ttsModel.includes('3.8') ? MODERN_CLIP_VERSION : CLIP_VERSION;
+  return `${version}|${s.gemini.ttsModel}|${s.gemini.voice}|${item.lang}|${item.text}${item.style ? `|style:${item.style}` : ''}`;
 }
 
 /** 예전 방식으로 만든 음성 파일(설명까지 읽어 버린 것 포함)을 지운다. */
 export async function dropStaleClips(): Promise<void> {
   const keys = (await db.audio.toCollection().primaryKeys()) as string[];
-  const stale = keys.filter((k) => !k.startsWith(`${CLIP_VERSION}|`));
+  const stale = keys.filter((k) => (!k.startsWith(`${CLIP_VERSION}|`) && !k.startsWith(`${MODERN_CLIP_VERSION}|`)) || k.startsWith('v2|gemini-3.8-'));
   if (stale.length) await db.audio.bulkDelete(stale);
 }
 
+/** 미리 만들기와 재생이 겹쳐도 같은 문장에 API를 두 번 호출하지 않는다. */
+const inFlight = new Map<string, Promise<Blob>>();
+
 async function clipFor(item: Speech, s: Settings & { gemini: NonNullable<Settings['gemini']> }): Promise<Blob> {
   const key = clipKey(item, s);
-  const have = await db.audio.get(key);
-  if (have) return have.blob;
-  const blob = await synthesize(item.text, item.lang, s.gemini.voice, s.gemini.ttsModel, s.gemini.apiKey);
-  await db.audio.put({ key, blob, createdAt: Date.now() });
-  return blob;
+  const existing = inFlight.get(key);
+  if (existing) return existing;
+  const pending = (async () => {
+    const have = await db.audio.get(key);
+    if (have) return have.blob;
+    const blob = await synthesize(item.text, item.lang, s.gemini.voice, s.gemini.ttsModel, s.gemini.apiKey, item.style);
+    await db.audio.put({ key, blob, createdAt: Date.now() });
+    return blob;
+  })();
+  inFlight.set(key, pending);
+  try {
+    return await pending;
+  } finally {
+    if (inFlight.get(key) === pending) inFlight.delete(key);
+  }
+}
+
+/** 읽기에서 다음 대사 하나만 미리 준비한다 (Gemini를 켰을 때만, 저장은 기기 안). */
+export async function prefetchSpeech(item: Speech, s: Settings | undefined): Promise<void> {
+  if (!geminiOn(s) || !navigator.onLine) return;
+  try {
+    await clipFor(item, s);
+  } catch {
+    // 재생할 때 다시 시도하거나 기기 음성을 쓴다.
+  }
 }
 
 let token = 0;
@@ -82,7 +107,7 @@ export interface PlayResult {
   missing?: string[];
 }
 
-export async function play(items: readonly Speech[], s: Settings | undefined): Promise<PlayResult> {
+export async function play(items: readonly Speech[], s: Settings | undefined, opts?: { timeoutMs?: number }): Promise<PlayResult> {
   stopAll();
   const list = items.filter((i) => i.text.trim());
   if (!list.length) return { via: 'none' };
@@ -91,7 +116,7 @@ export async function play(items: readonly Speech[], s: Settings | undefined): P
     try {
       for (const it of list) {
         // 처음 만드는 음성이 늦으면 기다리지 않고 기기 음성으로 읽는다 (만드는 건 계속해서 저장됨)
-        const blob = await withTimeout(clipFor(it, s), 10_000, '자연스러운 음성을 만드는 데 시간이 걸려요');
+        const blob = await withTimeout(clipFor(it, s), opts?.timeoutMs ?? 10_000, '자연스러운 음성을 만드는 데 시간이 걸려요');
         if (my !== token) return { via: 'gemini' };
         await playBlob(blob, my);
       }
