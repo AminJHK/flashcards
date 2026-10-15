@@ -89,6 +89,7 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     '- "truefalse": a Korean statement about the story, "answerTrue" true or false.',
     '- "gap": copy one story line exactly, replace one word or short phrase with ___, and give 3 Indonesian options (the removed text is correct).',
     '- "match": 3 to 5 Indonesian words or expressions that appear in the story ("id") with their Korean meanings ("ko").',
+    'Each block only has the fields of its type (omit the others).',
     'Every question needs a short Korean "explain" (except match). Each line needs a Korean translation in "ko". Each line has "speaker": a character id or "narrator".',
     'List place names and other proper nouns in "properNouns".',
   ];
@@ -230,7 +231,8 @@ export function parseDraft(raw: unknown): { draft?: StoryDraft; problems: string
       return { text: str(x.text), ko: str(x.ko), en: str(x.en) || undefined, root: str(x.root) || undefined };
     })
     .filter((g) => g.text && g.ko);
-  const fatal = lines < 6 || questions < 3 || !str(r.title);
+  // 질문이 모자란 건 고쳐 달라고 하면 되지만, 줄이 너무 적으면 이야기로 쓸 수 없다
+  const fatal = lines < 6 || !str(r.title);
   return {
     draft: {
       title: str(r.title) || '이야기',

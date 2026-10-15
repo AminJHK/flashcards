@@ -69,6 +69,8 @@ export async function generateStream(
     isComplete?: (text: string) => boolean;
     /** 이보다 길어지면 (같은 말을 끝없이 반복하는 등) 끊고 받은 데까지 돌려준다 */
     maxChars?: number;
+    /** 같은 글을 반복하기 시작했는지. 그러면 maxChars를 기다리지 않고 바로 끊는다 */
+    isRunaway?: (text: string) => boolean;
   } = {},
 ): Promise<StreamResult> {
   const totalMs = opts.totalMs ?? 240_000;
@@ -134,7 +136,7 @@ export async function generateStream(
             ended = 'complete';
             break;
           }
-          if (opts.maxChars && text.length > opts.maxChars) {
+          if ((opts.maxChars && text.length > opts.maxChars) || opts.isRunaway?.(text)) {
             ended = 'tooLong';
             break;
           }

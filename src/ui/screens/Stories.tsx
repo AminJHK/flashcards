@@ -15,13 +15,13 @@ import { markStorySeen, startStoryJob, useStoryJob } from '../storyJob';
 import { useLexicon } from '../useLexicon';
 
 const DIFF_OPTIONS = (Object.keys(DIFFICULTIES) as StoryDifficulty[]).map((k) => [k, `${DIFFICULTIES[k].label} ${Math.round(DIFFICULTIES[k].known * 100)}%`] as const);
-const STEP_TEXT: Record<StoryStep['stage'], string> = { writing: '이야기를 쓰는 중…', checking: '아는 단어 비율을 확인하는 중…', revising: '모르는 단어를 줄여 다시 쓰는 중…', waiting: 'Gemini 서버가 붐벼서 잠시 기다리는 중…' };
+const STEP_TEXT: Record<StoryStep['stage'], string> = { writing: '이야기를 쓰는 중…', checking: '아는 단어 비율을 확인하는 중…', revising: '모르는 단어를 줄여 다시 쓰는 중…', retrying: '답이 제대로 안 와서 다시 쓰는 중…', waiting: 'Gemini 서버가 붐벼서 잠시 기다리는 중…' };
 
 /** 만드는 중: 진행 막대와 퍼센트 (쓰는 중에는 받은 글자 수로 어림한 값) */
 export function StoryProgress({ step }: { step: StoryStep }) {
   const pct = Math.round((step.pct ?? 0) * 100);
   // 첫 글자가 오기 전(0%)에는 퍼센트 대신 움직이는 막대 (멈춘 것처럼 보이지 않게)
-  const known = step.stage === 'checking' || ((step.stage === 'writing' || step.stage === 'revising') && (step.pct ?? 0) > 0);
+  const known = step.stage === 'checking' || ((step.stage === 'writing' || step.stage === 'revising' || step.stage === 'retrying') && (step.pct ?? 0) > 0);
   return (
     <div className="job-card" role="status" aria-live="polite">
       <div className="job-line">

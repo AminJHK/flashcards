@@ -1,6 +1,7 @@
 import { newId } from '../../core/model/ids';
 import { nameSet, parseDraft, revisionPrompt, STORY_SCHEMA, STORY_TOPICS, storyTexts, systemPrompt, userPrompt, type StoryDraft, type StoryPlan } from '../../core/stories/plan';
 import type { Coverage, Story } from '../../core/stories/types';
+import { salvageJson } from '../../core/stories/salvage';
 import { measureCoverage, meetsTarget, type Lexicon } from '../../core/stories/vocab';
 import { GeminiError, generate, generateStream } from './api';
 
@@ -10,12 +11,22 @@ export const STORY_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
 export const MAX_ATTEMPTS = 3;
 
 /** pct: 0~1. 쓰는 중에는 지금까지 받은 글자 수로 어림한 값 (실제 길이는 이야기마다 달라서 어림이다) */
-export type StoryStep = { attempt: number; stage: 'writing' | 'checking' | 'revising' | 'waiting'; pct?: number };
+export type StoryStep = { attempt: number; stage: 'writing' | 'checking' | 'revising' | 'retrying' | 'waiting'; pct?: number };
 
 /** 이야기 JSON의 보통 길이 (글자 수). 진행률을 어림하는 데만 쓴다 */
-export const EXPECTED_CHARS = 4500;
-/** 이보다 길면 같은 말을 반복하는 등 고장 난 답으로 보고 끊는다 */
-export const MAX_CHARS = 30_000;
+export const EXPECTED_CHARS = 7000;
+/** 이보다 길면 같은 말을 반복하는 등 고장 난 답으로 보고 끊는다 (보통은 5천~1만 자) */
+export const MAX_CHARS = 20_000;
+
+/** 끝부분 200자가 바로 앞 6천 자 안에 3번 넘게 나오면 같은 글을 되풀이하는 것으로 본다 */
+export function looksLooping(text: string): boolean {
+  if (text.length < 3000) return false;
+  const tail = text.slice(-200);
+  const win = text.slice(-6000);
+  let n = 0;
+  for (let at = win.indexOf(tail); at >= 0; at = win.indexOf(tail, at + 1)) if (++n >= 3) return true;
+  return false;
+}
 
 /** 받은 글이 끝까지 온 이야기 JSON인지 (연결이 안 닫혀도 여기서 끝낸다) */
 export function isCompleteStory(text: string): boolean {
@@ -48,7 +59,7 @@ async function ask(
   contents: Turn[],
   sleep: (ms: number) => Promise<void>,
   hooks: { onBusy?: () => void; onProgress?: (chars: number) => void; stream: boolean },
-): Promise<{ text: string; model: string }> {
+): Promise<{ text: string; model: string; ended?: string; finishReason?: string }> {
   let last: unknown;
   for (const model of models) {
     for (let busy = 0; busy <= BUSY_WAITS.length; busy++) {
@@ -57,8 +68,8 @@ async function ask(
         const body = {
           systemInstruction: { parts: [{ text: systemPrompt() }] },
           contents,
+          // temperature는 기본값 그대로 (Gemini 3은 낮추면 같은 말을 반복할 수 있다고 안내한다)
           generationConfig: {
-            temperature: 0.9,
             responseMimeType: 'application/json',
             responseSchema: STORY_SCHEMA,
             // 끝없이 길어지지 않게 (이야기 JSON은 보통 2천 토큰 안팎)
@@ -66,11 +77,14 @@ async function ask(
             ...(THINKING[variant] ? { thinkingConfig: THINKING[variant] } : {}),
           },
         };
-        let text: string;
-        if (hooks.stream) text = (await generateStream(model, key, body, hooks.onProgress ?? (() => {}), { isComplete: isCompleteStory, maxChars: MAX_CHARS })).text;
-        else text = ((await generate(model, key, body, 180_000)).candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? '').join('');
-        if (!text.trim()) throw new GeminiError('Gemini가 빈 답을 보냈어요', 'empty');
-        return { text, model };
+        let out: { text: string; ended?: string; finishReason?: string };
+        if (hooks.stream) out = await generateStream(model, key, body, hooks.onProgress ?? (() => {}), { isComplete: isCompleteStory, maxChars: MAX_CHARS, isRunaway: looksLooping });
+        else {
+          const c = (await generate(model, key, body, 180_000)).candidates?.[0];
+          out = { text: (c?.content?.parts ?? []).map((p) => p.text ?? '').join(''), finishReason: (c as { finishReason?: string } | undefined)?.finishReason };
+        }
+        if (!out.text.trim()) throw new GeminiError('Gemini가 빈 답을 보냈어요', 'empty');
+        return { ...out, model };
       } catch (e) {
         last = e;
         // 400(잘못된 요청)이면 생각하는 시간 설정 때문일 수 있다: 다음 방식으로 바꿔 같은 모델로 다시 (기다림 횟수는 쓰지 않는다)
@@ -135,28 +149,46 @@ export async function createStory(opts: {
   let best: Candidate | undefined;
   let model = '';
   let attempts = 0;
+  /** 시도마다 왜 못 썼는지 (실패하면 화면에 그대로 보여 줘서 원인을 알 수 있게) */
+  const notes: string[] = [];
+  let retry = false;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     attempts = attempt;
-    opts.onStep?.({ attempt, stage: attempt === 1 ? 'writing' : 'revising' });
+    const stage: StoryStep['stage'] = attempt === 1 ? 'writing' : retry ? 'retrying' : 'revising';
+    opts.onStep?.({ attempt, stage });
     let lastPct = -1;
-    const res = await ask(opts.models ?? STORY_MODELS, opts.key, contents, opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms))), {
-      stream: opts.stream ?? true,
-      onBusy: () => opts.onStep?.({ attempt, stage: 'waiting' }),
-      onProgress: (chars) => {
-        const pct = progressOf(chars);
-        if (Math.round(pct * 100) === lastPct) return;
-        lastPct = Math.round(pct * 100);
-        opts.onStep?.({ attempt, stage: attempt === 1 ? 'writing' : 'revising', pct });
-      },
-    });
+    let res: Awaited<ReturnType<typeof ask>>;
+    try {
+      res = await ask(opts.models ?? STORY_MODELS, opts.key, contents, opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms))), {
+        stream: opts.stream ?? true,
+        onBusy: () => opts.onStep?.({ attempt, stage: 'waiting' }),
+        onProgress: (chars) => {
+          const pct = progressOf(chars);
+          if (Math.round(pct * 100) === lastPct) return;
+          lastPct = Math.round(pct * 100);
+          opts.onStep?.({ attempt, stage, pct });
+        },
+      });
+    } catch (e) {
+      // 고쳐 쓰다가 실패해도 앞에서 받은 이야기는 버리지 않는다
+      if (best) {
+        attempts = attempt - 1;
+        break;
+      }
+      if (notes.length && e instanceof Error) e.message = `${e.message} (앞의 시도: ${notes.join(' / ')})`;
+      throw e;
+    }
     model = res.model;
     opts.onStep?.({ attempt, stage: 'checking', pct: 1 });
     let raw: unknown;
+    let salvaged = false;
     try {
       raw = JSON.parse(res.text);
     } catch {
-      raw = undefined;
+      raw = salvageJson(res.text);
+      salvaged = raw !== undefined;
     }
+    const cut = res.ended === 'tooLong' ? '너무 길어서 끊음' : res.finishReason && res.finishReason !== 'STOP' ? `끝난 이유 ${res.finishReason}` : '';
     const parsed = parseDraft(raw);
     let coverage: Coverage | undefined;
     if (parsed.draft && !parsed.fatal) {
@@ -165,17 +197,24 @@ export async function createStory(opts: {
       const cand: Candidate = { draft: parsed.draft, coverage, ok, problems: parsed.problems };
       if (!best || score(cand, plan) > score(best, plan)) best = cand;
       if (ok) break;
+      if (salvaged) {
+        // 끊긴 답을 살려 쓴 것: 다시 고쳐 달라고 해도 또 끊기기 쉬우니 여기서 멈춘다
+        break;
+      }
+    } else {
+      notes.push(`${attempt}번째: ${raw === undefined ? `JSON이 아니거나 중간에 끊김 (${res.text.length}자${cut ? `, ${cut}` : ''})` : parsed.problems.join(', ') || '쓸 수 없는 답'}`);
     }
-    if (attempt < MAX_ATTEMPTS && raw === undefined) {
-      // 끝까지 안 오거나 깨진 답: 그 답은 대화에 넣지 않고 처음 요청을 짧게 다시 한다
-      contents.splice(0, contents.length, { role: 'user', parts: [{ text: `${userPrompt(plan, topic.en)}\n\nIMPORTANT: the previous answer was too long or not valid JSON. Keep it short (120-180 words, at most 18 lines, glossary only for unlisted words) and return complete valid JSON.` }] });
+    retry = !parsed.draft || parsed.fatal;
+    if (attempt < MAX_ATTEMPTS && retry) {
+      // 끊기거나 깨진 답: 그 답은 대화에 넣지 않고 처음 요청을 짧게 다시 한다
+      contents.splice(0, contents.length, { role: 'user', parts: [{ text: `${userPrompt(plan, topic.en)}\n\nIMPORTANT: the previous answer was too long, broken or unusable. Keep it short (120-180 words, at most 18 lines, glossary only for unlisted words, omit fields that do not apply to a block) and return complete valid JSON.` }] });
       continue;
     }
     if (attempt < MAX_ATTEMPTS) {
       contents.push({ role: 'model', parts: [{ text: res.text }] }, { role: 'user', parts: [{ text: revisionPrompt(plan, coverage, parsed.problems) }] });
     }
   }
-  if (!best) throw new GeminiError('이야기를 만들지 못했어요. 잠시 뒤에 다시 시도해 주세요', 'other');
+  if (!best) throw new GeminiError(`쓸 수 있는 이야기가 오지 않았어요 (${notes.join(' / ')}). 잠시 뒤에 다시 시도해 주세요`, 'other');
   const target = Math.round(plan.knownTarget * 100);
   const actual = Math.round(best.coverage.familiar * 100);
   const warning = best.ok

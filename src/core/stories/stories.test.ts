@@ -136,7 +136,8 @@ describe('AI 결과 검사', () => {
     raw.blocks[9] = { type: 'match', pairs: [{ id: 'kopi', ko: '커피' }, { id: 'bakso', ko: '미트볼' }, { id: 'teh', ko: '차' }] };
     const r = parseDraft(raw);
     expect(r.draft!.blocks.filter((b) => b.kind !== 'line')).toHaveLength(1);
-    expect(r.fatal).toBe(true); // 질문이 3개 미만
+    expect(r.fatal).toBe(false); // 질문이 모자라면 고쳐 달라고 할 뿐, 이야기는 쓸 수 있다
+    expect(r.problems.join(' ')).toMatch(/질문이 너무 적어요 \(1개\)/);
     expect(r.problems.join(' ')).toMatch(/정답 번호[\s\S]*빈칸 문제의 문장[\s\S]*bakso/);
   });
 
@@ -147,5 +148,20 @@ describe('AI 결과 검사', () => {
     const r = parseDraft(raw);
     expect(r.problems.join(' ')).toMatch(/첫 줄보다 앞에[\s\S]*|선택지/);
     expect(r.draft!.blocks[0]!.kind).toBe('line');
+  });
+});
+
+describe('끊긴 JSON 살리기', () => {
+  it('마지막으로 끝까지 온 객체까지 살리고 열린 괄호를 닫는다', async () => {
+    const { salvageJson } = await import('./salvage');
+    expect(salvageJson('{"title":"T","blocks":[{"type":"line","text":"a}b"},{"type":"line","text":"c"}],"glossary":[{"text":"x","ko"')).toEqual({
+      title: 'T',
+      blocks: [
+        { type: 'line', text: 'a}b' },
+        { type: 'line', text: 'c' },
+      ],
+    });
+    expect(salvageJson('{"blocks":[{"type":"line","text":"반쯤')).toBeUndefined();
+    expect(salvageJson('nope')).toBeUndefined();
   });
 });

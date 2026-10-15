@@ -6,7 +6,7 @@ import { planStory } from '../../core/stories/plan';
 import { buildLexicon } from '../../core/stories/vocab';
 import { FlashcardsDB } from '../storage/db';
 import { deleteStory, getProgress, listStories, restartStory, saveProgress, saveStory } from '../storage/stories';
-import { createStory, MAX_ATTEMPTS, resetThinkingMemory } from './story';
+import { createStory, looksLooping, MAX_ATTEMPTS, resetThinkingMemory } from './story';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -77,9 +77,27 @@ describe('AI 이야기 만들기', () => {
     expect(s.warning).toMatch(/목표는 아는 단어 98%였는데 실제로는 93%예요/);
   });
 
-  it('쓸 수 있는 결과가 한 번도 없으면 오류', async () => {
+  it('쓸 수 있는 결과가 한 번도 없으면, 시도마다 왜 못 썼는지 담아 오류', async () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => reply({ title: 'x', characters: [], blocks: [], glossary: [] })));
-    await expect(createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', stream: false })).rejects.toThrow(/만들지 못했어요/);
+    await expect(createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', stream: false })).rejects.toThrow(
+      /쓸 수 있는 이야기가 오지 않았어요 \(1번째: 줄이 너무 적어요 \(0줄\).* \/ 2번째: .* \/ 3번째: /,
+    );
+  });
+
+  it('고쳐 쓰다가 연결이 끊겨도, 앞에서 받은 이야기는 버리지 않는다', async () => {
+    const f = vi.fn().mockResolvedValueOnce(reply(story(['bakso', 'sate', 'kerupuk', 'es', 'teh', 'jeruk', 'soto', 'mie']))).mockRejectedValue(new TypeError('Failed to fetch'));
+    vi.stubGlobal('fetch', f);
+    const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', stream: false });
+    expect(s.title).toBe('Pagi');
+    expect(s.attempts).toBe(1);
+    expect(s.warning).toMatch(/목표는 아는 단어 95%/);
+  });
+
+  it('temperature는 보내지 않는다 (Gemini 3은 낮추면 같은 말을 반복할 수 있다)', async () => {
+    const f = vi.fn().mockResolvedValue(reply(story([])));
+    vi.stubGlobal('fetch', f);
+    await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', stream: false });
+    expect(JSON.parse(f.mock.calls[0]![1].body).generationConfig.temperature).toBeUndefined();
   });
 });
 
@@ -176,17 +194,36 @@ describe('조금씩 받다가 멈출 때', () => {
     expect(s.title).toBe('Pagi');
   });
 
-  it('같은 말을 끝없이 늘어놓으면 3만 자에서 끊고, 그 답은 버리고 짧게 다시 요청한다', async () => {
+  it('같은 말을 되풀이하기 시작하면 바로 끊고, 그 답은 버리고 짧게 다시 요청한다', async () => {
     const junk = Array.from({ length: 80 }, () => '{"text":"aku","ko":"나"},'.repeat(20));
     const f = vi.fn().mockResolvedValueOnce(sseStream(['{"blocks":[', ...junk], false)).mockResolvedValueOnce(sseStream([JSON.stringify(story([]))], true));
     vi.stubGlobal('fetch', f);
-    const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {} });
+    const steps: string[] = [];
+    const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {}, onStep: (x) => steps.push(`${x.attempt}:${x.stage}`) });
     expect(f).toHaveBeenCalledTimes(2);
     const second = JSON.parse(f.mock.calls[1]![1].body);
     expect(second.contents).toHaveLength(1); // 고장 난 답은 대화에 넣지 않는다
-    expect(second.contents[0].parts[0].text).toMatch(/previous answer was too long or not valid JSON/);
+    expect(second.contents[0].parts[0].text).toMatch(/previous answer was too long, broken or unusable/);
     expect(second.generationConfig.maxOutputTokens).toBe(8192);
+    expect(steps).toContain('2:retrying');
     expect(s.title).toBe('Pagi');
+  });
+
+  it('이야기 줄은 다 왔는데 끝(glossary)에서 끊기면, 살려서 그대로 쓴다', async () => {
+    const text = JSON.stringify(story([]));
+    const cut = text.slice(0, text.lastIndexOf('"glossary"')) + '"glossary":[{"text":"wah","ko":"와';
+    const f = vi.fn().mockResolvedValue(sseStream([cut], true));
+    vi.stubGlobal('fetch', f);
+    const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {} });
+    expect(f).toHaveBeenCalledTimes(1);
+    expect(s.title).toBe('Pagi');
+    expect(s.blocks.filter((b) => b.kind === 'line')).toHaveLength(13);
+  });
+
+  it('되풀이 알아차리기', () => {
+    expect(looksLooping(JSON.stringify(story([])))).toBe(false);
+    expect(looksLooping('{"blocks":[' + '{"text":"aku","ko":"나"},'.repeat(200))).toBe(true);
+    expect(looksLooping('{"a":"' + ' '.repeat(5000))).toBe(true);
   });
 });
 
@@ -194,8 +231,8 @@ describe('진행률 어림', () => {
   it('글자가 올수록 오르지만 100%에 닿지 않는다', async () => {
     const { progressOf } = await import('./story');
     expect(progressOf(0)).toBe(0);
-    expect(progressOf(4500)).toBeGreaterThan(0.75);
-    expect(progressOf(9000)).toBeGreaterThan(progressOf(4500));
+    expect(progressOf(7000)).toBeGreaterThan(0.75);
+    expect(progressOf(14000)).toBeGreaterThan(progressOf(7000));
     expect(progressOf(100_000)).toBe(0.97);
   });
 });
