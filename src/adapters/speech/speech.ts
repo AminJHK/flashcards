@@ -242,8 +242,10 @@ export async function generateAll(
         await clipFor(it, s as Settings & { gemini: NonNullable<Settings['gemini']> });
         break;
       } catch (e) {
-        if (e instanceof GeminiError && e.kind === 'quota' && tries++ < 2) {
-          await sleep(30_000);
+        // Retry only a confirmed short-term limit. Daily/unknown 429s should stop,
+        // not repeat background requests that consume the user's small free quota.
+        if (e instanceof GeminiError && e.kind === 'quota' && e.limit === 'minute' && tries++ < 2) {
+          await sleep(Math.max(75_000, e.retryAfterMs ?? 0));
           continue;
         }
         return { done, total: todo.length, stopped: e instanceof Error ? e.message : '음성을 만들지 못했어요' };
