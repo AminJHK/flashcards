@@ -121,7 +121,6 @@ export async function speakAndWait(item: Speech, preferred: Record<string, strin
   stopSpeaking();
   return new Promise<boolean>((resolve) => {
     let finished = false;
-    let timeout: ReturnType<typeof setTimeout>;
     const done = () => {
       if (finished) return;
       finished = true;
@@ -136,7 +135,7 @@ export async function speakAndWait(item: Speech, preferred: Record<string, strin
     if (v) u.voice = v;
     u.onend = done;
     u.onerror = done;
-    timeout = setTimeout(() => {
+    const timeout = setTimeout(() => {
       s.cancel();
       done();
     }, Math.min(90_000, Math.max(15_000, item.text.length * 400)));
