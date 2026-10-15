@@ -1,5 +1,5 @@
 import { base64ToBytes, pcm16ToWav, sampleRateOf } from '../audio/wav';
-import { GeminiError, generate } from './api';
+import { GeminiError, generate, interact } from './api';
 
 /** 무료로 쓸 수 있는 TTS 모델 (선호 순서). 실제로 쓸 모델은 키를 연결할 때 목록에서 고른다. */
 export const TTS_MODELS = ['gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts', 'gemini-3.1-flash-tts-preview'];
@@ -44,15 +44,14 @@ export function ttsPrompt(text: string, lang: string): string {
   return `Say in ${name}: ${t}`;
 }
 
-/**
- * Gemini 3.8: text는 실제 읽을 대사만 보낸다. 말투는 speech_metadata에 따로 지정한다.
- * 구버전: 기존 프롬프트 방식 유지. 3.8은 이미 WAV를 보낼 수 있으므로 중복 헤더를 씌우지 않는다.
- */
+/** Existing generateContent TTS request, retained for older models. */
 export function ttsBody(text: string, lang: string, voice: string, _model: string, style?: 'story') {
+  const transcript = ttsPrompt(text, lang);
   return {
     contents: [{ parts: [{
-      // Legacy generateContent accepts instructions in the text, not Interactions speech_metadata.
-      text: style === 'story' ? `Read naturally in conversational Indonesian with friendly, relaxed intonation, without reading these instructions aloud: ${text.trim()}` : ttsPrompt(text, lang),
+      text: style === 'story'
+        ? `Say naturally in fluent, relaxed everyday Indonesian, like a local friend in a conversation (not a textbook narrator). Read ONLY this sentence: "${text.trim()}"`
+        : transcript,
     }] }],
     generationConfig: {
       responseModalities: ['AUDIO'],
@@ -61,15 +60,58 @@ export function ttsBody(text: string, lang: string, voice: string, _model: strin
   };
 }
 
+/** The Gemini 3.8 REST Interactions endpoint accepts structured, non-spoken style metadata. */
+export function storySpeechBody(text: string, model: string, voice: string, style?: 'story') {
+  return {
+    model,
+    input: [{
+      type: 'user_input',
+      content: [{
+        type: 'text',
+        text: text.trim(),
+        ...(style === 'story' ? { annotations: [{
+          type: 'speech_metadata',
+          style: 'Natural everyday Indonesian conversation, warm and relaxed, fluid native Indonesian pronunciation, lively but not exaggerated intonation, comfortable normal pace. Not formal or robotic.',
+        }] } : {}),
+      }],
+    }],
+    response_format: { type: 'audio' },
+    generation_config: { speech_config: [{ voice }] },
+  };
+}
+
 export function isWav(bytes: Uint8Array): boolean {
   return bytes.length >= 12 && String.fromCharCode(...bytes.subarray(0, 4)) === 'RIFF' && String.fromCharCode(...bytes.subarray(8, 12)) === 'WAVE';
 }
 
+/** Raw REST response: base64 audio in the last model_output step; not the SDK's output_audio shortcut. */
+export function interactionAudio(result: unknown): { data: string; mimeType?: string } {
+  const r = result as {
+    steps?: { type?: string; content?: { type?: string; data?: string; mime_type?: string }[] }[];
+  };
+  const outputs = (r?.steps ?? [])
+    .filter((step) => step.type === 'model_output')
+    .flatMap((step) => step.content ?? [])
+    .filter((part) => part.type === 'audio' && typeof part.data === 'string' && !!part.data);
+  const audio = outputs.at(-1);
+  if (!audio?.data) throw new GeminiError('Gemini가 음성을 보내지 않았어요', 'empty');
+  return { data: audio.data, mimeType: audio.mime_type };
+}
+
 export async function synthesize(text: string, lang: string, voice: string, model: string, key: string, style?: 'story'): Promise<Blob> {
-  const r = await generate(model, key, ttsBody(text, lang, voice, model, style));
-  const part = r.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
-  if (!part?.inlineData?.data) throw new GeminiError('음성을 만들지 못했어요', 'empty');
-  const bytes = base64ToBytes(part.inlineData.data);
-  const wav = isWav(bytes) ? bytes : pcm16ToWav(bytes, sampleRateOf(part.inlineData.mimeType));
+  let bytes: Uint8Array;
+  let mimeType: string | undefined;
+  if (model.startsWith('gemini-3.8-') && model.includes('-tts')) {
+    const audio = interactionAudio(await interact(key, storySpeechBody(text, model, voice, style)));
+    bytes = base64ToBytes(audio.data);
+    mimeType = audio.mimeType;
+  } else {
+    const r = await generate(model, key, ttsBody(text, lang, voice, model, style));
+    const part = r.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
+    if (!part?.inlineData?.data) throw new GeminiError('음성을 만들지 못했어요', 'empty');
+    bytes = base64ToBytes(part.inlineData.data);
+    mimeType = part.inlineData.mimeType;
+  }
+  const wav = isWav(bytes) ? bytes : pcm16ToWav(bytes, sampleRateOf(mimeType));
   return new Blob([wav.buffer as ArrayBuffer], { type: 'audio/wav' });
 }
