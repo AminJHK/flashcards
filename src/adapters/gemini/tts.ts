@@ -2,7 +2,7 @@ import { base64ToBytes, pcm16ToWav, sampleRateOf } from '../audio/wav';
 import { GeminiError, generate, interact } from './api';
 
 /** 무료로 쓸 수 있는 TTS 모델 (선호 순서). 실제로 쓸 모델은 키를 연결할 때 목록에서 고른다. */
-export const TTS_MODELS = ['gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts', 'gemini-3.1-flash-tts-preview'];
+export const TTS_MODELS = ['gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts', 'gemini-3.1-flash-tts-preview', 'gemini-2.5-flash-preview-tts'];
 
 /** Gemini 기본 음성 중 일부. 언어와 상관없이 쓸 수 있다. */
 export const GEMINI_VOICES: [string, string][] = [
