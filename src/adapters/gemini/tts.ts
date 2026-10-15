@@ -48,7 +48,7 @@ export function ttsPrompt(text: string, lang: string): string {
  * Gemini 3.8: text는 실제 읽을 대사만 보낸다. 말투는 speech_metadata에 따로 지정한다.
  * 구버전: 기존 프롬프트 방식 유지. 3.8은 이미 WAV를 보낼 수 있으므로 중복 헤더를 씌우지 않는다.
  */
-export function ttsBody(text: string, lang: string, voice: string, model: string, style?: 'story') {
+export function ttsBody(text: string, lang: string, voice: string, _model: string, style?: 'story') {
   return {
     contents: [{ parts: [{
       // Legacy generateContent accepts instructions in the text, not Interactions speech_metadata.
