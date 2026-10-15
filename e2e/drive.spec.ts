@@ -167,6 +167,7 @@ test('설정에서 「시작 화면에서 로그인」을 켜면 앱을 열 때 
   await page.getByRole('button', { name: 'Google로 로그인' }).click();
   await expect(page.getByText(/연결했어요 · nurse@example.com/)).toBeVisible();
   await page.getByRole('switch', { name: '시작 화면에서 로그인' }).click();
+  await expect(page.getByRole('switch', { name: '시작 화면에서 로그인' })).toHaveAttribute('aria-checked', 'true'); // 저장된 뒤에 새로고침
   await page.reload();
   await expect(page.getByRole('button', { name: 'Google로 로그인하고 시작' })).toBeVisible();
   await page.screenshot({ path: 'test-results/shots/23-start-sync.png' });
@@ -194,9 +195,9 @@ test('동기화 상태: 왼쪽 위 구름 아이콘에 올리지 않은 기록 �
   await page.getByRole('button', { name: /인도네시아어 구어체/ }).click();
   await page.getByRole('button', { name: '이 덱 복습' }).click();
   await expect(page.getByText('aku', { exact: true })).toBeVisible();
-  await page.keyboard.press('Space');
+  await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
   await expect(page.getByText('Aku capek banget.')).toBeVisible();
-  await page.keyboard.press('2');
+  await page.getByRole('button', { name: /알았음/ }).click();
   await expect(page.getByText('kamu', { exact: true })).toBeVisible(); // 답이 저장되고 다음 카드로
   await page.goto('/#/');
   await expect(icon).toHaveAttribute('aria-label', /아직 올리지 않은 기록 1개/);
@@ -215,6 +216,7 @@ test('「처음 누를 때 자동 로그인」을 켜면 앱을 연 뒤 처음 �
   await page.getByRole('button', { name: 'Google로 로그인' }).click();
   await expect(page.getByText(/연결했어요 · nurse@example.com/)).toBeVisible();
   await page.getByRole('switch', { name: '처음 누를 때 자동 로그인' }).click();
+  await expect(page.getByRole('switch', { name: '처음 누를 때 자동 로그인' })).toHaveAttribute('aria-checked', 'true');
   await page.reload();
   await expect(page.getByRole('heading', { name: '설정' })).toBeVisible();
   await page.getByRole('heading', { name: '설정' }).click();
