@@ -224,29 +224,34 @@ export function Settings() {
   );
 }
 
-/** 지금 깔린 버전과 업데이트 확인. 새 버전이 있으면 바로 받아서 다시 연다 (덱·기록은 그대로) */
+/** 지금 깔린 버전과 수동 업데이트. 새 버전이 있으면 이 줄에만 알려 준다 (다른 화면에는 알림을 띄우지 않는다). 덱·기록은 그대로 */
 function UpdateRow() {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
+  const [latest, setLatest] = useState<string>();
+  useEffect(() => {
+    void fetchLatestVersion().then((v) => v && v !== currentVersion() && setLatest(v));
+  }, []);
   const check = async () => {
     setBusy(true);
-    const latest = await fetchLatestVersion();
-    if (!latest) {
+    const v = latest ?? (await fetchLatestVersion());
+    if (!v) {
       toast('버전을 확인하지 못했어요. 인터넷 연결을 확인해 주세요');
-    } else if (latest === currentVersion()) {
+    } else if (v === currentVersion()) {
       toast('최신 버전이에요');
     } else {
-      toast(`새 버전(${latest})으로 업데이트해요`);
-      await applyUpdate(latest);
+      toast(`새 버전(${v})으로 업데이트해요`);
+      await applyUpdate(v);
       return;
     }
     setBusy(false);
   };
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '0 4px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '0 4px', flexWrap: 'wrap' }}>
       <span className="faint small">버전 {currentVersion()}</span>
-      <button type="button" className="btn-plain" style={{ border: 'none', height: 36 }} onClick={check} disabled={busy}>
-        {busy ? '확인 중…' : '업데이트 확인'}
+      {latest && <span className="small" style={{ color: 'var(--accent)', fontWeight: 600 }}>새 버전 {latest}이 있어요</span>}
+      <button type="button" className={latest ? 'btn-soft' : 'btn-plain'} style={{ border: 'none', height: 36 }} onClick={check} disabled={busy}>
+        {busy ? '확인 중…' : latest ? '지금 업데이트' : '업데이트 확인'}
       </button>
     </div>
   );

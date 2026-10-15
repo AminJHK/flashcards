@@ -17,7 +17,6 @@ import { ConfirmHost, ErrorBoundary } from './confirm';
 import { StartSync } from './StartSync';
 import { FirstTapSync } from './FirstTapSync';
 import { useSyncStatus } from './useSyncStatus';
-import { UpdateBanner } from './UpdateBanner';
 import { SyncBadge } from './components/SyncBadge';
 import { syncWithDrive } from './driveSync';
 import { ToastProvider, useToast } from './toast';
@@ -131,7 +130,6 @@ export function App() {
         {showTabs && <SyncCorner />}
         {showTabs && <TabBar current={tab ?? ''} />}
         {tapSync && <FirstTapSync clientId={tapSync} />}
-        <UpdateBanner canReload={!inReview && !editingNote && a !== 'add' && !(a === 'decks' && b === 'new')} />
         <GlobalErrors />
         <ConfirmHost />
       </ToastProvider>

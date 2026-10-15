@@ -211,28 +211,28 @@ test('PC 키보드: R 키로 발음을 다시 듣는다 (앞면엔 앞면, 정�
   await expect.poll(count).toBeGreaterThan(before);
 });
 
-test('새 버전이 배포되면 자동으로 업데이트되고(복습 중에는 기다렸다가), 덱과 기록은 그대로다', async ({ page }) => {
+test('새 버전이 있어도 복습 중에는 아무 알림이 없고, 설정에서 수동으로 업데이트한다 (덱과 기록은 그대로)', async ({ page }) => {
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
   await expect(page.getByText('단어 500개를 넣었어요')).toBeVisible();
   await page.getByRole('button', { name: '이 덱 복습' }).click();
   await expect(page.getByText('aku', { exact: true })).toBeVisible();
-  // 복습 중에 새 버전이 배포됐다고 흉내 낸다 → 끊지 않고 알림만
+  // 복습 중에 새 버전이 배포됐다고 흉내 낸다 → 아무 알림도, 새로고침도 없다
   await page.route('**/version.json*', (route) => route.fulfill({ json: { version: 'zzz9999' } }));
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
-  await expect(page.getByText('이 화면을 나가면 자동으로 업데이트돼요')).toBeVisible();
-  await expect(page.getByText('aku', { exact: true })).toBeVisible(); // 카드는 그대로
-  // 복습을 닫으면 자동으로 새로 불러온다 (클릭 없이)
+  await page.waitForTimeout(1000);
+  await expect(page.getByText(/새 버전/)).toHaveCount(0);
+  await expect(page.getByText('aku', { exact: true })).toBeVisible();
+  // 설정에서 알려 주고, 눌러야 업데이트한다
+  await page.goto('/#/settings');
+  await expect(page.getByText('새 버전 zzz9999이 있어요')).toBeVisible();
   const reloaded = page.waitForEvent('framenavigated', (f) => f === page.mainFrame() && f.url().includes('v=zzz9999'));
-  await page.getByRole('button', { name: '복습 닫기' }).click();
+  await page.getByRole('button', { name: '지금 업데이트' }).click();
   await reloaded;
   await page.waitForLoadState('load');
-  await expect.poll(() => page.url()).not.toContain('v=zzz9999'); // 새로 열린 뒤 주소의 ?v=는 지워진다
-  // 덱과 기록은 그대로다
+  await expect.poll(() => page.url()).not.toContain('v=zzz9999');
   await page.goto('/#/decks');
   await expect(page.getByRole('button', { name: /인도네시아어 구어체/ })).toBeVisible();
-  await page.goto('/#/settings');
-  await expect(page.getByRole('button', { name: '업데이트 확인' })).toBeVisible();
 });
 
 test('덱 복습을 닫으면 그 덱 화면이 아니라 메인(오늘) 화면으로 간다', async ({ page }) => {
