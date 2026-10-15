@@ -52,8 +52,8 @@ export function ttsBody(text: string, lang: string, voice: string, model: string
   const modern = model.includes('3.8');
   return {
     contents: [{ parts: [{
-      text: modern ? text.trim() : ttsPrompt(text, lang),
-      ...(modern && style === 'story' ? { speech_metadata: { style: 'casual, friendly, natural conversational Indonesian' } } : {}),
+      // Legacy generateContent accepts instructions in the text, not Interactions speech_metadata.
+      text: style === 'story' ? `Read naturally in conversational Indonesian with friendly, relaxed intonation, without reading these instructions aloud: ${text.trim()}` : modern ? text.trim() : ttsPrompt(text, lang),
     }] }],
     generationConfig: {
       responseModalities: ['AUDIO'],
