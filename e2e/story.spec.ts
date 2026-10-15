@@ -72,14 +72,14 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await expect(page.locator('.story-row', { hasText: 'Bakso Malam' })).toBeVisible();
   await page.locator('.story-row', { hasText: 'Bakso Malam' }).click();
 
-  // 이야기 화면: 첫 줄만 보이고, 계속을 누르면 한 줄씩
+  // 이야기 화면: 첫 줄만 보이고, 다음 문장 버튼을 누르면 한 줄씩 (계속 버튼은 따로 없다)
   await expect(page.getByRole('heading', { name: 'Bakso Malam' })).toBeVisible();
   expect(calls.story).toBe(1);
   expect(calls.prompts[0]).toContain('Topic: food');
   expect(calls.prompts[0]).toContain('DECK WORDS (only when necessary): ');
   await expect(page.locator('.story-narration')).toHaveCount(1);
   await expect(page.locator('.story-line')).toHaveCount(0);
-  await page.getByRole('button', { name: '계속' }).click();
+  await page.getByRole('button', { name: '다음 문장 읽기' }).click();
   await expect(page.locator('.story-line')).toHaveCount(1);
   await expect(page.locator('.story-line').first()).toContainText('Budi');
 
@@ -125,7 +125,6 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await expect(page.locator('.story-line')).toHaveCount(2);
   await expect(page.locator('.story-line').nth(1)).toHaveClass(/story-active/);
   await page.screenshot({ path: 'test-results/shots/45-read-player.png' });
-  // 줄이 하나 더 늘었으니 아래 "계속" 횟수를 맞춘다
 
   // 단어 누르기: 덱 밖 단어 → 생성할 때 받은 뜻 + 덱에 추가
   await page.locator('.story-narration').getByRole('button', { name: 'bakso' }).click();
@@ -145,10 +144,12 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await expect(page.getByRole('dialog', { name: 'aku 뜻' })).toContainText('나');
   await page.getByRole('dialog', { name: 'aku 뜻' }).getByRole('button', { name: '읽기 계속하기' }).click();
 
-  // 질문이 나오면 답하기 전에는 계속을 못 누른다
-  await page.getByRole('button', { name: '계속' }).click();
+  // 질문이 나오면 답하기 전에는 다음으로 못 간다
+  await page.getByRole('button', { name: '다음 문장 읽기' }).click();
   await expect(page.getByText('부디는 무엇을 먹고 싶어 하나요?')).toBeVisible();
-  await expect(page.getByRole('button', { name: '답을 골라 주세요' })).toBeDisabled();
+  await expect(page.getByText('답을 골라 주세요')).toBeVisible();
+  await expect(page.getByRole('button', { name: '다음 문장 읽기' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '계속', exact: true })).toHaveCount(0);
   await page.screenshot({ path: 'test-results/shots/42-read-question.png' });
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.screenshot({ path: 'test-results/shots/44-read-question-dark.png' });
@@ -158,7 +159,7 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await expect(page.getByText(/정답: 바소/)).toBeVisible();
 
   // 중간에 닫았다 다시 열면 이어서 (AI를 다시 부르지 않는다)
-  await page.getByRole('button', { name: '계속' }).click();
+  await page.getByRole('button', { name: '다음 문장 읽기' }).click();
   await page.getByRole('button', { name: '이야기 닫기' }).click();
   await expect(page.getByText('5/16')).toBeVisible();
   await page.locator('.story-row', { hasText: 'Bakso Malam' }).click();
@@ -166,10 +167,10 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   expect(calls.story).toBe(1);
 
   // 끝까지: 맞다/틀리다, 짝 맞추기
-  for (let i = 0; i < 4; i++) await page.getByRole('button', { name: '계속' }).click();
+  for (let i = 0; i < 4; i++) await page.getByRole('button', { name: '다음 문장 읽기' }).click();
   await page.getByRole('button', { name: '맞아요' }).click();
   await expect(page.getByText('맞았어요!')).toBeVisible();
-  for (let i = 0; i < 7; i++) await page.getByRole('button', { name: '계속' }).click();
+  for (let i = 0; i < 7; i++) await page.getByRole('button', { name: '다음 문장 읽기' }).click();
   for (const [id, ko] of [['makan', '먹다'], ['minum', '마시다'], ['pulang', '집에 가다']]) {
     await page.locator('.story-match').getByRole('button', { name: id, exact: true }).click();
     await page.locator('.story-match').getByRole('button', { name: ko, exact: true }).click();

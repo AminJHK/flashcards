@@ -1835,7 +1835,14 @@ textarea.input-sentence {
   justify-content: center;
   align-items: center;
   gap: 14px;
-  padding: 8px 16px 0;
+  padding: 8px 16px calc(24px + var(--safe-bottom));
+}
+
+.story-player-hint {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text3);
+  padding-bottom: 6px;
 }
 
 .story-play-btn {

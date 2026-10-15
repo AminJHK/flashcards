@@ -140,7 +140,8 @@ export function StoryReader({ id }: { id: string }) {
     for (let i = at + 1; i < shown.length; i++) if (isLine(i)) return i;
     return -1;
   })();
-  const canReveal = nextShown < 0 && !waiting && !last && isLine(progress.position);
+  // 보이는 다음 줄이 없고 마지막 블록이면, 오른쪽 버튼이 "다 읽었어요"가 된다
+  const finish = nextShown < 0 && !waiting && last;
   const playAt = (i: number) => {
     setCursor(i);
     speakLine(story.blocks[i] as StoryLine);
@@ -238,20 +239,16 @@ export function StoryReader({ id }: { id: string }) {
               </button>
               <button
                 type="button"
-                className="story-play-btn"
-                aria-label="다음 문장 읽기"
-                disabled={nextShown < 0 && !canReveal}
+                className={`story-play-btn${finish ? ' story-play-main' : ''}`}
+                aria-label={finish ? '다 읽었어요' : '다음 문장 읽기'}
+                disabled={nextShown < 0 && waiting}
                 onClick={() => (nextShown >= 0 ? playAt(nextShown) : next(true))}
               >
-                <Icon name="nextLine" size={24} />
+                <Icon name={finish ? 'check' : 'nextLine'} size={finish ? 28 : 24} strokeWidth={finish ? 2.4 : undefined} />
               </button>
             </div>
           )}
-          <div className="answer-bar">
-            <button type="button" className="btn btn-primary" onClick={() => next()} aria-disabled={waiting} disabled={waiting}>
-              {waiting ? '답을 골라 주세요' : last ? '다 읽었어요' : '계속'}
-            </button>
-          </div>
+          {waiting && <div className="story-player-hint" role="status">답을 골라 주세요</div>}
         </>
       )}
       {picked && <WordSheet picked={picked} story={story} lex={lex} onClose={() => setPicked(undefined)} />}
