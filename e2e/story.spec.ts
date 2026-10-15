@@ -32,12 +32,13 @@ const STORY = {
   glossary: [{ text: 'bakso', ko: '바소 (미트볼 수프)', en: 'meatball soup' }],
 };
 
-async function mockGemini(page: Page, calls: { story: number; prompts: string[] }) {
+async function mockGemini(page: Page, calls: { story: number; prompts: string[] }, delayMs = 0) {
   await page.route('https://generativelanguage.googleapis.com/**', async (route) => {
     const url = route.request().url();
     if (url.includes('/models?')) return route.fulfill({ json: { models: [{ name: 'models/gemini-flash-latest' }, { name: 'models/gemini-3.8-flash-tts' }] } });
     if (url.includes('-tts:generateContent')) return route.fulfill({ json: { candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/L16;codec=pcm;rate=24000', data: '' } }] } }] } });
     calls.story++;
+    if (delayMs) await new Promise((r) => setTimeout(r, delayMs));
     calls.prompts.push(route.request().postDataJSON().contents[0].parts[0].text);
     return route.fulfill({ json: { candidates: [{ content: { parts: [{ text: JSON.stringify(STORY) }] } }] } });
   });
@@ -61,6 +62,9 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await page.getByRole('group', { name: '주제' }).getByRole('button', { name: '음식' }).click();
   await page.screenshot({ path: 'test-results/shots/40-read-library.png' });
   await page.getByRole('button', { name: '이야기 만들기' }).click();
+  // 만들어지면 화면을 옮기지 않고 목록에 나타난다. 눌러서 읽는다
+  await expect(page.locator('.story-row', { hasText: 'Bakso Malam' })).toBeVisible();
+  await page.locator('.story-row', { hasText: 'Bakso Malam' }).click();
 
   // 이야기 화면: 첫 줄만 보이고, 계속을 누르면 한 줄씩
   await expect(page.getByRole('heading', { name: 'Bakso Malam' })).toBeVisible();
@@ -143,4 +147,43 @@ test('읽기: Gemini 키가 없으면 연결하라고 안내한다', async ({ pa
   await page.goto('/#/read');
   await expect(page.getByText('설정에서 무료 Gemini 키를 먼저 연결해 주세요.')).toBeVisible();
   await expect(page.getByRole('button', { name: '이야기 만들기' })).toHaveCount(0);
+});
+
+test('읽기: 이야기를 만드는 동안 다른 화면(복습)으로 가도 멈추지 않고, 끝나면 알림만 뜬다', async ({ page }) => {
+  const calls = { story: 0, prompts: [] as string[] };
+  await mockGemini(page, calls, 2500); // 2.5초 걸리는 Gemini
+  await page.goto('/#/settings');
+  await page.getByLabel('Gemini API 키').fill('FAKE-KEY');
+  await page.getByRole('button', { name: '연결' }).click();
+  await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();
+  await page.goto('/#/decks/new');
+  await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
+  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+
+  await page.goto('/#/read');
+  await page.getByRole('button', { name: '이야기 만들기' }).click();
+  await expect(page.getByText('이야기를 쓰는 중…')).toBeVisible();
+  await expect(page.getByText(/다른 화면으로 가도 뒤에서 계속 만들어요/)).toBeVisible();
+
+  // 바로 복습하러 간다: 화면이 멈추지 않고 복습할 수 있다
+  await page.getByRole('navigation', { name: '메인 메뉴' }).getByRole('link', { name: '오늘' }).click();
+  await expect(page.getByRole('navigation', { name: '메인 메뉴' }).locator('.tab-spin')).toBeVisible(); // 읽기 탭에 만드는 중 표시
+  await page.getByRole('button', { name: /복습 시작/ }).click();
+  await expect(page.getByText('aku', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
+  await page.getByRole('button', { name: /알았음/ }).click();
+  await expect(page.getByText('kamu', { exact: true })).toBeVisible(); // 복습이 계속 된다
+
+  // 만들어지면 알림만 뜨고, 복습 화면에 그대로 있다
+  await expect(page.getByText(/이야기 「Bakso Malam」가 완성됐어요/)).toBeVisible({ timeout: 8000 });
+  await expect(page.getByText('kamu', { exact: true })).toBeVisible();
+  expect(page.url()).toContain('#/review');
+  expect(calls.story).toBe(1);
+
+  // 복습을 닫고 읽기 탭에 가면 목록에 있고, 알림 점은 사라진다
+  await page.getByRole('button', { name: '복습 닫기' }).click();
+  await expect(page.getByRole('navigation', { name: '메인 메뉴' }).locator('.tab-dot')).toBeVisible();
+  await page.getByRole('navigation', { name: '메인 메뉴' }).getByRole('link', { name: '읽기' }).click();
+  await expect(page.locator('.story-row', { hasText: 'Bakso Malam' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: '메인 메뉴' }).locator('.tab-dot')).toHaveCount(0);
 });

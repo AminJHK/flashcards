@@ -1,9 +1,9 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useState } from 'react';
-import { createStory, type StoryStep } from '../../adapters/gemini/story';
+import { useEffect, useState } from 'react';
+import type { StoryStep } from '../../adapters/gemini/story';
 import { db } from '../../adapters/storage/db';
-import { deleteStory, restartStory, saveStory } from '../../adapters/storage/stories';
-import { planStory, STORY_TOPICS, StoryPlanError } from '../../core/stories/plan';
+import { deleteStory, restartStory } from '../../adapters/storage/stories';
+import { STORY_TOPICS } from '../../core/stories/plan';
 import { DIFFICULTIES, type StoryDifficulty } from '../../core/stories/types';
 import { FALLBACK_MIN_FAMILIAR } from '../../core/stories/vocab';
 import { Segmented } from '../components/Controls';
@@ -11,7 +11,7 @@ import { ScreenSync } from '../components/ScreenSync';
 import { ask } from '../confirm';
 import { useSettings } from '../hooks';
 import { go } from '../router';
-import { useToast } from '../toast';
+import { markStorySeen, startStoryJob, useStoryJob } from '../storyJob';
 import { useLexicon } from '../useLexicon';
 
 const DIFF_OPTIONS = (Object.keys(DIFFICULTIES) as StoryDifficulty[]).map((k) => [k, `${DIFFICULTIES[k].label} ${Math.round(DIFFICULTIES[k].known * 100)}%`] as const);
@@ -21,13 +21,14 @@ const STEP_TEXT: Record<StoryStep['stage'], string> = { writing: '이야기를 �
 export function Stories() {
   const settings = useSettings();
   const lex = useLexicon();
-  const toast = useToast();
   const stories = useLiveQuery(() => db.stories.orderBy('createdAt').reverse().toArray(), []);
   const progress = useLiveQuery(() => db.storyProgress.toArray(), []);
   const [difficulty, setDifficulty] = useState<StoryDifficulty>('normal');
   const [topic, setTopic] = useState('free');
-  const [step, setStep] = useState<StoryStep>();
-  const [error, setError] = useState<string>();
+  const job = useStoryJob();
+  const step = job.status === 'running' ? job.step : undefined;
+  const error = job.status === 'error' ? job.error : undefined;
+  useEffect(() => markStorySeen(), [job.unseen]);
 
   if (!settings || !lex || !stories || !progress) return <div className="screen" />;
   const key = settings.gemini?.apiKey;
@@ -35,21 +36,8 @@ export function Stories() {
   const familiar = count('known') + count('learning');
   const byId = new Map(progress.map((p) => [p.storyId, p]));
 
-  const generate = async () => {
-    if (!key) return;
-    setError(undefined);
-    try {
-      const plan = planStory(lex, difficulty);
-      setStep({ attempt: 1, stage: 'writing' });
-      const story = await createStory({ lex, plan, topicKey: topic, key, onStep: setStep });
-      await saveStory(story);
-      if (story.warning) toast(story.warning);
-      go(`read/${story.id}`);
-    } catch (e) {
-      setError(e instanceof StoryPlanError || e instanceof Error ? e.message : String(e));
-    } finally {
-      setStep(undefined);
-    }
+  const generate = () => {
+    if (key) startStoryJob({ lex, difficulty, topicKey: topic, key });
   };
 
   return (
@@ -87,6 +75,8 @@ export function Stories() {
             <button type="button" className="btn btn-primary" style={{ height: 52 }} onClick={generate} disabled={!!step}>
               {step ? `${STEP_TEXT[step.stage]}${step.attempt > 1 ? ` (${step.attempt}번째)` : ''}` : '이야기 만들기'}
             </button>
+            {step && <span className="faint small">다른 화면으로 가도 뒤에서 계속 만들어요. 다 되면 알려 드려요. (앱을 닫으면 멈춰요)</span>}
+            {job.status === 'done' && job.title && !step && <span className="small" style={{ color: 'var(--accent)', fontWeight: 600 }}>「{job.title}」가 완성됐어요. 아래 목록에 있어요.</span>}
             {error && (
               <span role="alert" style={{ color: 'var(--again)', fontSize: 14, lineHeight: 1.5 }}>
                 {error}

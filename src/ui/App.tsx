@@ -18,6 +18,7 @@ import { applyTheme } from './theme';
 import { ConfirmHost, ErrorBoundary } from './confirm';
 import { StartSync } from './StartSync';
 import { FirstTapSync } from './FirstTapSync';
+import { StoryJobWatcher } from './StoryJobWatcher';
 import { useSyncStatus } from './useSyncStatus';
 import { syncWithDrive } from './driveSync';
 import { ToastProvider, useToast } from './toast';
@@ -133,6 +134,7 @@ export function App() {
         <ErrorBoundary resetKey={route.join('/')}>{screen}</ErrorBoundary>
         {showTabs && <TabBar current={tab ?? ''} />}
         {tapSync && <FirstTapSync clientId={tapSync} />}
+        <StoryJobWatcher />
         <GlobalErrors />
         <ConfirmHost />
       </ToastProvider>
