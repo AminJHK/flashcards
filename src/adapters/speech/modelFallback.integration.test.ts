@@ -28,6 +28,21 @@ beforeEach(async () => {
 });
 
 describe('free-tier TTS model failover integration', () => {
+  it('replays from phone cache without calling any Gemini API, and never synthesizes a missing line', async () => {
+    const current = settings();
+    const saved = new Blob([new Uint8Array([82, 73, 70, 70])], { type: 'audio/wav' });
+    const cacheKey = `v4|gemini-3.8-flash-lite-tts|Aoede|id-ID|Aku suka membaca.|style:story`;
+    await db.audio.put({ key: cacheKey, blob: saved, createdAt: Date.now() });
+    const request = vi.fn(() => { throw new Error('must not request TTS on replay'); });
+    vi.stubGlobal('fetch', request);
+    const found = await storyClipFor(speech, current, true, true);
+    expect(found.model).toBe('gemini-3.8-flash-lite-tts');
+    expect(found.cached).toBe(true);
+    expect(request).not.toHaveBeenCalled();
+    await expect(storyClipFor({ ...speech, text: 'Aku lapar.' }, current, true, true)).rejects.toMatchObject({ kind: 'empty' });
+    expect(request).not.toHaveBeenCalled();
+  });
+
   it('rotates on a daily quota error, saves the actual model and reuses the result offline', async () => {
     const calls: string[] = [];
     vi.stubGlobal('fetch', vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
