@@ -149,20 +149,20 @@ describe('조금씩 받기 (진행률)', () => {
     expect(s.title).toBe('Pagi');
   });
 
-  it('400(잘못된 요청)이면 생각 설정을 thinkingBudget → thinkingLevel → 없음 순서로 바꿔 같은 모델로 다시 하고, 된 방식을 기억한다', async () => {
+  it('400(잘못된 요청)이면 생각 설정을 thinkingBudget → minimal → low → 없음 순서로 바꿔 같은 모델로 다시 하고, 된 방식을 기억한다', async () => {
     const bad = () => new Response(JSON.stringify({ error: { message: 'Request contains an invalid argument.' } }), { status: 400 });
-    const f = vi.fn().mockResolvedValueOnce(bad()).mockResolvedValueOnce(bad()).mockImplementation(async () => sse([JSON.stringify(story([]))]));
+    const f = vi.fn().mockResolvedValueOnce(bad()).mockResolvedValueOnce(bad()).mockResolvedValueOnce(bad()).mockImplementation(async () => sse([JSON.stringify(story([]))]));
     vi.stubGlobal('fetch', f);
     const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {} });
     const cfg = (i: number) => JSON.parse(f.mock.calls[i]![1].body).generationConfig.thinkingConfig;
-    expect(f).toHaveBeenCalledTimes(3);
-    expect([cfg(0), cfg(1), cfg(2)]).toEqual([{ thinkingBudget: 0 }, { thinkingLevel: 'low' }, undefined]);
+    expect(f).toHaveBeenCalledTimes(4);
+    expect([cfg(0), cfg(1), cfg(2), cfg(3)]).toEqual([{ thinkingBudget: 0 }, { thinkingLevel: 'minimal' }, { thinkingLevel: 'low' }, undefined]);
     expect(f.mock.calls.every((c) => String(c[0]).includes('gemini-flash-latest:'))).toBe(true);
     expect(s.model).toBe('gemini-flash-latest');
     // 다음 이야기는 처음부터 된 방식으로 (400을 다시 겪지 않는다)
     await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {} });
-    expect(f).toHaveBeenCalledTimes(4);
-    expect(cfg(3)).toBeUndefined();
+    expect(f).toHaveBeenCalledTimes(5);
+    expect(cfg(4)).toBeUndefined();
   });
 
   it('생각 설정을 다 빼도 400이면 Google의 이유를 보여 준다', async () => {
@@ -204,7 +204,7 @@ describe('조금씩 받다가 멈출 때', () => {
     const second = JSON.parse(f.mock.calls[1]![1].body);
     expect(second.contents).toHaveLength(1); // 고장 난 답은 대화에 넣지 않는다
     expect(second.contents[0].parts[0].text).toMatch(/previous answer was too long, broken or unusable/);
-    expect(second.generationConfig.maxOutputTokens).toBe(8192);
+    expect(second.generationConfig.maxOutputTokens).toBe(32768);
     expect(steps).toContain('2:retrying');
     expect(s.title).toBe('Pagi');
   });
@@ -218,6 +218,23 @@ describe('조금씩 받다가 멈출 때', () => {
     expect(f).toHaveBeenCalledTimes(1);
     expect(s.title).toBe('Pagi');
     expect(s.blocks.filter((b) => b.kind === 'line')).toHaveLength(13);
+  });
+
+  it('생각에 토큰을 다 써서 몇 줄에서 끊기면, 끝난 이유와 생각 토큰 수를 오류에 담는다', async () => {
+    const head = JSON.stringify(story([])).slice(0, 400);
+    const enc = new TextEncoder();
+    const cutStream = () =>
+      new Response(
+        new ReadableStream({
+          start(c) {
+            c.enqueue(enc.encode(`data: ${JSON.stringify({ candidates: [{ content: { parts: [{ text: head }] }, finishReason: 'MAX_TOKENS' }], usageMetadata: { thoughtsTokenCount: 7900 } })}\n\n`));
+            c.close();
+          },
+        }),
+        { status: 200 },
+      );
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => cutStream()));
+    await expect(createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {} })).rejects.toThrow(/1번째: 줄이 너무 적어요.*\[400자, 끝난 이유 MAX_TOKENS, 생각 7900토큰\]/);
   });
 
   it('되풀이 알아차리기', () => {

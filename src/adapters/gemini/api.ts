@@ -50,7 +50,9 @@ async function errorFrom(res: Response): Promise<GeminiError> {
 }
 
 export interface GenerateResponse {
-  candidates?: { content?: { parts?: { text?: string; inlineData?: { mimeType?: string; data?: string } }[] } }[];
+  candidates?: { content?: { parts?: { text?: string; thought?: boolean; inlineData?: { mimeType?: string; data?: string } }[] }; finishReason?: string }[];
+  /** 쓴 토큰 수 (thoughtsTokenCount: 생각하는 데 쓴 토큰. 답 길이 상한에 같이 들어간다) */
+  usageMetadata?: { candidatesTokenCount?: number; thoughtsTokenCount?: number };
 }
 
 /**
@@ -105,6 +107,7 @@ export async function generateStream(
     if (!res.ok) throw await errorFrom(res);
     let text = '';
     let finishReason: string | undefined;
+    let usage: GenerateResponse['usageMetadata'];
     let ended: StreamResult['ended'];
     const take = (event: string) => {
       const data = event
@@ -114,9 +117,10 @@ export async function generateStream(
         .join('');
       if (!data || data === '[DONE]') return;
       try {
-        const j = JSON.parse(data) as GenerateResponse & { candidates?: { finishReason?: string }[] };
+        const j = JSON.parse(data) as GenerateResponse;
         finishReason = j.candidates?.[0]?.finishReason ?? finishReason;
-        const piece = (j.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? '').join('');
+        if (j.usageMetadata) usage = j.usageMetadata;
+        const piece = (j.candidates?.[0]?.content?.parts ?? []).filter((p) => !p.thought).map((p) => p.text ?? '').join('');
         if (piece) {
           text += piece;
           onProgress(text.length);
@@ -155,11 +159,11 @@ export async function generateStream(
       }
     } catch (e) {
       // 시간이 다 됐어도 받은 글이 완성돼 있으면 그대로 쓴다 (연결만 안 닫힌 경우)
-      if (opts.isComplete?.(text)) return { text, ended: 'complete', finishReason };
+      if (opts.isComplete?.(text)) return { text, ended: 'complete', finishReason, usage };
       if (reason) throw new GeminiError(text ? `${reason} (받은 글 ${text.length}자에서 멈춤)` : reason, 'network');
       throw e;
     }
-    return { text, ended, finishReason };
+    return { text, ended, finishReason, usage };
   } finally {
     clearTimeout(idle);
     clearTimeout(total);
@@ -172,6 +176,7 @@ export interface StreamResult {
   ended?: 'complete' | 'tooLong';
   /** Google이 알려 준 끝난 이유 (STOP, MAX_TOKENS …) */
   finishReason?: string;
+  usage?: GenerateResponse['usageMetadata'];
 }
 
 export function generate(model: string, key: string, body: unknown, timeoutMs = 45_000): Promise<GenerateResponse> {

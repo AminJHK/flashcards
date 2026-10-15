@@ -3,7 +3,7 @@ import { nameSet, parseDraft, revisionPrompt, STORY_SCHEMA, STORY_TOPICS, storyT
 import type { Coverage, Story } from '../../core/stories/types';
 import { salvageJson } from '../../core/stories/salvage';
 import { measureCoverage, meetsTarget, type Lexicon } from '../../core/stories/vocab';
-import { GeminiError, generate, generateStream } from './api';
+import { GeminiError, generate, generateStream, type StreamResult } from './api';
 
 /** 이야기(글) 모델 (선호 순서). 'latest' 별칭이라 새 모델을 따라간다. */
 export const STORY_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
@@ -59,7 +59,7 @@ async function ask(
   contents: Turn[],
   sleep: (ms: number) => Promise<void>,
   hooks: { onBusy?: () => void; onProgress?: (chars: number) => void; stream: boolean },
-): Promise<{ text: string; model: string; ended?: string; finishReason?: string }> {
+): Promise<StreamResult & { model: string }> {
   let last: unknown;
   for (const model of models) {
     for (let busy = 0; busy <= BUSY_WAITS.length; busy++) {
@@ -72,16 +72,18 @@ async function ask(
           generationConfig: {
             responseMimeType: 'application/json',
             responseSchema: STORY_SCHEMA,
-            // 끝없이 길어지지 않게 (이야기 JSON은 보통 2천 토큰 안팎)
-            maxOutputTokens: 8192,
+            // 생각하는 데 쓴 토큰도 이 상한에 들어간다 (8192로 했더니 생각에 다 써서 이야기가 몇 줄에서 끊겼다).
+            // 끝없이 길어지는 건 looksLooping·MAX_CHARS로 따로 끊는다
+            maxOutputTokens: 32768,
             ...(THINKING[variant] ? { thinkingConfig: THINKING[variant] } : {}),
           },
         };
-        let out: { text: string; ended?: string; finishReason?: string };
+        let out: StreamResult;
         if (hooks.stream) out = await generateStream(model, key, body, hooks.onProgress ?? (() => {}), { isComplete: isCompleteStory, maxChars: MAX_CHARS, isRunaway: looksLooping });
         else {
-          const c = (await generate(model, key, body, 180_000)).candidates?.[0];
-          out = { text: (c?.content?.parts ?? []).map((p) => p.text ?? '').join(''), finishReason: (c as { finishReason?: string } | undefined)?.finishReason };
+          const r = await generate(model, key, body, 180_000);
+          const c = r.candidates?.[0];
+          out = { text: (c?.content?.parts ?? []).filter((p) => !p.thought).map((p) => p.text ?? '').join(''), finishReason: c?.finishReason, usage: r.usageMetadata };
         }
         if (!out.text.trim()) throw new GeminiError('Gemini가 빈 답을 보냈어요', 'empty');
         return { ...out, model };
@@ -109,9 +111,9 @@ async function ask(
 
 /**
  * 생각하는 시간(thinking)을 줄이면 훨씬 빠르다. 모델 세대마다 받는 설정이 달라서 차례로 시도하고,
- * 그 모델이 받아들인 방식을 기억한다 (Gemini 2.5: thinkingBudget, Gemini 3: thinkingLevel, 둘 다 안 되면 설정 없이).
+ * 그 모델이 받아들인 방식을 기억한다 (Gemini 2.5: thinkingBudget, Gemini 3 Flash: minimal, Gemini 3 Pro: low, 다 안 되면 설정 없이).
  */
-export const THINKING: readonly (Record<string, unknown> | undefined)[] = [{ thinkingBudget: 0 }, { thinkingLevel: 'low' }, undefined];
+export const THINKING: readonly (Record<string, unknown> | undefined)[] = [{ thinkingBudget: 0 }, { thinkingLevel: 'minimal' }, { thinkingLevel: 'low' }, undefined];
 const thinkingIndex = new Map<string, number>();
 const thinkingFor = (model: string) => thinkingIndex.get(model) ?? 0;
 /** 테스트용 */
@@ -188,7 +190,14 @@ export async function createStory(opts: {
       raw = salvageJson(res.text);
       salvaged = raw !== undefined;
     }
-    const cut = res.ended === 'tooLong' ? '너무 길어서 끊음' : res.finishReason && res.finishReason !== 'STOP' ? `끝난 이유 ${res.finishReason}` : '';
+    const why = [
+      `${res.text.length}자`,
+      res.ended === 'tooLong' ? '되풀이·너무 길어서 끊음' : '',
+      res.finishReason && res.finishReason !== 'STOP' ? `끝난 이유 ${res.finishReason}` : '',
+      res.usage?.thoughtsTokenCount ? `생각 ${res.usage.thoughtsTokenCount}토큰` : '',
+    ]
+      .filter(Boolean)
+      .join(', ');
     const parsed = parseDraft(raw);
     let coverage: Coverage | undefined;
     if (parsed.draft && !parsed.fatal) {
@@ -202,7 +211,7 @@ export async function createStory(opts: {
         break;
       }
     } else {
-      notes.push(`${attempt}번째: ${raw === undefined ? `JSON이 아니거나 중간에 끊김 (${res.text.length}자${cut ? `, ${cut}` : ''})` : parsed.problems.join(', ') || '쓸 수 없는 답'}`);
+      notes.push(`${attempt}번째: ${raw === undefined ? 'JSON이 아니거나 중간에 끊김' : parsed.problems.join(', ') || '쓸 수 없는 답'} [${why}]`);
     }
     retry = !parsed.draft || parsed.fatal;
     if (attempt < MAX_ATTEMPTS && retry) {
