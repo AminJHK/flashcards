@@ -79,22 +79,28 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await page.getByRole('button', { name: '계속' }).click();
   await expect(page.locator('.story-line')).toHaveCount(1);
   await expect(page.locator('.story-line').first()).toContainText('Budi');
+  // Auto-read is enabled on new installs, but can be switched off by the reader.
+  await expect(page.getByRole('button', { name: '줄이 나올 때 자동으로 읽기' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: '줄이 나올 때 자동으로 읽기' }).click();
+  await expect(page.getByRole('button', { name: '줄이 나올 때 자동으로 읽기' })).toHaveAttribute('aria-pressed', 'false');
 
   // 단어 누르기: 덱 밖 단어 → 생성할 때 받은 뜻 + 덱에 추가
   await page.locator('.story-narration').getByRole('button', { name: 'bakso' }).click();
   const sheet = page.getByRole('dialog', { name: 'bakso 뜻' });
   await expect(sheet).toContainText('바소 (미트볼 수프)');
+  await expect(sheet.locator('.story-sheet-meaning')).toBeVisible();
+  await expect(sheet.getByRole('button', { name: '읽기 계속하기' })).toBeVisible();
   await expect(sheet).toContainText('영어: meatball soup');
   await expect(sheet).toContainText('이 문장: 내레이션');
   await page.screenshot({ path: 'test-results/shots/41-read-word.png' });
-  await sheet.getByRole('button', { name: '덱에 추가' }).click();
+  await sheet.getByRole('button', { name: '내 덱에 추가' }).click();
   await expect(page.getByText('덱에 넣었어요. 새 카드로 나와요')).toBeVisible();
   await expect(sheet.getByText('덱에 있어요 · 아직 안 배움')).toBeVisible();
-  await sheet.getByRole('button', { name: '닫기' }).click();
+  await sheet.getByRole('button', { name: '읽기 계속하기' }).click();
   // 덱에 있는 단어 → 덱의 뜻
   await page.locator('.story-narration').getByRole('button', { name: 'aku', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'aku 뜻' })).toContainText('나');
-  await page.getByRole('dialog', { name: 'aku 뜻' }).getByRole('button', { name: '닫기' }).click();
+  await page.getByRole('dialog', { name: 'aku 뜻' }).getByRole('button', { name: '읽기 계속하기' }).click();
 
   // 질문이 나오면 답하기 전에는 계속을 못 누른다
   await page.getByRole('button', { name: '계속' }).click();
