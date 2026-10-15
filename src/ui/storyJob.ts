@@ -1,4 +1,6 @@
 import { useSyncExternalStore } from 'react';
+import { prepareStoryAudio } from '../adapters/speech/speech';
+import { getSettings } from '../adapters/storage/repo';
 import { createStory, type StoryStep } from '../adapters/gemini/story';
 import { saveStory } from '../adapters/storage/stories';
 import { planStory } from '../core/stories/plan';
@@ -15,6 +17,7 @@ export interface StoryJob {
   error?: string;
   storyId?: string;
   title?: string;
+  audio?: { done: number; total: number; running: boolean; note?: string };
   /** 완성됐는데 사용자가 아직 읽기 탭을 안 본 상태 */
   unseen: boolean;
   /** 알림을 한 번만 띄우려는 번호 */
@@ -45,15 +48,24 @@ export function dismissStoryError(): void {
 
 export function startStoryJob(args: { lex: Lexicon; difficulty: StoryDifficulty; topicKey: string; key: string }): void {
   if (job.status === 'running') return;
-  set({ status: 'running', step: { attempt: 1, stage: 'writing' }, error: undefined, storyId: undefined, title: undefined });
+  set({ status: 'running', step: { attempt: 1, stage: 'writing' }, error: undefined, storyId: undefined, title: undefined, audio: undefined });
   void (async () => {
     try {
       const plan = planStory(args.lex, args.difficulty);
       const story = await createStory({ lex: args.lex, plan, topicKey: args.topicKey, key: args.key, onStep: (step) => set({ step }) });
       await saveStory(story);
-      set({ status: 'done', storyId: story.id, title: story.title, unseen: true, step: undefined, seq: job.seq + 1 });
+      // The story is available immediately; voice preparation runs after saving.
+      const total = story.blocks.filter((block) => block.kind === 'line').length;
+      set({ status: 'done', storyId: story.id, title: story.title, unseen: true, step: undefined, audio: { done: 0, total, running: true }, seq: job.seq + 1 });
+      const settings = await getSettings();
+      await prepareStoryAudio(story, settings, (done, count, note) => {
+        if (job.storyId === story.id) set({ audio: { done, total: count, running: !note && done < count, note } });
+      }, () => job.storyId !== story.id);
+      if (job.storyId === story.id && job.audio?.running) set({ audio: { ...job.audio, running: false } });
     } catch (e) {
-      set({ status: 'error', error: e instanceof Error ? e.message : String(e), step: undefined, seq: job.seq + 1 });
+      if (job.status === 'done') {
+        set({ audio: { done: job.audio?.done ?? 0, total: job.audio?.total ?? 0, running: false, note: '음성 준비가 중단됐어요' } });
+      } else set({ status: 'error', error: e instanceof Error ? e.message : String(e), step: undefined, seq: job.seq + 1 });
     }
   })();
 }
