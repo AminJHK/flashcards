@@ -3,7 +3,7 @@ import { driveErrorMessage } from '../driveBackup';
 import { syncWithDrive } from '../driveSync';
 import { useSyncStatus } from '../useSyncStatus';
 import { useToast } from '../toast';
-import { Icon } from './Icon';
+import { Icon, type IconName } from './Icon';
 
 function ago(t: number | undefined, now: number): string {
   if (!t) return '아직 한 번도 안 맞췄어요';
@@ -15,10 +15,11 @@ function ago(t: number | undefined, now: number): string {
 }
 
 /**
- * "지금 종료해도 되나?"에 답한다. 초록 = 이 기기의 기록이 모두 Drive에 올라갔음.
- * 아니면 몇 개가 아직이라고 알려 주고, 누르면 바로 맞춘다 (버튼을 누른 것이라 로그인 창도 열 수 있다).
+ * 동기화 상태를 작은 구름 아이콘으로 보여 준다 (글자는 마우스를 올리거나 읽어 주는 말로만).
+ * ☁✓ 동기화됨(종료해도 돼요) · ☁↑ 3 올리지 않은 기록 3개 · ☁! 실패 · 돌면 동기화 중. 누르면 바로 동기화한다.
+ * inline이면 아이콘 옆에 짧은 글자도 함께 (복습 끝 화면).
  */
-export function SyncBadge({ className = '' }: { className?: string }) {
+export function SyncBadge({ inline = false }: { inline?: boolean }) {
   const st = useSyncStatus();
   const toast = useToast();
   const [now, setNow] = useState(Date.now());
@@ -38,7 +39,8 @@ export function SyncBadge({ className = '' }: { className?: string }) {
   };
 
   const ok = st.pending === 0 && !st.failed && !!st.lastSyncAt;
-  const label = st.syncing
+  const icon: IconName = st.failed ? 'cloudAlert' : ok ? 'cloudCheck' : st.pending > 0 ? 'cloudUp' : 'cloud';
+  const full = st.syncing
     ? '동기화 중…'
     : st.failed
       ? '동기화 실패 · 누르면 다시'
@@ -47,10 +49,12 @@ export function SyncBadge({ className = '' }: { className?: string }) {
         : st.lastSyncAt
           ? `동기화됨 · ${ago(st.lastSyncAt, now)} · 종료해도 돼요`
           : '아직 동기화 전 · 누르면 동기화';
+  const short = st.syncing ? '동기화 중' : st.failed ? '실패' : st.pending > 0 ? `${st.pending}` : '';
+  const state = st.failed ? 'fail' : ok ? 'ok' : 'warn';
   return (
-    <button type="button" className={`sync-badge ${ok ? 'sync-ok' : 'sync-warn'} ${className}`} onClick={sync} disabled={st.syncing} aria-label={label}>
-      <Icon name={ok ? 'check' : 'clock'} size={16} strokeWidth={2.2} />
-      <span>{label}</span>
+    <button type="button" className={`sync-icon sync-${state}${st.syncing ? ' sync-spin' : ''}${inline ? ' sync-inline' : ''}`} onClick={sync} disabled={st.syncing} aria-label={full} title={full}>
+      <Icon name={icon} size={inline ? 20 : 18} strokeWidth={2} />
+      {inline ? <span>{full}</span> : short && <span>{short}</span>}
     </button>
   );
 }

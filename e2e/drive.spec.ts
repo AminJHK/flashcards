@@ -175,7 +175,7 @@ test('설정에서 「시작 화면에서 로그인」을 켜면 앱을 열 때 
 });
 
 
-test('동기화 상태: 복습하면 "아직 올리지 않은 기록"이 뜨고, 동기화하면 "종료해도 돼요"로 바뀐다', async ({ browser }) => {
+test('동기화 상태: 왼쪽 위 구름 아이콘에 올리지 않은 기록 수가 뜨고, 누르면 동기화되어 "종료해도 돼요"로 바뀐다', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, hasTouch: false, isMobile: false, locale: 'ko-KR' });
   const page = await context.newPage();
   await fakeGoogle(page);
@@ -186,21 +186,25 @@ test('동기화 상태: 복습하면 "아직 올리지 않은 기록"이 뜨고,
   await page.getByLabel('Google 클라이언트 ID').fill('123-abc.apps.googleusercontent.com');
   await page.getByRole('button', { name: 'Google로 로그인' }).click();
   await expect(page.getByText(/연결했어요 · nurse@example.com/)).toBeVisible();
-  const nav = page.getByRole('navigation', { name: '메인 메뉴' });
-  await expect(nav.getByRole('button', { name: /동기화됨 · .* 종료해도 돼요/ })).toBeVisible();
-  // 복습 한 장 → 아직 올리지 않은 기록 (복습을 닫으면 조용히 동기화를 시도하지만, 받아 둔 토큰이 없으면 건너뛴다)
+  const icon = page.locator('.sync-corner .sync-icon');
+  await expect(icon).toHaveAttribute('aria-label', /동기화됨 · .* 종료해도 돼요/);
+  expect((await icon.boundingBox())!.x).toBeLessThan(40); // 왼쪽 위 구석
+  // 복습 한 장 → 올리지 않은 기록 1개 (복습 화면을 닫지 않고 오늘 화면으로 가서 본다)
   await page.goto('/#/decks');
   await page.getByRole('button', { name: /인도네시아어 구어체/ }).click();
   await page.getByRole('button', { name: '이 덱 복습' }).click();
+  await expect(page.getByText('aku', { exact: true })).toBeVisible();
   await page.keyboard.press('Space');
+  await expect(page.getByText('Aku capek banget.')).toBeVisible();
   await page.keyboard.press('2');
-  await page.getByRole('button', { name: '복습 닫기' }).click();
+  await expect(page.getByText('kamu', { exact: true })).toBeVisible(); // 답이 저장되고 다음 카드로
   await page.goto('/#/');
+  await expect(icon).toHaveAttribute('aria-label', /아직 올리지 않은 기록 1개/);
+  await expect(icon).toHaveText('1');
   await page.screenshot({ path: 'test-results/shots/37-sync-badge-pc.png' });
-  await expect(nav.getByRole('button', { name: /동기화됨|올리지 않은 기록/ })).toBeVisible();
   // 눌러서 동기화 → 종료해도 돼요
-  await page.getByRole('navigation', { name: '메인 메뉴' }).getByRole('button', { name: /동기화/ }).click();
-  await expect(nav.getByRole('button', { name: /동기화됨 · .* 종료해도 돼요/ })).toBeVisible();
+  await icon.click();
+  await expect(icon).toHaveAttribute('aria-label', /동기화됨 · .* 종료해도 돼요/);
   await context.close();
 });
 

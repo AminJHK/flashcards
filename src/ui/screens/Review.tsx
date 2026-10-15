@@ -12,7 +12,6 @@ import { VoiceMeter } from '../components/VoiceMeter';
 import { useCards, useDecks, useNotes, useNow, useScheduler, useSettings } from '../hooks';
 import { go } from '../router';
 import { useToast } from '../toast';
-import { backupToDrive, driveBackupDue, driveErrorMessage } from '../driveBackup';
 import { syncWithDrive } from '../driveSync';
 import { SyncBadge } from '../components/SyncBadge';
 import { useVoiceAnswer } from '../useVoiceAnswer';
@@ -362,30 +361,12 @@ export function Review({ deckId }: { deckId?: string }) {
           <span className="muted" style={{ fontSize: 15 }}>
             {doneCount ? `${doneCount}장 복습 · 다시 ${againCount}번` : '지금은 볼 카드가 없어요'}
           </span>
-          <SyncBadge />
+          <SyncBadge inline />
         </div>
         <div className="answer-bar">
-          {doneCount > 0 && driveBackupDue(settings) ? (
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() =>
-                backupToDrive().then(
-                  () => {
-                    toast('Google Drive에 백업했어요');
-                    go('');
-                  },
-                  (e) => toast(driveErrorMessage(e)),
-                )
-              }
-            >
-              Drive에 백업하고 홈으로
-            </button>
-          ) : (
-            <button type="button" className="btn btn-primary" onClick={() => go('')}>
-              홈으로
-            </button>
-          )}
+          <button type="button" className="btn btn-primary" onClick={() => go('')}>
+            홈으로
+          </button>
         </div>
       </>
     );

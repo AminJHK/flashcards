@@ -1,5 +1,4 @@
 import { Icon, type IconName } from './Icon';
-import { SyncBadge } from './SyncBadge';
 
 const TABS: [string, string, IconName][] = [
   ['', '오늘', 'home'],
@@ -17,7 +16,6 @@ export function TabBar({ current }: { current: string }) {
           <span>{label}</span>
         </a>
       ))}
-      <SyncBadge className="sync-side" />
     </nav>
   );
 }

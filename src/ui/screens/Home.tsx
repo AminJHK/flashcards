@@ -1,9 +1,8 @@
-import { SyncBadge } from '../components/SyncBadge';
 import { useMemo } from 'react';
 import { getCardType } from '../../core/cardTypes/registry';
 import { buildQueue } from '../../core/scheduler/queue';
 import { daysSince, runBackup } from '../backup';
-import { backupToDrive, driveBackupDue, driveErrorMessage } from '../driveBackup';
+import { driveErrorMessage } from '../driveBackup';
 import { syncWithDrive } from '../driveSync';
 import { weekColumns } from '../../core/stats/heatmap';
 import { durationLabel, Heatmap, HeatmapNumbers } from '../components/Heatmap';
@@ -34,7 +33,8 @@ export function Home() {
   const total = q.counts.review + q.counts.learning + q.counts.newc;
   const backupDays = daysSince(settings.lastBackupAt, now);
   const drive = settings.googleDrive?.clientId;
-  const needBackup = notes.length > 0 && (drive ? driveBackupDue(settings, now) : backupDays === undefined || backupDays >= 7);
+  // 파일 백업 알림은 Drive를 연결하지 않았을 때만 (Drive를 연결했으면 동기화 아이콘이 대신 알려 준다)
+  const needBackup = notes.length > 0 && !drive && (backupDays === undefined || backupDays >= 7);
 
   if (decks.length === 0) {
     return (
@@ -87,7 +87,6 @@ export function Home() {
             {dateLabel}
           </span>
           <h1 className="title title-lg">오늘</h1>
-          <SyncBadge className="sync-home" />
         </div>
 
         <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -159,19 +158,8 @@ export function Home() {
 
         {needBackup && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px', fontSize: 14 }} className="faint">
-            <span style={{ flex: 1 }}>{drive ? '오늘 아직 Drive에 백업하지 않았어요' : backupDays === undefined ? '아직 백업하지 않았어요' : `마지막 백업 ${backupDays}일 전`}</span>
-            <button
-              type="button"
-              className="link-btn"
-              onClick={() =>
-                drive
-                  ? backupToDrive().then(
-                      () => toast('Google Drive에 백업했어요'),
-                      (e) => toast(driveErrorMessage(e)),
-                    )
-                  : runBackup(toast)
-              }
-            >
+            <span style={{ flex: 1 }}>{backupDays === undefined ? '아직 백업하지 않았어요' : `마지막 백업 ${backupDays}일 전`}</span>
+            <button type="button" className="link-btn" onClick={() => runBackup(toast)}>
               지금 백업
             </button>
           </div>
