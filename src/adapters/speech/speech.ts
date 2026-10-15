@@ -163,13 +163,24 @@ export async function prepareStoryAudio(
     const line = lines[i]!;
     const voice = storyVoice(story, roleOf(story, line), overrides);
     const selected = { ...settings, gemini: { ...settings.gemini, voice } };
-    try {
-      await storyClipFor({ text: line.text, lang: story.lang, style: 'story' }, selected, settings.storyAutoModelSwitch !== false);
-      onProgress(i + 1, total);
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : '음성을 준비하지 못했어요';
-      onProgress(i, total, reason);
-      return;
+    let prepared = false;
+    for (let attempt = 0; attempt < 3 && !prepared; attempt++) {
+      if (cancelled()) return;
+      try {
+        await storyClipFor({ text: line.text, lang: story.lang, style: 'story' }, selected, settings.storyAutoModelSwitch !== false);
+        prepared = true;
+        onProgress(i + 1, total);
+      } catch (error) {
+        if (error instanceof GeminiError && error.kind === 'quota' && error.limit === 'minute' && attempt < 2) {
+          // The model's free RPM is tiny; wait rather than flooding the API.
+          onProgress(i, total, '분당 무료 한도를 기다리는 중…');
+          await new Promise((resolve) => setTimeout(resolve, Math.max(65_000, error.retryAfterMs ?? 0)));
+          continue;
+        }
+        const reason = error instanceof Error ? error.message : '음성을 준비하지 못했어요';
+        onProgress(i, total, reason);
+        return;
+      }
     }
   }
 }
