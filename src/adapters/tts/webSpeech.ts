@@ -108,6 +108,43 @@ export function speak(items: readonly Speech[], preferred: Record<string, string
   return found;
 }
 
+/** Await a single device-spoken sentence for sequential story replay.
+ * Calling stopSpeaking() resolves the waiter so paused replay never hangs.
+ */
+let cancelWaiter: (() => void) | undefined;
+
+export async function speakAndWait(item: Speech, preferred: Record<string, string> = {}, rate = 0.9): Promise<boolean> {
+  const s = synth();
+  if (!s || !ttsSupported() || !item.text.trim()) return false;
+  const v = pickVoice(item.lang, preferred[item.lang]);
+  if (!v && loadVoices().length) return false;
+  stopSpeaking();
+  return new Promise<boolean>((resolve) => {
+    let finished = false;
+    let timeout: ReturnType<typeof setTimeout>;
+    const done = () => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeout);
+      if (cancelWaiter === done) cancelWaiter = undefined;
+      resolve(true);
+    };
+    cancelWaiter = done;
+    const u = new SpeechSynthesisUtterance(item.text);
+    u.lang = v?.lang ?? item.lang;
+    u.rate = rate;
+    if (v) u.voice = v;
+    u.onend = done;
+    u.onerror = done;
+    timeout = setTimeout(() => {
+      s.cancel();
+      done();
+    }, Math.min(90_000, Math.max(15_000, item.text.length * 400)));
+    s.speak(u);
+  });
+}
+
 export function stopSpeaking(): void {
+  cancelWaiter?.();
   synth()?.cancel();
 }
