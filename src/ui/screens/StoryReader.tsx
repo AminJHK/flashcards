@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { play } from '../../adapters/speech/speech';
+import { play, prefetchSpeech, stopAll } from '../../adapters/speech/speech';
 import { db } from '../../adapters/storage/db';
 import { addNote, saveSettings } from '../../adapters/storage/repo';
 import { getProgress, saveProgress } from '../../adapters/storage/stories';
@@ -41,6 +41,9 @@ export function StoryReader({ id }: { id: string }) {
   const lex = useLexicon();
   const settings = useSettings();
   const end = useRef<HTMLDivElement>(null);
+  const autoplay = settings?.storyAutoplay !== false;
+  // Leave the story: stop a voice that would otherwise continue on the next screen.
+  useEffect(() => () => stopAll(), []);
 
   useEffect(() => {
     void getProgress(id).then((p) => {
@@ -51,6 +54,13 @@ export function StoryReader({ id }: { id: string }) {
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [progress?.position]);
+
+  // Prepare one upcoming sentence. Never preload the entire story (free API limits).
+  useEffect(() => {
+    if (!story || !progress || !autoplay) return;
+    const upcoming = story.blocks.slice(progress.position).find((block) => block.kind === 'line');
+    if (upcoming?.kind === 'line') void prefetchSpeech({ text: upcoming.text, lang: 'id-ID', style: 'story' }, settings);
+  }, [story, progress, autoplay, settings]);
 
   if (story === undefined || !progress || !lex) return <div className="screen" />;
   if (!story) {
@@ -82,7 +92,13 @@ export function StoryReader({ id }: { id: string }) {
     const position = progress.position + 1;
     update({ ...progress, position });
     const b = story.blocks[position - 1]!;
-    if (b.kind === 'line' && settings?.storyAutoplay) void play([{ text: b.text, lang: 'id-ID' }], settings);
+    if (b.kind === 'line' && autoplay) void play([{ text: b.text, lang: 'id-ID', style: 'story' }], settings, { timeoutMs: 25_000 });
+  };
+  const toggleAutoplay = () => {
+    const enabled = !autoplay;
+    void saveSettings({ storyAutoplay: enabled });
+    if (!enabled) stopAll();
+    else if (current.kind === 'line') void play([{ text: current.text, lang: 'id-ID', style: 'story' }], settings, { timeoutMs: 25_000 });
   };
   const answer = (index: number, correct: boolean) => {
     if (progress.answers[index] !== undefined) return;
@@ -105,9 +121,9 @@ export function StoryReader({ id }: { id: string }) {
           type="button"
           className="icon-btn"
           aria-label="줄이 나올 때 자동으로 읽기"
-          aria-pressed={!!settings?.storyAutoplay}
-          style={settings?.storyAutoplay ? { color: 'var(--accent)' } : undefined}
-          onClick={() => void saveSettings({ storyAutoplay: !settings?.storyAutoplay })}
+          aria-pressed={autoplay}
+          style={autoplay ? { color: 'var(--accent)' } : undefined}
+          onClick={toggleAutoplay}
         >
           <Icon name="speaker" size={22} />
         </button>
@@ -181,7 +197,7 @@ function Tokens({ text, lex, names, onPick }: { text: string; lex: Lexicon; name
 
 function LineView({ line, story, lex, names, onPick }: { line: StoryLine; story: Story; lex: Lexicon; names: Set<string>; onPick: (s: Span) => void }) {
   const settings = useSettings();
-  const say = () => void play([{ text: line.text, lang: 'id-ID' }], settings);
+  const say = () => void play([{ text: line.text, lang: 'id-ID', style: 'story' }], settings, { timeoutMs: 25_000 });
   const speakerName = story.characters.find((c) => c.id === line.speaker)?.name;
   if (!speakerName) {
     return (
@@ -386,32 +402,47 @@ function WordSheet({ picked, story, lex, onClose }: { picked: Picked; story: Sto
     }
   };
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
-      <div className="dialog story-sheet" role="dialog" aria-label={`${span.text} 뜻`} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <strong style={{ fontSize: 24, flex: 1 }}>{span.text}</strong>
-          <button type="button" className="icon-btn" aria-label="단어 듣기" onClick={() => void play([{ text: span.text, lang: 'id-ID' }], settings)}>
-            <Icon name="speaker" size={22} />
+    <div className="dialog-backdrop story-word-backdrop" onClick={onClose}>
+      <div className="dialog story-sheet" role="dialog" aria-modal="true" aria-label={`${span.text} 뜻`} onClick={(e) => e.stopPropagation()}>
+        <div className="story-sheet-handle" aria-hidden="true" />
+        <div className="story-sheet-head">
+          <div className="story-sheet-word">
+            <span className="story-sheet-eyebrow">인도네시아어 · 단어 살펴보기</span>
+            <strong>{span.text}</strong>
+          </div>
+          <button type="button" className="story-sheet-audio" aria-label="단어 듣기" onClick={() => void play([{ text: span.text, lang: 'id-ID' }], settings)}>
+            <Icon name="speaker" size={23} />
           </button>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 16, lineHeight: 1.5 }}>
-          <span>{g.ko || '뜻 정보가 없어요'}</span>
-          {g.en && <span className="muted small">영어: {g.en}</span>}
-          {g.root && <span className="muted small">어근·표준형: {g.root}</span>}
-          {line.ko && <span className="faint small">이 문장: {line.ko}</span>}
+        <div className="story-sheet-meaning">
+          <span className="story-sheet-eyebrow">뜻 · MEANING</span>
+          <span className="story-sheet-ko">{g.ko || '뜻 정보가 없어요'}</span>
+          {g.en && <span className="story-sheet-en">{g.en}</span>}
         </div>
+        {g.root && (
+          <div className="story-sheet-meta">
+            <span className="story-sheet-eyebrow">어근 · 표준형</span>
+            <span>{g.root}</span>
+          </div>
+        )}
+        {line.ko && (
+          <div className="story-sheet-example">
+            <span className="story-sheet-eyebrow">이야기 속 문장</span>
+            <p>{line.text}</p>
+            <span>{line.ko}</span>
+          </div>
+        )}
         {entry ? (
-          <span className="chip" style={{ alignSelf: 'flex-start' }}>
-            {STATUS_TEXT[entry.status]}
-          </span>
+          <div className="story-sheet-known">
+            <Icon name="check" size={18} />
+            <span>{STATUS_TEXT[entry.status]}</span>
+          </div>
         ) : (
-          <button type="button" className="btn btn-primary" style={{ height: 48 }} onClick={add} disabled={busy}>
-            덱에 추가
+          <button type="button" className="btn btn-primary story-sheet-add" onClick={add} disabled={busy}>
+            {busy ? '추가하는 중…' : '내 덱에 추가'}
           </button>
         )}
-        <button type="button" className="btn btn-quiet" onClick={onClose}>
-          닫기
-        </button>
+        <button type="button" className="story-sheet-close" onClick={onClose}>읽기 계속하기</button>
       </div>
     </div>
   );
