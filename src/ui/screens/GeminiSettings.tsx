@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Settings } from '../../core/model/types';
 import { GeminiError, listModels, pickModel } from '../../adapters/gemini/api';
 import { GEMINI_VOICES, synthesize, TTS_MODELS } from '../../adapters/gemini/tts';
@@ -105,6 +105,15 @@ function Connected({ s, g }: { s: Settings; g: NonNullable<Settings['gemini']> }
   const set = (patch: Partial<NonNullable<Settings['gemini']>>) => saveSettings({ gemini: { ...g, ...patch } });
   const missing = useLiveQuery(() => missingClips(s), [s]);
   const [progress, setProgress] = useState<{ done: number; total: number }>();
+  const [availableTts, setAvailableTts] = useState<string[]>([g.ttsModel]);
+  useEffect(() => {
+    let active = true;
+    void listModels(g.apiKey).then(
+      (models) => { if (active) setAvailableTts([...new Set([g.ttsModel, ...models.filter((name) => name.includes('-tts'))])]); },
+      () => { /* Keep current model if the list cannot load; playback shows errors. */ },
+    );
+    return () => { active = false; };
+  }, [g.apiKey, g.ttsModel]);
   const signal = useRef({ cancelled: false });
 
   const runAll = async () => {
@@ -126,6 +135,15 @@ function Connected({ s, g }: { s: Settings; g: NonNullable<Settings['gemini']> }
     <div className="group">
       <Row title="Gemini 음성으로 읽기" desc={`연결됨 · ${g.ttsModel}`}>
         <Switch label="Gemini 음성으로 읽기" checked={g.useTts} onChange={(v) => set({ useTts: v })} />
+      </Row>
+      <Row title="음성 모델" desc="3.8 Flash는 자연스러운 억양과 말투를 지원해요. 이 키에서 보이는 모델 중 고를 수 있어요.">
+        <select className="select" aria-label="Gemini TTS 모델" value={g.ttsModel} onChange={(e) => set({ ttsModel: e.target.value })}>
+          {availableTts.map((name) => (
+            <option key={name} value={name}>
+              {name === 'gemini-3.8-flash-tts' ? '3.8 Flash · 자연스러운 발음' : name === 'gemini-3.8-flash-lite-tts' ? '3.8 Flash-Lite · 빠름' : name}
+            </option>
+          ))}
+        </select>
       </Row>
       <Row title="목소리" desc={voiceName}>
         <select className="select" aria-label="Gemini 목소리" value={g.voice} onChange={(e) => set({ voice: e.target.value })}>

@@ -38,6 +38,9 @@ async function mockGemini(page: Page, calls: { story: number; prompts: string[] 
     const url = route.request().url();
     if (url.includes('/models?')) return route.fulfill({ json: { models: [{ name: 'models/gemini-flash-latest' }, { name: 'models/gemini-3.8-flash-tts' }] } });
     if (url.includes('-tts:generateContent')) return route.fulfill({ json: { candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/L16;codec=pcm;rate=24000', data: '' } }] } }] } });
+    if (url.endsWith('/interactions')) return route.fulfill({ json: {
+      steps: [{ type: 'model_output', content: [{ type: 'audio', data: btoa('RIFF' + '\\0'.repeat(4) + 'WAVE'), mime_type: 'audio/wav' }] }],
+    } });
     calls.story++;
     if (delayMs) await new Promise((r) => setTimeout(r, delayMs));
     calls.prompts.push(route.request().postDataJSON().contents[0].parts[0].text);
@@ -79,6 +82,8 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await page.getByRole('button', { name: '계속' }).click();
   await expect(page.locator('.story-line')).toHaveCount(1);
   await expect(page.locator('.story-line').first()).toContainText('Budi');
+  // Reading always reports which speech provider was actually used or why it fell back.
+  await expect(page.locator('.story-playback-status')).toBeVisible();
   // Auto-read is enabled on new installs, but can be switched off by the reader.
   await expect(page.getByRole('button', { name: '줄이 나올 때 자동으로 읽기' })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: '줄이 나올 때 자동으로 읽기' }).click();

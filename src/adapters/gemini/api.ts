@@ -179,6 +179,11 @@ export interface StreamResult {
   usage?: GenerateResponse['usageMetadata'];
 }
 
+/** Gemini 3.8 TTS: REST Interactions API (speech_metadata is not supported by generateContent). */
+export function interact(key: string, body: unknown, timeoutMs = 45_000): Promise<unknown> {
+  return call('interactions', key, { method: 'POST', body: JSON.stringify(body) }, timeoutMs);
+}
+
 export function generate(model: string, key: string, body: unknown, timeoutMs = 45_000): Promise<GenerateResponse> {
   return call(`models/${model}:generateContent`, key, { method: 'POST', body: JSON.stringify(body) }, timeoutMs) as Promise<GenerateResponse>;
 }

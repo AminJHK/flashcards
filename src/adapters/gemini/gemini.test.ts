@@ -40,16 +40,16 @@ describe('Gemini API', () => {
     expect(pickModel(['gemini-flash-latest'], ['gemini-3.8-flash-tts'], /-tts/)).toBeUndefined();
   });
 
-  it('TTS: 음성 설정을 보내고 PCM을 WAV로 돌려받는다', async () => {
+  it('구형 TTS: 음성 설정을 보내고 PCM을 WAV로 돌려받는다', async () => {
     const fetchMock = vi.fn(async (_url: string, _init: RequestInit) =>
       json(200, { candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/L16;codec=pcm;rate=24000', data: btoa('\x00\x01\x02\x03') } }] } }] }),
     );
     vi.stubGlobal('fetch', fetchMock);
-    const blob = await synthesize('银行', 'zh-CN', 'Kore', 'gemini-3.8-flash-tts', 'KEY');
+    const blob = await synthesize('银行', 'zh-CN', 'Kore', 'gemini-3.1-flash-tts-preview', 'KEY');
     expect(blob.type).toBe('audio/wav');
     expect(blob.size).toBe(48);
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toContain('models/gemini-3.8-flash-tts:generateContent');
+    expect(url).toContain('models/gemini-3.1-flash-tts-preview:generateContent');
     expect((init.headers as Record<string, string>)['x-goog-api-key']).toBe('KEY');
     const body = JSON.parse(init.body as string);
     expect(body.generationConfig.responseModalities).toEqual(['AUDIO']);

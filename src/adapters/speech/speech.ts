@@ -20,17 +20,18 @@ export function geminiOn(s: Settings | undefined): s is Settings & { gemini: Non
 
 /** 음성을 만드는 글(프롬프트)을 바꾸면 올린다. 그러면 예전 방식으로 만든 음성은 쓰지 않고 새로 만든다. */
 const CLIP_VERSION = 'v2';
-const MODERN_CLIP_VERSION = 'v3'; // Gemini 3.8: WAV·메타데이터·짧은 단어 프롬프트 수정
+const MODERN_CLIP_VERSION = 'v4'; // Gemini 3.8 Interactions + speech_metadata; discard old, unstyled v3 clips
+const LEGACY_STORY_VERSION = 'v3-story'; // Changed conversational directions; preserve ordinary v2 card clips
 
 export function clipKey(item: Speech, s: Settings & { gemini: NonNullable<Settings['gemini']> }): string {
-  const version = s.gemini.ttsModel.includes('3.8') ? MODERN_CLIP_VERSION : CLIP_VERSION;
+  const version = s.gemini.ttsModel.includes('3.8') ? MODERN_CLIP_VERSION : item.style === 'story' ? LEGACY_STORY_VERSION : CLIP_VERSION;
   return `${version}|${s.gemini.ttsModel}|${s.gemini.voice}|${item.lang}|${item.text}${item.style ? `|style:${item.style}` : ''}`;
 }
 
 /** 예전 방식으로 만든 음성 파일(설명까지 읽어 버린 것 포함)을 지운다. */
 export async function dropStaleClips(): Promise<void> {
   const keys = (await db.audio.toCollection().primaryKeys()) as string[];
-  const stale = keys.filter((k) => (!k.startsWith(`${CLIP_VERSION}|`) && !k.startsWith(`${MODERN_CLIP_VERSION}|`)) || k.startsWith('v2|gemini-3.8-'));
+  const stale = keys.filter((k) => (!k.startsWith(`${CLIP_VERSION}|`) && !k.startsWith(`${MODERN_CLIP_VERSION}|`) && !k.startsWith(`${LEGACY_STORY_VERSION}|`)) || k.startsWith('v2|gemini-3.8-'));
   if (stale.length) await db.audio.bulkDelete(stale);
 }
 
@@ -101,13 +102,17 @@ function playBlob(blob: Blob, my: number): Promise<void> {
 export interface PlayResult {
   /** 실제로 쓴 음성 */
   via: 'gemini' | 'device' | 'none';
+  /** 이미 이 기기에 저장된 Gemini 음성인지 */
+  cached?: boolean;
+  /** 재생한 Gemini 모델 이름(키 자체는 노출하지 않음) */
+  model?: string;
   /** Gemini가 안 돼서 기기 음성으로 바꿨을 때 그 이유 */
   error?: string;
   /** 기기에 음성이 없어서 읽지 못한 언어 (예: ['es-ES']) */
   missing?: string[];
 }
 
-export async function play(items: readonly Speech[], s: Settings | undefined, opts?: { timeoutMs?: number }): Promise<PlayResult> {
+export async function play(items: readonly Speech[], s: Settings | undefined, opts?: { timeoutMs?: number; onSource?: (result: PlayResult) => void }): Promise<PlayResult> {
   stopAll();
   const list = items.filter((i) => i.text.trim());
   if (!list.length) return { via: 'none' };
@@ -116,8 +121,10 @@ export async function play(items: readonly Speech[], s: Settings | undefined, op
     try {
       for (const it of list) {
         // 처음 만드는 음성이 늦으면 기다리지 않고 기기 음성으로 읽는다 (만드는 건 계속해서 저장됨)
+        const cached = !!(await db.audio.get(clipKey(it, s)));
         const blob = await withTimeout(clipFor(it, s), opts?.timeoutMs ?? 10_000, '자연스러운 음성을 만드는 데 시간이 걸려요');
         if (my !== token) return { via: 'gemini' };
+        opts?.onSource?.({ via: 'gemini', model: s.gemini.ttsModel, cached });
         await playBlob(blob, my);
       }
       return { via: 'gemini' };
@@ -126,13 +133,17 @@ export async function play(items: readonly Speech[], s: Settings | undefined, op
       await voicesReady();
       if (my !== token) return { via: 'device' };
       const ok = deviceSpeak(list, s.voices);
-      return { via: ok ? 'device' : 'none', error: e instanceof Error ? e.message : undefined, missing: ok ? undefined : missingVoiceLangs(list) };
+      const result: PlayResult = { via: ok ? 'device' : 'none', error: e instanceof Error ? e.message : undefined, missing: ok ? undefined : missingVoiceLangs(list) };
+      opts?.onSource?.(result);
+      return result;
     }
   }
   await voicesReady();
   if (my !== token) return { via: 'device' };
   const ok = deviceSpeak(list, s?.voices);
-  return { via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list) };
+  const result: PlayResult = { via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list) };
+  opts?.onSource?.(result);
+  return result;
 }
 
 /** 노트 하나의 모든 카드에서 읽을 텍스트 (중복 제거) */

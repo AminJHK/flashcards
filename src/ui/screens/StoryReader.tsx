@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { play, prefetchSpeech, stopAll } from '../../adapters/speech/speech';
+import { play, prefetchSpeech, stopAll, type PlayResult } from '../../adapters/speech/speech';
 import { db } from '../../adapters/storage/db';
 import { addNote, saveSettings } from '../../adapters/storage/repo';
 import { getProgress, saveProgress } from '../../adapters/storage/stories';
@@ -38,6 +38,7 @@ export function StoryReader({ id }: { id: string }) {
   const [progress, setProgress] = useState<StoryProgress>();
   const [result, setResult] = useState(false);
   const [picked, setPicked] = useState<Picked>();
+  const [audioStatus, setAudioStatus] = useState('');
   const lex = useLexicon();
   const settings = useSettings();
   const end = useRef<HTMLDivElement>(null);
@@ -83,6 +84,17 @@ export function StoryReader({ id }: { id: string }) {
     setProgress(p);
     void saveProgress(p);
   };
+  const speakLine = (line: StoryLine) => {
+    setAudioStatus(settings?.gemini?.useTts && settings.gemini.apiKey ? 'Gemini 음성 준비 중…' : '기기 음성 준비 중…');
+    void play([{ text: line.text, lang: 'id-ID', style: 'story' }], settings, {
+      timeoutMs: 30_000,
+      onSource: (source: PlayResult) => {
+        if (source.via === 'gemini') setAudioStatus(`Gemini AI · ${source.model} · ${source.cached ? '저장된 음성' : '새 음성'}`);
+        else if (source.via === 'device') setAudioStatus(source.error ? `기기 음성으로 대체됨 · Gemini 오류: ${source.error}` : '기기 음성으로 읽는 중 · 설정에서 Gemini 연결 확인');
+        else setAudioStatus(source.error ? `음성 오류: ${source.error}` : '사용할 수 있는 음성이 없어요');
+      },
+    });
+  };
   const next = () => {
     if (last) {
       update({ ...progress, completedAt: Date.now(), readCount: progress.readCount + 1 });
@@ -92,13 +104,16 @@ export function StoryReader({ id }: { id: string }) {
     const position = progress.position + 1;
     update({ ...progress, position });
     const b = story.blocks[position - 1]!;
-    if (b.kind === 'line' && autoplay) void play([{ text: b.text, lang: 'id-ID', style: 'story' }], settings, { timeoutMs: 25_000 });
+    if (b.kind === 'line' && autoplay) speakLine(b);
+    else setAudioStatus('');
   };
   const toggleAutoplay = () => {
     const enabled = !autoplay;
     void saveSettings({ storyAutoplay: enabled });
-    if (!enabled) stopAll();
-    else if (current.kind === 'line') void play([{ text: current.text, lang: 'id-ID', style: 'story' }], settings, { timeoutMs: 25_000 });
+    if (!enabled) {
+      stopAll();
+      setAudioStatus('');
+    } else if (current.kind === 'line') speakLine(current);
   };
   const answer = (index: number, correct: boolean) => {
     if (progress.answers[index] !== undefined) return;
@@ -128,6 +143,7 @@ export function StoryReader({ id }: { id: string }) {
           <Icon name="speaker" size={22} />
         </button>
       </div>
+      {!!audioStatus && !result && <div className="story-playback-status" role="status" aria-live="polite">{audioStatus}</div>}
       {result ? (
         <StoryResult story={story} progress={progress} lex={lex} onRestart={() => {
           update({ ...progress, position: 1, answers: {}, completedAt: undefined });
@@ -142,7 +158,7 @@ export function StoryReader({ id }: { id: string }) {
             </div>
             {shown.map((b, i) =>
               b.kind === 'line' ? (
-                <LineView key={i} line={b} story={story} lex={lex} names={names} onPick={(span) => setPicked({ span, line: b })} />
+                <LineView key={i} line={b} story={story} lex={lex} names={names} onSay={() => speakLine(b)} onPick={(span) => setPicked({ span, line: b })} />
               ) : i === shown.length - 1 ? (
                 <QuestionView key={i} q={b} seed={`${story.id}:${i}`} result={progress.answers[i]} onAnswer={(c) => answer(i, c)} />
               ) : (
@@ -195,14 +211,12 @@ function Tokens({ text, lex, names, onPick }: { text: string; lex: Lexicon; name
   return <>{out}</>;
 }
 
-function LineView({ line, story, lex, names, onPick }: { line: StoryLine; story: Story; lex: Lexicon; names: Set<string>; onPick: (s: Span) => void }) {
-  const settings = useSettings();
-  const say = () => void play([{ text: line.text, lang: 'id-ID', style: 'story' }], settings, { timeoutMs: 25_000 });
+function LineView({ line, story, lex, names, onPick, onSay }: { line: StoryLine; story: Story; lex: Lexicon; names: Set<string>; onPick: (s: Span) => void; onSay: () => void }) {
   const speakerName = story.characters.find((c) => c.id === line.speaker)?.name;
   if (!speakerName) {
     return (
       <div className="story-narration">
-        <button type="button" className="icon-btn story-say" aria-label="이 문장 듣기" onClick={say}>
+        <button type="button" className="icon-btn story-say" aria-label="이 문장 듣기" onClick={onSay}>
           <Icon name="speaker" size={20} />
         </button>
         <p>
@@ -217,7 +231,7 @@ function LineView({ line, story, lex, names, onPick }: { line: StoryLine; story:
       <div className="story-bubble">
         <span className="story-name">{speakerName}</span>
         <div className="story-bubble-row">
-          <button type="button" className="icon-btn story-say" aria-label="이 문장 듣기" onClick={say}>
+          <button type="button" className="icon-btn story-say" aria-label="이 문장 듣기" onClick={onSay}>
             <Icon name="speaker" size={20} />
           </button>
           <p>
