@@ -113,6 +113,8 @@ export interface Settings {
   immersive: boolean;
   /** 이야기 읽기에서 줄이 나올 때 자동으로 읽어 줄지 */
   storyAutoplay?: boolean;
+  /** 이야기 TTS가 429/404를 만나면 다른 무료 TTS 모델로 변경할지. 카드 재생에는 영향 없음. */
+  storyAutoModelSwitch?: boolean;
   /** 이야기 음성 재생 속도. 이미 저장한 WAV도 재생 중에 바꿀 수 있다. */
   storyPlaybackRate?: number;
   /** 이야기 ID → 등장인물 ID(또는 '__narrator__') → Gemini 목소리. API 키와 무관하다. */
@@ -181,6 +183,7 @@ export const DEFAULT_SETTINGS: Settings = {
   immersive: false,
   fontScale: 'm',
   storyAutoplay: true,
+  storyAutoModelSwitch: true,
   storyPlaybackRate: 0.85,
   voices: {},
 };
