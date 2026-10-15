@@ -3,7 +3,7 @@
 다른 AI 도구나 새 대화에서 이어서 작업할 때 이 문서부터 읽는다. 규칙은 `AGENTS.md`, 설계는 `docs/DESIGN.md`.
 작업을 마칠 때마다 이 문서를 고친다.
 
-마지막 갱신: 2026-10-16 (읽기: 이야기 TTS·자동 읽기·단어 팝업)
+마지막 갱신: 2026-10-16 (Gemini 3.8 읽기 TTS 실제 API 수정)
 
 ## 사용자
 
@@ -61,7 +61,9 @@ npm run dev        # 개발 서버
 - **PC 화면:** 너비 900px 이상이면 왼쪽 세로 메뉴(탭 바가 옆으로 옴) + 가운데 본문(880px, 아주 넓으면 1000px), 덱 목록 2열, 복습 카드 글자 크게. 폰 화면 CSS는 그대로 두고 `src/ui/styles.css` 맨 아래 `@media (min-width: 900px)`에서만 바꾼다. 화면 테스트: `e2e/desktop.spec.ts`(1440×900 스크린샷 30~36번).
 - **백업:** 파일 내보내기/가져오기, Google Drive 백업(사용자가 만든 OAuth 클라이언트 ID). 키와 토큰은 백업에 넣지 않는다.
 
-- **읽기 TTS·UI (2026-10-16, 별도 브랜치 feat/story-audio-word-sheet):** 이야기 자동 읽기를 기본 켬(기존에 직접 꺼 둔 설정은 유지). '계속'으로 다음 대사가 나타나면 발음 재생, 다음 대사 1개를 미리 만들어 IndexedDB에 저장, 같은 발음 API 중복 요청 방지, 이야기 재생의 Gemini 대기 상한 25초(기존 10초), 떠나면 음성 중단. Gemini에서 이야기는 부드러운 구어체 인도네시아어로 읽도록 요청(기존 generateContent 경로). 3.8 모델 음성에 WAV 헤더가 이미 있으면 중복 생성하지 않음. 단어 팝업은 상단 단어·오디오, 뜻 카드, 어근, 예문, 덱 상태/추가, 닫기 버튼이 있는 bottom sheet로 바꿈. **실제 폰 음질은 확인 필요.** Gemini 3.8의 speech_metadata는 새 Interactions API에 해당하므로 기존 generateContent 요청 본문에는 넣지 않음. 변경 후 CI 통과·배포 확인 필요.
+- **읽기 TTS·UI (2026-10-16, 별도 브랜치 feat/story-audio-word-sheet):** 이야기 자동 읽기를 기본 켬(기존에 직접 꺼 둔 설정은 유지). '계속'으로 다음 대사가 나타나면 발음 재생, 다음 대사 1개를 미리 만들어 IndexedDB에 저장, 같은 발음 API 중복 요청 방지, 이야기 재생의 Gemini 대기 상한 25초(기존 10초), 떠나면 음성 중단. Gemini에서 이야기는 부드러운 구어체 인도네시아어로 읽도록 요청(기존 generateContent 경로). 3.8 모델 음성에 WAV 헤더가 이미 있으면 중복 생성하지 않음. 단어 팝업은 상단 단어·오디오, 뜻 카드, 어근, 예문, 덱 상태/추가, 닫기 버튼이 있는 bottom sheet로 바꿈. **실제 폰 음질은 확인 필요.** Gemini 3.8의 speech_metadata는 새 Interactions API에 해당하므로 기존 generateContent 요청 본문에는 넣지 않음. 이전 PR의 검사 통과·main 병합. 이번 TTS 수정은 별도 PR에서 검사 중.
+
+- **읽기 음성이 그대로인 문제 — Gemini 3.8 TTS 근본 수정 (2026-10-16):** 이전 버전은 자연스러운 말투를 `generateContent` 텍스트 프롬프트로 보냈지만 Google Gemini 3.8 공식 문서에 따르면 음성 말투는 새 `v1beta/interactions`의 `input[].content[].annotations[{type:'speech_metadata',style:...}]`으로 보내야 하고 REST 오디오는 `steps[].content[].data`에 온다. 이제 3.8 Flash/Lite TTS에 Interactions API를 사용, 한국어/중국어/스페인어 단어는 style 지정 없이 정확한 transcript만 전달하고, 읽기 인도네시아어 이야기에는 자연스러운 일상회화 style 메타데이터를 붙임. 이전 Gemini 3.8 캐시(v2/v3)는 새 v4 키로 구별해 새로 만듦. 3.1 구형 모델 이야기도 변경된 프롬프트가 반영되도록 별도 버전을 써서 캐시 무효화. 기존 일반 카드 클립은 유지. **읽기 화면에 실제 재생 출처(사용 중인 Gemini 모델/캐시 여부 또는 기기 음성 fallback과 오류 이유)를 작게 표시**해 기기 음성인 줄 모르고 듣는 일을 막음. 설정 > 자연스러운 음성에 `음성 모델` 선택기를 추가(기존 연결 사용자도 무료 3.8 모델로 선택 가능, listModels로 해당 키에서 사용 가능한 모델만 목록 표시). 기본 fallback 규칙 D7 유지. 테스트는 fake 요청/응답으로만, 실제 키는 사용 안 함. 실제 삼성 인터넷 품질과 권한/무료 한도 확인 필요.
 
 ## 아직 실제 폰에서 확인하지 못한 것
 
