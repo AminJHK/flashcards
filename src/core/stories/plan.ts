@@ -57,7 +57,7 @@ export function systemPrompt(): string {
     'Write natural conversational Indonesian, not textbook Indonesian. Keep sentences short.',
     'The story is a sequence of blocks: narration, dialogue lines and comprehension questions placed between story parts (never all at the end).',
     'Korean is used for translations, questions and explanations. English is used only in glossary meanings.',
-    'Return only JSON that matches the schema.',
+    'Write the story in the exact line format the user gives (one item per line, fields separated by " | "). No JSON, no markdown, no extra commentary. Finish with a line containing only END.',
   ].join(' ');
 }
 
@@ -76,8 +76,7 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     plan.fallback
       ? `- The learner knows few words yet. If a sentence is impossible with KNOWN WORDS, you may use DECK WORDS. Words outside all lists must stay under ${unknownPct}% of word occurrences.`
       : `- Words that are not KNOWN WORDS (including the new words) must stay under ${unknownPct}% of word occurrences.`,
-    '- "glossary": only words or expressions that are in none of the lists below (the app already knows the meanings of listed words). Give a short Korean meaning (ko), English meaning (en) and the root when useful. Usually 0 to 8 entries. Use multi-word entries for expressions like "nggak apa-apa".',
-    '- Keep the JSON compact: short translations, no repeated entries.',
+    '- GLOSS lines: only for words or expressions that are in none of the lists below (the app already knows the meanings of listed words). Usually 0 to 8. Multi-word entries are fine for expressions like "nggak apa-apa".',
     '',
     `KNOWN WORDS: ${plan.familiar.map(form).join(', ')}`,
     plan.reinforce.length ? `REVIEW WORDS: ${plan.reinforce.map(form).join(', ')}` : '',
@@ -85,53 +84,29 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     plan.fallback && plan.deckPool.length ? `DECK WORDS (only when necessary): ${plan.deckPool.map(form).join(', ')}` : '',
     '',
     'QUESTIONS: 4 to 6 questions in Korean, placed right after the part of the story they ask about. Use at least three types:',
-    '- "choice": a comprehension question with exactly 3 options and one clearly correct answer (index in "answer").',
-    '- "truefalse": a Korean statement about the story, "answerTrue" true or false.',
-    '- "gap": copy one story line exactly, replace one word or short phrase with ___, and give 3 Indonesian options (the removed text is correct).',
-    '- "match": 3 to 5 Indonesian words or expressions that appear in the story ("id") with their Korean meanings ("ko").',
-    'Each block only has the fields of its type (omit the others).',
-    'Every question needs a short Korean "explain" (except match). Each line needs a Korean translation in "ko". Each line has "speaker": a character id or "narrator".',
-    'List place names and other proper nouns in "properNouns".',
+    '- CHOICE: a comprehension question with exactly 3 options and one clearly correct answer.',
+    '- TF: a Korean statement about the story, true or false.',
+    '- GAP: copy one story line exactly, replace one word or short phrase with ___, and give 3 Indonesian options (the removed text is correct).',
+    '- MATCH: 3 to 5 Indonesian words or expressions that appear in the story, each with its Korean meaning.',
+    'Every question except MATCH needs a short Korean explanation.',
+    '',
+    'FORMAT (one item per line, in story order; answer numbers start at 1; speaker is a character id or narrator):',
+    'TITLE: <Indonesian title>',
+    'TITLE_KO: <Korean title>',
+    'CHARACTER: a | <name>',
+    'CHARACTER: b | <name>',
+    'PROPER: <place names and other proper nouns, comma separated>',
+    'LINE: narrator | <Indonesian> | <Korean translation>',
+    'LINE: a | <Indonesian> | <Korean translation>',
+    'CHOICE: <Korean question> | <option 1> / <option 2> / <option 3> | <correct number> | <Korean explanation>',
+    'TF: <Korean statement> | true | <Korean explanation>',
+    'GAP: <story line with ___> | <option 1> / <option 2> / <option 3> | <correct number> | <Korean explanation>',
+    'MATCH: <word> = <Korean> / <word> = <Korean> / <word> = <Korean>',
+    'GLOSS: <word or expression> | <Korean meaning> | <English meaning> | <root>',
+    'END',
   ];
   return lines.filter((l) => l !== '').join('\n');
 }
-
-/** Gemini의 구조화 출력 형식 (OpenAPI 스키마 일부) */
-export const STORY_SCHEMA = {
-  type: 'OBJECT',
-  properties: {
-    title: { type: 'STRING' },
-    titleKo: { type: 'STRING' },
-    characters: { type: 'ARRAY', items: { type: 'OBJECT', properties: { id: { type: 'STRING' }, name: { type: 'STRING' } }, required: ['id', 'name'] } },
-    properNouns: { type: 'ARRAY', items: { type: 'STRING' } },
-    blocks: {
-      type: 'ARRAY',
-      items: {
-        type: 'OBJECT',
-        properties: {
-          type: { type: 'STRING', enum: ['line', 'choice', 'truefalse', 'gap', 'match'] },
-          speaker: { type: 'STRING' },
-          text: { type: 'STRING' },
-          ko: { type: 'STRING' },
-          prompt: { type: 'STRING' },
-          statement: { type: 'STRING' },
-          sentence: { type: 'STRING' },
-          options: { type: 'ARRAY', items: { type: 'STRING' } },
-          answer: { type: 'INTEGER' },
-          answerTrue: { type: 'BOOLEAN' },
-          explain: { type: 'STRING' },
-          pairs: { type: 'ARRAY', items: { type: 'OBJECT', properties: { id: { type: 'STRING' }, ko: { type: 'STRING' } }, required: ['id', 'ko'] } },
-        },
-        required: ['type'],
-      },
-    },
-    glossary: {
-      type: 'ARRAY',
-      items: { type: 'OBJECT', properties: { text: { type: 'STRING' }, ko: { type: 'STRING' }, en: { type: 'STRING' }, root: { type: 'STRING' } }, required: ['text', 'ko'] },
-    },
-  },
-  required: ['title', 'titleKo', 'characters', 'blocks', 'glossary'],
-} as const;
 
 export interface StoryDraft {
   title: string;
@@ -159,13 +134,13 @@ function cleanOptions(v: unknown): string[] | undefined {
 }
 
 /**
- * AI가 준 JSON을 이야기로 바꾸고 검사한다.
+ * AI가 준 이야기(parseStoryText로 읽은 것)를 검사한다.
  * - 틀린 질문(정답 번호가 없음, 빈칸 문장이 이야기에 없음, 짝 맞추기 단어가 이야기에 없음 등)은 빼고 problems에 적는다.
  * - fatal이면 쓸 수 없는 결과 (줄이나 질문이 너무 적음).
  */
 export function parseDraft(raw: unknown): { draft?: StoryDraft; problems: string[]; fatal: boolean } {
   const problems: string[] = [];
-  if (!raw || typeof raw !== 'object') return { problems: ['JSON이 아니에요'], fatal: true };
+  if (!raw || typeof raw !== 'object') return { problems: ['이야기 형식이 아니에요'], fatal: true };
   const r = raw as Record<string, unknown>;
   const chars: StoryCharacter[] = (Array.isArray(r.characters) ? r.characters : [])
     .map((c, i) => ({ id: str((c as Record<string, unknown>)?.id) || `c${i}`, name: str((c as Record<string, unknown>)?.name), color: i % 6 }))
@@ -291,7 +266,7 @@ function toQuestion(type: string, x: Record<string, unknown>, problems: string[]
 
 /** 다시 써 달라고 할 때의 요청 (지난 결과의 문제와 실제 비율을 알려 준다) */
 export function revisionPrompt(plan: StoryPlan, coverage: Coverage | undefined, problems: readonly string[]): string {
-  const parts = ['Revise the story you just wrote and return the full JSON again.'];
+  const parts = ['Revise the story you just wrote and write the whole story again in the same line format, ending with END.'];
   if (coverage) {
     const words = offendingWords(coverage, plan.fallback);
     parts.push(

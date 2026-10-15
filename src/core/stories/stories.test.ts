@@ -151,17 +151,38 @@ describe('AI 결과 검사', () => {
   });
 });
 
-describe('끊긴 JSON 살리기', () => {
-  it('마지막으로 끝까지 온 객체까지 살리고 열린 괄호를 닫는다', async () => {
-    const { salvageJson } = await import('./salvage');
-    expect(salvageJson('{"title":"T","blocks":[{"type":"line","text":"a}b"},{"type":"line","text":"c"}],"glossary":[{"text":"x","ko"')).toEqual({
-      title: 'T',
-      blocks: [
-        { type: 'line', text: 'a}b' },
-        { type: 'line', text: 'c' },
-      ],
-    });
-    expect(salvageJson('{"blocks":[{"type":"line","text":"반쯤')).toBeUndefined();
-    expect(salvageJson('nope')).toBeUndefined();
+describe('줄 형식 읽기', () => {
+  it('줄 형식을 이야기 모양으로 읽고, 앞의 꾸밈·정답 글자·끊긴 마지막 줄을 처리한다', async () => {
+    const { parseStoryText, formatStoryText } = await import('./textFormat');
+    const text = [
+      '```',
+      'TITLE: Pagi',
+      'TITLE_KO: 아침',
+      'CHARACTER: a | Budi',
+      '- CHARACTER: b | Sari',
+      'PROPER: Jakarta, Bali',
+      'LINE: a | Aku mau kopi. | 나 커피 원해.',
+      'LINE: Sari pergi. | 사리가 간다.',
+      '**CHOICE:** 부디는 뭘 원해? | 차 / 커피 / 밥 | 커피 | kopi = 커피',
+      'TF: 사리는 간다 | 맞아요 | 설명',
+      'GAP: Aku mau ___. | teh / kopi / nasi | 2 | 커피',
+      'MATCH: kopi = 커피 / mau = 원하다 / aku = 나',
+      'GLOSS: pergi | 가다 | to go | ',
+      'LINE: a | Ini sete',
+    ].join('\n');
+    const { raw, complete } = parseStoryText(text);
+    expect(complete).toBe(false);
+    expect(raw).toMatchObject({ title: 'Pagi', titleKo: '아침', properNouns: ['Jakarta', 'Bali'], glossary: [{ text: 'pergi', ko: '가다', en: 'to go' }] });
+    expect(raw.characters.map((c) => c.name)).toEqual(['Budi', 'Sari']);
+    expect(raw.blocks.map((b) => b.type)).toEqual(['line', 'line', 'choice', 'truefalse', 'gap', 'match']); // 끊긴 마지막 줄은 버린다
+    expect(raw.blocks[1]).toMatchObject({ speaker: 'narrator', text: 'Sari pergi.', ko: '사리가 간다.' });
+    expect(raw.blocks[2]).toMatchObject({ answer: 1, options: ['차', '커피', '밥'] });
+    expect(raw.blocks[3]).toMatchObject({ answerTrue: true });
+    expect(raw.blocks[4]).toMatchObject({ answer: 1 });
+    expect((raw.blocks[5]!.pairs as unknown[]).length).toBe(3);
+    // 다시 써서 읽으면 같은 이야기
+    const again = parseStoryText(formatStoryText(raw));
+    expect(again.complete).toBe(true);
+    expect(again.raw.blocks).toEqual(raw.blocks);
   });
 });

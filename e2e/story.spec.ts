@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { formatStoryText } from '../src/core/stories/textFormat';
 
 // 덱 첫 부분의 단어로만 쓴 가짜 이야기 (130단어) + 덱에 없는 단어 하나(bakso)
 const W = 'aku kamu mau makan minum pulang nggak udah lagi sini'.split(' ');
@@ -40,7 +41,7 @@ async function mockGemini(page: Page, calls: { story: number; prompts: string[] 
     calls.story++;
     if (delayMs) await new Promise((r) => setTimeout(r, delayMs));
     calls.prompts.push(route.request().postDataJSON().contents[0].parts[0].text);
-    const body = { candidates: [{ content: { parts: [{ text: JSON.stringify(STORY) }] } }] };
+    const body = { candidates: [{ content: { parts: [{ text: formatStoryText(STORY) }] } }] };
     if (url.includes(':streamGenerateContent')) return route.fulfill({ contentType: 'text/event-stream', body: `data: ${JSON.stringify(body)}\r\n\r\n` });
     return route.fulfill({ json: body });
   });

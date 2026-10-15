@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Card, Note } from '../../core/model/types';
 import type { Scheduler } from '../../core/scheduler/types';
 import { planStory } from '../../core/stories/plan';
+import { formatStoryText } from '../../core/stories/textFormat';
 import { buildLexicon } from '../../core/stories/vocab';
 import { FlashcardsDB } from '../storage/db';
 import { deleteStory, getProgress, listStories, restartStory, saveProgress, saveStory } from '../storage/stories';
@@ -44,7 +45,7 @@ function story(extra: string[]) {
     glossary: [],
   };
 }
-const reply = (body: unknown) => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify(body) }] } }] }), { status: 200 });
+const reply = (body: unknown) => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: formatStoryText(body as Parameters<typeof formatStoryText>[0]) }] } }] }), { status: 200 });
 
 describe('AI 이야기 만들기', () => {
   it('모르는 단어가 너무 많으면 그 단어를 알려주며 다시 써 달라고 하고, 맞는 결과를 저장용 이야기로 만든다', async () => {
@@ -54,7 +55,8 @@ describe('AI 이야기 만들기', () => {
     const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'food', key: 'K', stream: false, onStep: (x) => steps.push(`${x.attempt}:${x.stage}`) });
     expect(f).toHaveBeenCalledTimes(2);
     const second = JSON.parse(f.mock.calls[1]![1].body);
-    expect(second.generationConfig.responseMimeType).toBe('application/json');
+    expect(second.generationConfig.responseSchema).toBeUndefined(); // 구조화 출력은 되풀이에 빠져서 쓰지 않는다
+    expect(second.contents[0].parts[0].text).toContain('LINE: a | <Indonesian> | <Korean translation>');
     expect(second.contents).toHaveLength(3); // 요청 → 첫 답 → 고쳐 달라는 요청
     expect(second.contents[2].parts[0].text).toMatch(/Replace these words[^\n]*bakso, sate/);
     expect(steps).toEqual(['1:writing', '1:checking', '2:revising', '2:checking']);
@@ -135,8 +137,9 @@ const sse = (chunks: string[]) =>
 
 describe('조금씩 받기 (진행률)', () => {
   it('받은 글자 수로 진행률을 알려 주고, 조각을 이어 붙여 이야기를 만든다', async () => {
-    const text = JSON.stringify(story([]));
-    const cut = [text.slice(0, 1500), text.slice(1500, 3000), text.slice(3000)];
+    const text = formatStoryText(story([]));
+    const third = Math.floor(text.length / 3);
+    const cut = [text.slice(0, third), text.slice(third, 2 * third), text.slice(2 * third)];
     const f = vi.fn().mockResolvedValue(sse(cut));
     vi.stubGlobal('fetch', f);
     const pcts: number[] = [];
@@ -151,7 +154,7 @@ describe('조금씩 받기 (진행률)', () => {
 
   it('400(잘못된 요청)이면 생각 설정을 thinkingBudget → minimal → low → 없음 순서로 바꿔 같은 모델로 다시 하고, 된 방식을 기억한다', async () => {
     const bad = () => new Response(JSON.stringify({ error: { message: 'Request contains an invalid argument.' } }), { status: 400 });
-    const f = vi.fn().mockResolvedValueOnce(bad()).mockResolvedValueOnce(bad()).mockResolvedValueOnce(bad()).mockImplementation(async () => sse([JSON.stringify(story([]))]));
+    const f = vi.fn().mockResolvedValueOnce(bad()).mockResolvedValueOnce(bad()).mockResolvedValueOnce(bad()).mockImplementation(async () => sse([formatStoryText(story([]))]));
     vi.stubGlobal('fetch', f);
     const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {} });
     const cfg = (i: number) => JSON.parse(f.mock.calls[i]![1].body).generationConfig.thinkingConfig;
@@ -188,7 +191,7 @@ function sseStream(chunks: string[], close: boolean) {
 
 describe('조금씩 받다가 멈출 때', () => {
   it('이야기가 끝까지 왔는데 연결이 안 닫혀도, 기다리지 않고 바로 쓴다', async () => {
-    const text = JSON.stringify(story([]));
+    const text = formatStoryText(story([]));
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(sseStream([text.slice(0, 2000), text.slice(2000)], false)));
     const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {} });
     expect(s.title).toBe('Pagi');
@@ -196,22 +199,22 @@ describe('조금씩 받다가 멈출 때', () => {
 
   it('같은 말을 되풀이하기 시작하면 바로 끊고, 그 답은 버리고 짧게 다시 요청한다', async () => {
     const junk = Array.from({ length: 80 }, () => '{"text":"aku","ko":"나"},'.repeat(20));
-    const f = vi.fn().mockResolvedValueOnce(sseStream(['{"blocks":[', ...junk], false)).mockResolvedValueOnce(sseStream([JSON.stringify(story([]))], true));
+    const f = vi.fn().mockResolvedValueOnce(sseStream(['{"blocks":[', ...junk], false)).mockResolvedValueOnce(sseStream([formatStoryText(story([]))], true));
     vi.stubGlobal('fetch', f);
     const steps: string[] = [];
     const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {}, onStep: (x) => steps.push(`${x.attempt}:${x.stage}`) });
     expect(f).toHaveBeenCalledTimes(2);
     const second = JSON.parse(f.mock.calls[1]![1].body);
     expect(second.contents).toHaveLength(1); // 고장 난 답은 대화에 넣지 않는다
-    expect(second.contents[0].parts[0].text).toMatch(/previous answer was too long, broken or unusable/);
+    expect(second.contents[0].parts[0].text).toMatch(/previous answer was broken or unusable/);
     expect(second.generationConfig.maxOutputTokens).toBe(32768);
     expect(steps).toContain('2:retrying');
     expect(s.title).toBe('Pagi');
   });
 
-  it('이야기 줄은 다 왔는데 끝(glossary)에서 끊기면, 살려서 그대로 쓴다', async () => {
-    const text = JSON.stringify(story([]));
-    const cut = text.slice(0, text.lastIndexOf('"glossary"')) + '"glossary":[{"text":"wah","ko":"와';
+  it('이야기 줄은 다 왔는데 끝(GLOSS)에서 끊기면, 살려서 그대로 쓴다', async () => {
+    const text = formatStoryText(story([]));
+    const cut = text.slice(0, text.lastIndexOf('END')) + 'GLOSS: wah | 와';
     const f = vi.fn().mockResolvedValue(sseStream([cut], true));
     vi.stubGlobal('fetch', f);
     const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {} });
@@ -221,7 +224,7 @@ describe('조금씩 받다가 멈출 때', () => {
   });
 
   it('생각에 토큰을 다 써서 몇 줄에서 끊기면, 끝난 이유와 생각 토큰 수를 오류에 담는다', async () => {
-    const head = JSON.stringify(story([])).slice(0, 400);
+    const head = formatStoryText(story([])).slice(0, 400);
     const enc = new TextEncoder();
     const cutStream = () =>
       new Response(
@@ -238,7 +241,7 @@ describe('조금씩 받다가 멈출 때', () => {
   });
 
   it('되풀이 알아차리기', () => {
-    expect(looksLooping(JSON.stringify(story([])))).toBe(false);
+    expect(looksLooping(formatStoryText(story([])))).toBe(false);
     expect(looksLooping('{"blocks":[' + '{"text":"aku","ko":"나"},'.repeat(200))).toBe(true);
     expect(looksLooping('{"a":"' + ' '.repeat(5000))).toBe(true);
   });
