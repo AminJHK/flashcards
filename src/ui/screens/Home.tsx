@@ -5,13 +5,20 @@ import { buildQueue } from '../../core/scheduler/queue';
 import { daysSince, runBackup } from '../backup';
 import { driveErrorMessage } from '../driveBackup';
 import { syncWithDrive } from '../driveSync';
-import { weekColumns } from '../../core/stats/heatmap';
+import { dayToDate, weekColumns } from '../../core/stats/heatmap';
 import { durationLabel, Heatmap, HeatmapNumbers } from '../components/Heatmap';
 import { Icon } from '../components/Icon';
 import { useReviewStats } from '../useReviewStats';
 import { useCards, useDecks, useNotes, useNow, useScheduler, useSettings } from '../hooks';
 import { go } from '../router';
 import { useToast } from '../toast';
+
+/** 히트맵을 처음 공부한 주부터 보여 준다 (최대 26주). 기록이 없으면 이번 주만 */
+function heatWeeks(counts: Map<number, unknown>, today: number): number {
+  const first = counts.size ? Math.min(...counts.keys()) : today;
+  const monday = (d: number) => d - ((dayToDate(d).getUTCDay() + 6) % 7);
+  return Math.max(1, Math.min(26, (monday(today) - monday(first)) / 7 + 1));
+}
 
 export function Home() {
   const settings = useSettings();
@@ -104,21 +111,6 @@ export function Home() {
           </span>
         </div>
 
-        {record && (
-          <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>
-                {record.todayCount ? `오늘 ${record.todayCount.count}장${record.todayCount.ms ? ` · ${durationLabel(record.todayCount.ms)}` : ''} 공부했어요` : '오늘은 아직 복습하지 않았어요'}
-              </span>
-              <button type="button" className="link-btn" style={{ padding: '4px 0' }} onClick={() => go('stats')}>
-                전체 보기
-              </button>
-            </div>
-            <Heatmap columns={weekColumns(record.today, 26)} counts={record.counts} average={record.stats.dailyAverage} today={record.today} scrollToEnd />
-            <HeatmapNumbers s={record.stats} />
-          </div>
-        )}
-
         <div>
           <div className="section-label" style={{ marginBottom: 10 }}>
             덱
@@ -166,16 +158,21 @@ export function Home() {
             </button>
           </div>
         )}
-      </div>
-      <div className="bottom-bar">
-        <button
-          type="button"
-          className="btn btn-primary"
-          aria-disabled={total === 0}
-          onClick={() => (total ? go('review') : toast(q.waiting ? '남은 카드는 잠시 뒤에 다시 나와요' : '오늘 복습은 모두 끝났어요'))}
-        >
-          {total ? '복습 시작' : '오늘 복습 끝'}
-        </button>
+        {record && (
+          <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>
+                {record.todayCount ? `오늘 ${record.todayCount.count}장${record.todayCount.ms ? ` · ${durationLabel(record.todayCount.ms)}` : ''} 공부했어요` : '오늘은 아직 복습하지 않았어요'}
+              </span>
+              <button type="button" className="link-btn" style={{ padding: '4px 0' }} onClick={() => go('stats')}>
+                전체 보기
+              </button>
+            </div>
+            <Heatmap columns={weekColumns(record.today, heatWeeks(record.counts, record.today))} counts={record.counts} average={record.stats.dailyAverage} today={record.today} scrollToEnd />
+            <HeatmapNumbers s={record.stats} />
+          </div>
+        )}
+
       </div>
     </>
   );

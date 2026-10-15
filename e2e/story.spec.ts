@@ -236,7 +236,7 @@ test('읽기: 이야기를 만드는 동안 다른 화면(복습)으로 가도 �
   await expect(page.getByRole('navigation', { name: '메인 메뉴' }).locator('.tab-spin')).toBeVisible(); // 읽기 탭에 만드는 중 표시
   await expect(page.locator('.job-top')).toBeVisible(); // 어느 화면에서든 맨 위의 얇은 막대
   await page.screenshot({ path: 'test-results/shots/46-job-top-bar.png' });
-  await page.getByRole('button', { name: /복습 시작/ }).click();
+  await page.locator('.deck-row').first().click();
   await expect(page.getByText('aku', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
   await page.getByRole('button', { name: /알았음/ }).click();

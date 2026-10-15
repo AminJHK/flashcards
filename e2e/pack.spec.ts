@@ -11,7 +11,7 @@ test('준비된 덱(심장 병동 간호 중국어)을 넣고, 말하기·듣기
   await page.getByRole('link', { name: '오늘' }).click();
   await expect(page.getByText('새 10')).toBeVisible();
 
-  await page.getByRole('button', { name: '복습 시작' }).click();
+  await page.locator('.deck-row').first().click();
   // 첫 카드: 간호사가 할 말 (한국어 → 중국어)
   await expect(page.getByText('안녕하세요, 오늘 담당 간호사예요.', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: /정답 보기/ }).click();
@@ -42,7 +42,7 @@ test('여행 스페인어 덱: 스페인어 단어를 보고 영어 뜻과 예�
 
   await page.getByRole('link', { name: '오늘' }).click();
   await expect(page.getByText('새 15')).toBeVisible();
-  await page.getByRole('button', { name: '복습 시작' }).click();
+  await page.locator('.deck-row').first().click();
   // 기본값: 영어를 보고 스페인어를 떠올린다
   await expect(page.getByText('house, home', { exact: true })).toBeVisible();
   await expect(page.getByText('la casa', { exact: true })).toHaveCount(0);
@@ -75,7 +75,7 @@ test('스페인어 불규칙 동사 덱: 동사를 보고 여섯 인칭 변화�
   await expect(page.getByLabel('덱 이름')).toHaveValue('스페인어 불규칙 동사');
   await page.getByRole('link', { name: '오늘' }).click();
   await expect(page.getByText('새 5')).toBeVisible();
-  await page.getByRole('button', { name: '복습 시작' }).click();
+  await page.locator('.deck-row').first().click();
   await expect(page.getByText('ser', { exact: true })).toBeVisible();
   await expect(page.getByText('presente', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();

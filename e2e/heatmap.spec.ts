@@ -34,7 +34,10 @@ test('복습 기록 히트맵: 홈 카드와 전체 보기', async ({ page }) =>
   await expect(page.getByText('오늘은 아직 복습하지 않았어요')).toBeVisible();
   await expect(page.getByText('하루 평균')).toBeVisible();
   const cells = page.locator('.hm-grid .hm-c');
-  expect(await cells.count()).toBeGreaterThan(150);
+  // 기록이 시작된 주부터 보여 준다: 120일치 ≈ 18주 (26주 고정이 아니다)
+  const count = await cells.count();
+  expect(count).toBeGreaterThan(100);
+  expect(count).toBeLessThan(140);
   expect(await page.locator('.hm-grid .hm-4').count()).toBeGreaterThan(0);
   await page.screenshot({ path: 'test-results/shots/15-heatmap-home.png' });
 

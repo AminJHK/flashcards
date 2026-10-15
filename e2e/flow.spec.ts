@@ -43,7 +43,7 @@ test('덱 만들기 → 단어 추가(병음 자동) → 복습 → 되돌리기
   await shot(page, '04-home');
 
   // 복습: 노트 2개 → 형제 카드는 하루에 하나라서 2장
-  await page.getByRole('button', { name: '복습 시작' }).click();
+  await page.locator('.deck-row').first().click();
   await expect(page.locator('.b-hanzi.front')).toHaveText('图书馆');
   await shot(page, '05-front');
   await page.getByRole('button', { name: '정답 보기' }).first().click();
