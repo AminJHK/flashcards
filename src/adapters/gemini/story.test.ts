@@ -6,9 +6,12 @@ import { planStory } from '../../core/stories/plan';
 import { buildLexicon } from '../../core/stories/vocab';
 import { FlashcardsDB } from '../storage/db';
 import { deleteStory, getProgress, listStories, restartStory, saveProgress, saveStory } from '../storage/stories';
-import { createStory, MAX_ATTEMPTS } from './story';
+import { createStory, MAX_ATTEMPTS, resetThinkingMemory } from './story';
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  resetThinkingMemory();
+});
 
 const KNOWN = ['aku', 'kamu', 'mau', 'makan', 'nasi', 'di', 'mana', 'enak', 'banget', 'ya', 'nggak', 'ada', 'ini', 'itu', 'kopi', 'pagi'];
 const sched = { retrievability: () => 0.97 } as unknown as Scheduler;
@@ -128,14 +131,26 @@ describe('조금씩 받기 (진행률)', () => {
     expect(s.title).toBe('Pagi');
   });
 
-  it('모델이 thinking 설정을 못 받으면 그 설정만 빼고 같은 모델로 다시 한다', async () => {
-    const err = new Response(JSON.stringify({ error: { message: 'Thinking is not supported by this model' } }), { status: 400 });
-    const f = vi.fn().mockResolvedValueOnce(err).mockResolvedValueOnce(sse([JSON.stringify(story([]))]));
+  it('400(잘못된 요청)이면 생각 설정을 thinkingBudget → thinkingLevel → 없음 순서로 바꿔 같은 모델로 다시 하고, 된 방식을 기억한다', async () => {
+    const bad = () => new Response(JSON.stringify({ error: { message: 'Request contains an invalid argument.' } }), { status: 400 });
+    const f = vi.fn().mockResolvedValueOnce(bad()).mockResolvedValueOnce(bad()).mockImplementation(async () => sse([JSON.stringify(story([]))]));
     vi.stubGlobal('fetch', f);
     const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {} });
-    expect(f).toHaveBeenCalledTimes(2);
-    expect(JSON.parse(f.mock.calls[1]![1].body).generationConfig.thinkingConfig).toBeUndefined();
+    const cfg = (i: number) => JSON.parse(f.mock.calls[i]![1].body).generationConfig.thinkingConfig;
+    expect(f).toHaveBeenCalledTimes(3);
+    expect([cfg(0), cfg(1), cfg(2)]).toEqual([{ thinkingBudget: 0 }, { thinkingLevel: 'low' }, undefined]);
+    expect(f.mock.calls.every((c) => String(c[0]).includes('gemini-flash-latest:'))).toBe(true);
     expect(s.model).toBe('gemini-flash-latest');
+    // 다음 이야기는 처음부터 된 방식으로 (400을 다시 겪지 않는다)
+    await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {} });
+    expect(f).toHaveBeenCalledTimes(4);
+    expect(cfg(3)).toBeUndefined();
+  });
+
+  it('생각 설정을 다 빼도 400이면 Google의 이유를 보여 준다', async () => {
+    const bad = () => new Response(JSON.stringify({ error: { message: 'Request contains an invalid argument.' } }), { status: 400 });
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => bad()));
+    await expect(createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {} })).rejects.toThrow(/400: Request contains an invalid argument/);
   });
 });
 

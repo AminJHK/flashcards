@@ -31,10 +31,9 @@ async function ask(
   hooks: { onBusy?: () => void; onProgress?: (chars: number) => void; stream: boolean },
 ): Promise<{ text: string; model: string }> {
   let last: unknown;
-  // 생각하는 시간(thinking)을 끄면 훨씬 빠르다. 모델이 이 설정을 못 받으면 빼고 다시 한다
-  let thinking = true;
   for (const model of models) {
     for (let busy = 0; busy <= BUSY_WAITS.length; busy++) {
+      const variant = thinkingFor(model);
       try {
         const body = {
           systemInstruction: { parts: [{ text: systemPrompt() }] },
@@ -43,7 +42,7 @@ async function ask(
             temperature: 0.9,
             responseMimeType: 'application/json',
             responseSchema: STORY_SCHEMA,
-            ...(thinking ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+            ...(THINKING[variant] ? { thinkingConfig: THINKING[variant] } : {}),
           },
         };
         let text: string;
@@ -53,9 +52,10 @@ async function ask(
         return { text, model };
       } catch (e) {
         last = e;
-        if (thinking && e instanceof GeminiError && e.kind === 'other' && /thinking/i.test(e.message)) {
-          thinking = false;
-          busy--; // 같은 모델로 설정만 빼고 다시 (기다림 횟수는 쓰지 않는다)
+        // 400(잘못된 요청)이면 생각하는 시간 설정 때문일 수 있다: 다음 방식으로 바꿔 같은 모델로 다시 (기다림 횟수는 쓰지 않는다)
+        if (e instanceof GeminiError && e.kind === 'other' && /\(400/.test(e.message) && variant < THINKING.length - 1) {
+          thinkingIndex.set(model, variant + 1);
+          busy--;
           continue;
         }
         if (e instanceof GeminiError && e.kind === 'busy' && busy < BUSY_WAITS.length) {
@@ -70,6 +70,18 @@ async function ask(
     }
   }
   throw last;
+}
+
+/**
+ * 생각하는 시간(thinking)을 줄이면 훨씬 빠르다. 모델 세대마다 받는 설정이 달라서 차례로 시도하고,
+ * 그 모델이 받아들인 방식을 기억한다 (Gemini 2.5: thinkingBudget, Gemini 3: thinkingLevel, 둘 다 안 되면 설정 없이).
+ */
+export const THINKING: readonly (Record<string, unknown> | undefined)[] = [{ thinkingBudget: 0 }, { thinkingLevel: 'low' }, undefined];
+const thinkingIndex = new Map<string, number>();
+const thinkingFor = (model: string) => thinkingIndex.get(model) ?? 0;
+/** 테스트용 */
+export function resetThinkingMemory(): void {
+  thinkingIndex.clear();
 }
 
 interface Candidate {
