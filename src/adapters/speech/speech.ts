@@ -97,7 +97,7 @@ function claimStoryRequest(model: string, now: number): boolean {
 /** First reuse any cached line from any eligible engine, then try available free engines.
  * One request succeeds at most once. Never retry bad keys, network errors or other unexpected failures.
  */
-async function storyClipFor(
+export async function storyClipFor(
   item: Speech,
   s: Settings & { gemini: NonNullable<Settings['gemini']> },
   switching: boolean,
