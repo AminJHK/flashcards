@@ -38,6 +38,8 @@ export function StoryReader({ id }: { id: string }) {
   const [progress, setProgress] = useState<StoryProgress>();
   const [result, setResult] = useState(false);
   const [picked, setPicked] = useState<Picked>();
+  /** 재생 버튼이 가리키는 줄 (블록 번호). 없으면 지금 보이는 마지막 줄 */
+  const [cursor, setCursor] = useState<number>();
   const lex = useLexicon();
   const settings = useSettings();
   const end = useRef<HTMLDivElement>(null);
@@ -73,7 +75,26 @@ export function StoryReader({ id }: { id: string }) {
     setProgress(p);
     void saveProgress(p);
   };
-  const next = () => {
+  const say = (b: StoryLine) => void play([{ text: b.text, lang: 'id-ID' }], settings);
+  const isLine = (i: number) => story.blocks[i]?.kind === 'line';
+  // 재생 버튼: 이전 줄 / 지금 줄 다시 / 다음 줄 (보이는 줄 안에서 움직이고, 맨 끝에서 다음 줄이 이야기 줄이면 이어서 펼친다)
+  let at = cursor !== undefined && cursor < shown.length && isLine(cursor) ? cursor : -1;
+  for (let i = shown.length - 1; at < 0 && i >= 0; i--) if (isLine(i)) at = i;
+  const prevAt = (() => {
+    for (let i = at - 1; i >= 0; i--) if (isLine(i)) return i;
+    return -1;
+  })();
+  const nextShown = (() => {
+    for (let i = at + 1; i < shown.length; i++) if (isLine(i)) return i;
+    return -1;
+  })();
+  const canReveal = nextShown < 0 && !waiting && !last && isLine(progress.position);
+  const playAt = (i: number) => {
+    setCursor(i);
+    say(story.blocks[i] as StoryLine);
+  };
+  const next = (autoplay = !!settings?.storyAutoplay) => {
+    setCursor(undefined);
     if (last) {
       update({ ...progress, completedAt: Date.now(), readCount: progress.readCount + 1 });
       setResult(true);
@@ -82,7 +103,7 @@ export function StoryReader({ id }: { id: string }) {
     const position = progress.position + 1;
     update({ ...progress, position });
     const b = story.blocks[position - 1]!;
-    if (b.kind === 'line' && settings?.storyAutoplay) void play([{ text: b.text, lang: 'id-ID' }], settings);
+    if (b.kind === 'line' && autoplay) say(b);
   };
   const answer = (index: number, correct: boolean) => {
     if (progress.answers[index] !== undefined) return;
@@ -126,7 +147,7 @@ export function StoryReader({ id }: { id: string }) {
             </div>
             {shown.map((b, i) =>
               b.kind === 'line' ? (
-                <LineView key={i} line={b} story={story} lex={lex} names={names} onPick={(span) => setPicked({ span, line: b })} />
+                <LineView key={i} line={b} active={i === at} story={story} lex={lex} names={names} onPick={(span) => setPicked({ span, line: b })} onSay={() => setCursor(i)} />
               ) : i === shown.length - 1 ? (
                 <QuestionView key={i} q={b} seed={`${story.id}:${i}`} result={progress.answers[i]} onAnswer={(c) => answer(i, c)} />
               ) : (
@@ -135,8 +156,27 @@ export function StoryReader({ id }: { id: string }) {
             )}
             <div ref={end} />
           </div>
+          {at >= 0 && (
+            <div className="story-player" role="group" aria-label="소리 듣기">
+              <button type="button" className="story-play-btn" aria-label="이전 문장 읽기" disabled={prevAt < 0} onClick={() => playAt(prevAt)}>
+                <Icon name="prevLine" size={24} />
+              </button>
+              <button type="button" className="story-play-btn story-play-main" aria-label="현재 문장 다시 읽기" onClick={() => playAt(at)}>
+                <Icon name="replay" size={26} />
+              </button>
+              <button
+                type="button"
+                className="story-play-btn"
+                aria-label="다음 문장 읽기"
+                disabled={nextShown < 0 && !canReveal}
+                onClick={() => (nextShown >= 0 ? playAt(nextShown) : next(true))}
+              >
+                <Icon name="nextLine" size={24} />
+              </button>
+            </div>
+          )}
           <div className="answer-bar">
-            <button type="button" className="btn btn-primary" onClick={next} aria-disabled={waiting} disabled={waiting}>
+            <button type="button" className="btn btn-primary" onClick={() => next()} aria-disabled={waiting} disabled={waiting}>
               {waiting ? '답을 골라 주세요' : last ? '다 읽었어요' : '계속'}
             </button>
           </div>
@@ -179,13 +219,16 @@ function Tokens({ text, lex, names, onPick }: { text: string; lex: Lexicon; name
   return <>{out}</>;
 }
 
-function LineView({ line, story, lex, names, onPick }: { line: StoryLine; story: Story; lex: Lexicon; names: Set<string>; onPick: (s: Span) => void }) {
+function LineView({ line, active, story, lex, names, onPick, onSay }: { line: StoryLine; active: boolean; story: Story; lex: Lexicon; names: Set<string>; onPick: (s: Span) => void; onSay: () => void }) {
   const settings = useSettings();
-  const say = () => void play([{ text: line.text, lang: 'id-ID' }], settings);
+  const say = () => {
+    onSay();
+    void play([{ text: line.text, lang: 'id-ID' }], settings);
+  };
   const speakerName = story.characters.find((c) => c.id === line.speaker)?.name;
   if (!speakerName) {
     return (
-      <div className="story-narration">
+      <div className={`story-narration${active ? ' story-active' : ''}`}>
         <button type="button" className="icon-btn story-say" aria-label="이 문장 듣기" onClick={say}>
           <Icon name="speaker" size={20} />
         </button>
@@ -196,7 +239,7 @@ function LineView({ line, story, lex, names, onPick }: { line: StoryLine; story:
     );
   }
   return (
-    <div className="story-line">
+    <div className={`story-line${active ? ' story-active' : ''}`}>
       <Avatar story={story} speaker={line.speaker} />
       <div className="story-bubble">
         <span className="story-name">{speakerName}</span>

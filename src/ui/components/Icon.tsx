@@ -46,6 +46,24 @@ const PATHS = {
     </>
   ),
   check: <path d="m5 12 5 5 9-10" />,
+  prevLine: (
+    <>
+      <path d="M7 5v14" />
+      <path d="M19 6v12L10 12z" />
+    </>
+  ),
+  nextLine: (
+    <>
+      <path d="M17 5v14" />
+      <path d="M5 6v12l9-6z" />
+    </>
+  ),
+  replay: (
+    <>
+      <path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5" />
+      <path d="M4 4v4.5h4.5" />
+    </>
+  ),
   stop: <rect x="6.5" y="6.5" width="11" height="11" rx="2.5" />,
   chevronDown: <path d="m6 9 6 6 6-6" />,
   chevronRight: <path d="m9 6 6 6-6 6" />,

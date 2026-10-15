@@ -80,6 +80,25 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await expect(page.locator('.story-line')).toHaveCount(1);
   await expect(page.locator('.story-line').first()).toContainText('Budi');
 
+  // 소리 버튼 3개: 이전 문장 / 현재 문장 다시 / 다음 문장. 지금 가리키는 줄이 강조된다
+  const prev = page.getByRole('button', { name: '이전 문장 읽기' });
+  const again = page.getByRole('button', { name: '현재 문장 다시 읽기' });
+  const nextLine = page.getByRole('button', { name: '다음 문장 읽기' });
+  await expect(page.locator('.story-line.story-active')).toHaveCount(1); // 처음엔 보이는 마지막 줄
+  await expect(prev).toBeEnabled();
+  await prev.click(); // 내레이션으로
+  await expect(page.locator('.story-narration.story-active')).toHaveCount(1);
+  await expect(prev).toBeDisabled(); // 맨 처음 줄
+  await again.click();
+  await expect(page.locator('.story-narration.story-active')).toHaveCount(1);
+  await nextLine.click(); // 보이는 다음 줄
+  await expect(page.locator('.story-line.story-active')).toHaveCount(1);
+  await nextLine.click(); // 맨 끝에서 누르면 다음 줄을 펼치고 읽는다
+  await expect(page.locator('.story-line')).toHaveCount(2);
+  await expect(page.locator('.story-line').nth(1)).toHaveClass(/story-active/);
+  await page.screenshot({ path: 'test-results/shots/45-read-player.png' });
+  // 줄이 하나 더 늘었으니 아래 "계속" 횟수를 맞춘다
+
   // 단어 누르기: 덱 밖 단어 → 생성할 때 받은 뜻 + 덱에 추가
   await page.locator('.story-narration').getByRole('button', { name: 'bakso' }).click();
   const sheet = page.getByRole('dialog', { name: 'bakso 뜻' });
@@ -97,7 +116,6 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await page.getByRole('dialog', { name: 'aku 뜻' }).getByRole('button', { name: '닫기' }).click();
 
   // 질문이 나오면 답하기 전에는 계속을 못 누른다
-  await page.getByRole('button', { name: '계속' }).click();
   await page.getByRole('button', { name: '계속' }).click();
   await expect(page.getByText('부디는 무엇을 먹고 싶어 하나요?')).toBeVisible();
   await expect(page.getByRole('button', { name: '답을 골라 주세요' })).toBeDisabled();

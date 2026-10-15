@@ -1820,6 +1820,42 @@ textarea.input-sentence {
   color: var(--text2);
 }
 
+.story-player {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 16px 0;
+}
+
+.story-play-btn {
+  width: 56px;
+  height: 48px;
+  border: none;
+  border-radius: 16px;
+  background: var(--surface2);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+}
+
+.story-play-btn:disabled {
+  opacity: 0.35;
+}
+
+.story-play-main {
+  width: 84px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* 재생 버튼이 가리키는 줄 */
+.story-active {
+  background: var(--accent-soft);
+  border-radius: 14px;
+  box-shadow: 0 0 0 6px var(--accent-soft);
+}
+
 .icon-btn.story-say {
   width: 34px;
   height: 34px;
