@@ -49,7 +49,10 @@ export function StoryReader({ id }: { id: string }) {
   const end = useRef<HTMLDivElement>(null);
   const autoplay = settings?.storyAutoplay !== false;
   const playbackRate = rateDraft ?? settings?.storyPlaybackRate ?? 0.85;
-  const voiceAssignments = { ...(settings?.storyVoices?.[id] ?? {}), ...(voiceDraft[id] ?? {}) };
+  const voiceAssignments = useMemo(
+    () => ({ ...(settings?.storyVoices?.[id] ?? {}), ...(voiceDraft[id] ?? {}) }),
+    [settings?.storyVoices, voiceDraft, id],
+  );
   // A short debounce avoids writing the whole settings record on every slider tick.
   useEffect(() => {
     if (rateDraft === undefined) return;
@@ -77,7 +80,7 @@ export function StoryReader({ id }: { id: string }) {
       const voice = storyVoice(story, roleOf(story, upcoming), voiceAssignments);
       void prefetchSpeech({ text: upcoming.text, lang: 'id-ID', style: 'story' }, settings, voice);
     }
-  }, [story, progress, autoplay, settings, voiceDraft, id]);
+  }, [story, progress, autoplay, settings, voiceAssignments]);
 
   if (story === undefined || !progress || !lex) return <div className="screen" />;
   if (!story) {
