@@ -102,6 +102,19 @@ export function Stories() {
             )}
             {step && <span className="faint small">다른 화면으로 가도 뒤에서 계속 만들어요. 다 되면 알려 드려요. (앱을 닫으면 멈춰요)</span>}
             {job.status === 'done' && job.title && !step && <span className="small" style={{ color: 'var(--accent)', fontWeight: 600 }}>「{job.title}」가 완성됐어요. 아래 목록에 있어요.</span>}
+            {job.status === 'done' && job.audio && (
+              <div className="job-card" role="status" aria-live="polite">
+                <div className="job-line">
+                  <span>{job.audio.running ? '이야기 음성 준비 중…' : job.audio.done === job.audio.total ? '음성 준비 완료' : '음성 일부만 준비됨'}</span>
+                  <strong>{job.audio.done}/{job.audio.total}문장</strong>
+                </div>
+                <div className="job-track" role="progressbar" aria-valuenow={job.audio.total ? Math.round(job.audio.done / job.audio.total * 100) : 0} aria-valuemin={0} aria-valuemax={100} aria-label="이야기 음성 준비 진행률">
+                  <div className="job-fill" style={{ width: `${job.audio.total ? job.audio.done / job.audio.total * 100 : 0}%` }} />
+                </div>
+                {job.audio.note && <span className="faint small">{job.audio.note}</span>}
+                <span className="faint small">음성은 폰에 저장돼요. 기다리지 않고 이야기를 열 수도 있어요. 무료 한도에 도달하면 기기 음성을 사용해요.</span>
+              </div>
+            )}
             {error && (
               <span role="alert" style={{ color: 'var(--again)', fontSize: 14, lineHeight: 1.5 }}>
                 {error}
