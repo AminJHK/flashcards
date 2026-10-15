@@ -1738,6 +1738,16 @@ textarea.input-sentence {
 }
 
 /* ---------- 읽기 (이야기) ---------- */
+.story-playback-status {
+  padding: 7px 18px;
+  min-height: 32px;
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
 .story-body {
   gap: 14px;
   padding-top: 12px;
@@ -2003,9 +2013,69 @@ textarea.input-sentence {
   padding: 0 4px;
 }
 
-.story-sheet {
-  gap: 14px;
+/* Reading audio settings, separate from per-word dictionary sheet. */
+.story-audio-sheet {
+  width: 100%;
+  max-width: 520px;
+  max-height: min(84dvh, 760px);
+  overflow-y: auto;
+  gap: 17px;
+  padding: 10px 20px calc(22px + var(--safe-bottom));
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -12px 45px rgb(0 0 0 / 0.15);
 }
+.story-audio-header { display: flex; justify-content: space-between; align-items: center; }
+.story-audio-header h2 { margin: 0; font-size: 23px; font-weight: 700; }
+.story-audio-section { display: flex; flex-direction: column; gap: 11px; }
+.story-audio-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 16px; }
+.story-audio-rate { color: var(--accent); font-size: 21px; font-variant-numeric: tabular-nums; }
+.story-audio-slider { width: 100%; accent-color: var(--accent); height: 35px; touch-action: pan-y; cursor: pointer; }
+.story-audio-range { display: flex; justify-content: space-between; gap: 12px; color: var(--text3); font-size: 12px; }
+.story-audio-hint { margin: 0; color: var(--text3); font-size: 12px; line-height: 1.55; }
+.story-audio-cast { display: flex; flex-direction: column; gap: 8px; }
+.story-audio-person { display: flex; align-items: center; gap: 8px; min-height: 52px; border-radius: 15px; background: var(--surface2); padding: 7px 8px 7px 13px; }
+.story-audio-person-name { width: 82px; flex-shrink: 0; font-size: 13px; font-weight: 650; overflow-wrap: anywhere; }
+.story-audio-person .select { flex: 1; min-width: 0; max-width: 100%; font-size: 13px; background: var(--surface); border-color: var(--line); }
+.story-audio-preview { background: var(--accent-soft); color: var(--accent); width: 38px; height: 38px; }
+.story-audio-done { min-height: 50px; }
+@media (max-width: 365px) {
+  .story-audio-person-name { width: 64px; }
+  .story-audio-person { gap: 5px; padding-left: 9px; }
+}
+
+.story-word-backdrop { padding: 0; align-items: flex-end; }
+.story-sheet {
+  width: 100%;
+  max-width: 520px;
+  max-height: min(84dvh, 720px);
+  overflow-y: auto;
+  padding: 10px 22px calc(20px + var(--safe-bottom));
+  border-radius: 28px 28px 0 0;
+  gap: 20px;
+  box-shadow: 0 -12px 45px rgb(0 0 0 / 0.15);
+}
+.story-sheet-handle {
+  width: 38px;
+  height: 4px;
+  margin: 0 auto 2px;
+  border-radius: 4px;
+  background: var(--line);
+}
+.story-sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.story-sheet-word { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.story-sheet-word strong { font: 700 calc(30px * var(--scale))/1.25 var(--font-latin); overflow-wrap: anywhere; letter-spacing: -0.025em; }
+.story-sheet-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.045em; color: var(--text3); }
+.story-sheet-audio { display: grid; place-items: center; width: 50px; height: 50px; flex-shrink: 0; background: var(--accent-soft); color: var(--accent); border: none; border-radius: 16px; }
+.story-sheet-meaning { display: flex; flex-direction: column; gap: 6px; padding: 18px; border-radius: 18px; background: var(--surface2); }
+.story-sheet-ko { font-size: calc(20px * var(--scale)); font-weight: 700; line-height: 1.4; overflow-wrap: anywhere; }
+.story-sheet-en { font-size: 15px; color: var(--text2); overflow-wrap: anywhere; }
+.story-sheet-meta { display: flex; flex-direction: column; gap: 5px; font-size: 16px; }
+.story-sheet-example { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border-left: 3px solid var(--accent); border-radius: 0 15px 15px 0; background: var(--accent-soft); line-height: 1.5; }
+.story-sheet-example p { margin: 0; font: 600 16px/1.5 var(--font-latin); overflow-wrap: anywhere; }
+.story-sheet-example > span:last-child { font-size: 14px; color: var(--text2); }
+.story-sheet-known { display: flex; align-items: center; gap: 8px; padding: 12px 14px; color: var(--accent); background: var(--accent-soft); border-radius: 14px; font-size: 14px; font-weight: 600; }
+.story-sheet-add { min-height: 52px; }
+.story-sheet-close { border: none; background: transparent; color: var(--text2); min-height: 44px; font-size: 14px; font-weight: 600; }
 
 .story-row {
   border: none;

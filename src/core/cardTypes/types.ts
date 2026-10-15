@@ -57,6 +57,8 @@ export type Block =
 export interface Speech {
   text: string;
   lang: Lang;
+  /** 이야기의 대화체 발음. Gemini 3.8에서는 말투를 음성 메타데이터로 지정한다. */
+  style?: 'story';
 }
 
 export interface CardView {

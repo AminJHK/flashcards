@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { pcm16ToWav, sampleRateOf } from '../audio/wav';
-import { GeminiError, listModels, pickModel } from './api';
+import { GeminiError, classifyRateLimit, listModels, pickModel } from './api';
 import { transcribe } from './stt';
 import { synthesize, ttsPrompt } from './tts';
 
@@ -34,22 +34,39 @@ describe('Gemini API', () => {
     await expect(listModels('k')).rejects.toMatchObject({ kind: 'network' });
   });
 
+  it('429: minute/day/unknown limit are not falsely reported as daily exhaustion', async () => {
+    expect(classifyRateLimit('Too many requests', [{ violations: [{ quotaId: 'GenerateRequestsPerMinutePerProject' }] }])).toBe('minute');
+    expect(classifyRateLimit('Quota exceeded', [{ violations: [{ quotaId: 'GenerateRequestsPerDayPerProject' }] }])).toBe('daily');
+    expect(classifyRateLimit('Resource exhausted', undefined)).toBe('unknown');
+
+    vi.stubGlobal('fetch', vi.fn(async () => json(429, {
+      error: { message: 'Quota exceeded for GenerateRequestsPerMinutePerProject', details: [{ quotaId: 'RequestsPerMinute' }] },
+    })));
+    await expect(listModels('key')).rejects.toMatchObject({ kind: 'quota', limit: 'minute' });
+    vi.stubGlobal('fetch', vi.fn(async () => json(429, {
+      error: { message: 'Quota exceeded for GenerateRequestsPerDayPerProject', details: [{ quotaId: 'RequestsPerDay' }] },
+    })));
+    await expect(listModels('key')).rejects.toMatchObject({ kind: 'quota', limit: 'daily' });
+    vi.stubGlobal('fetch', vi.fn(async () => json(429, { error: { message: 'RESOURCE_EXHAUSTED' } })));
+    await expect(listModels('key')).rejects.toMatchObject({ kind: 'quota', limit: 'unknown' });
+  });
+
   it('선호하는 TTS 모델을 고르고, 없으면 이름에 tts가 든 모델을 쓴다', () => {
     expect(pickModel(['gemini-3.8-flash-lite-tts', 'gemini-3.8-flash-tts'], ['gemini-3.8-flash-tts'], /-tts/)).toBe('gemini-3.8-flash-tts');
     expect(pickModel(['gemini-9-flash-tts', 'gemini-flash-latest'], ['gemini-3.8-flash-tts'], /-tts/)).toBe('gemini-9-flash-tts');
     expect(pickModel(['gemini-flash-latest'], ['gemini-3.8-flash-tts'], /-tts/)).toBeUndefined();
   });
 
-  it('TTS: 음성 설정을 보내고 PCM을 WAV로 돌려받는다', async () => {
+  it('구형 TTS: 음성 설정을 보내고 PCM을 WAV로 돌려받는다', async () => {
     const fetchMock = vi.fn(async (_url: string, _init: RequestInit) =>
       json(200, { candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/L16;codec=pcm;rate=24000', data: btoa('\x00\x01\x02\x03') } }] } }] }),
     );
     vi.stubGlobal('fetch', fetchMock);
-    const blob = await synthesize('银行', 'zh-CN', 'Kore', 'gemini-3.8-flash-tts', 'KEY');
+    const blob = await synthesize('银行', 'zh-CN', 'Kore', 'gemini-3.1-flash-tts-preview', 'KEY');
     expect(blob.type).toBe('audio/wav');
     expect(blob.size).toBe(48);
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toContain('models/gemini-3.8-flash-tts:generateContent');
+    expect(url).toContain('models/gemini-3.1-flash-tts-preview:generateContent');
     expect((init.headers as Record<string, string>)['x-goog-api-key']).toBe('KEY');
     const body = JSON.parse(init.body as string);
     expect(body.generationConfig.responseModalities).toEqual(['AUDIO']);

@@ -4,6 +4,7 @@ import type { Card, Deck, Note, Settings } from '../../core/model/types';
 import { GeminiError } from '../gemini/api';
 import { withTimeout } from '../net';
 import { synthesize } from '../gemini/tts';
+import { canSwitchTtsModel, storyTtsModels } from './modelFallback';
 import { db } from '../storage/db';
 import { missingVoiceLangs, speak as deviceSpeak, stopSpeaking, voicesReady } from '../tts/webSpeech';
 
@@ -20,29 +21,138 @@ export function geminiOn(s: Settings | undefined): s is Settings & { gemini: Non
 
 /** 음성을 만드는 글(프롬프트)을 바꾸면 올린다. 그러면 예전 방식으로 만든 음성은 쓰지 않고 새로 만든다. */
 const CLIP_VERSION = 'v2';
+const MODERN_CLIP_VERSION = 'v4'; // Gemini 3.8 Interactions + speech_metadata; discard old, unstyled v3 clips
+const LEGACY_STORY_VERSION = 'v3-story'; // Changed conversational directions; preserve ordinary v2 card clips
 
 export function clipKey(item: Speech, s: Settings & { gemini: NonNullable<Settings['gemini']> }): string {
-  return `${CLIP_VERSION}|${s.gemini.ttsModel}|${s.gemini.voice}|${item.lang}|${item.text}`;
+  const version = s.gemini.ttsModel.includes('3.8') ? MODERN_CLIP_VERSION : item.style === 'story' ? LEGACY_STORY_VERSION : CLIP_VERSION;
+  return `${version}|${s.gemini.ttsModel}|${s.gemini.voice}|${item.lang}|${item.text}${item.style ? `|style:${item.style}` : ''}`;
 }
 
 /** 예전 방식으로 만든 음성 파일(설명까지 읽어 버린 것 포함)을 지운다. */
 export async function dropStaleClips(): Promise<void> {
   const keys = (await db.audio.toCollection().primaryKeys()) as string[];
-  const stale = keys.filter((k) => !k.startsWith(`${CLIP_VERSION}|`));
+  const stale = keys.filter((k) => (!k.startsWith(`${CLIP_VERSION}|`) && !k.startsWith(`${MODERN_CLIP_VERSION}|`) && !k.startsWith(`${LEGACY_STORY_VERSION}|`)) || k.startsWith('v2|gemini-3.8-'));
   if (stale.length) await db.audio.bulkDelete(stale);
 }
 
+/** 미리 만들기와 재생이 겹쳐도 같은 문장에 API를 두 번 호출하지 않는다. */
+const inFlight = new Map<string, Promise<Blob>>();
+
+/** Avoid repeatedly hitting Google's quota API after an exhausted response. Session-only; cached clips remain playable. */
+const quotaPauses = new Map<string, { until: number; reason: GeminiError }>();
+function quotaCooldown(error: GeminiError): number {
+  // Daily limits won't be resolved by an immediate retry. An unknown 429 is treated cautiously.
+  const defaultMs = error.limit === 'daily' ? 15 * 60_000 : 75_000;
+  return Math.max(defaultMs, Math.min(error.retryAfterMs ?? defaultMs, 60 * 60_000));
+}
+
+
 async function clipFor(item: Speech, s: Settings & { gemini: NonNullable<Settings['gemini']> }): Promise<Blob> {
   const key = clipKey(item, s);
-  const have = await db.audio.get(key);
-  if (have) return have.blob;
-  const blob = await synthesize(item.text, item.lang, s.gemini.voice, s.gemini.ttsModel, s.gemini.apiKey);
-  await db.audio.put({ key, blob, createdAt: Date.now() });
-  return blob;
+  const existing = inFlight.get(key);
+  if (existing) return existing;
+  const pending = (async () => {
+    const have = await db.audio.get(key);
+    if (have) return have.blob;
+    const paused = quotaPauses.get(s.gemini.ttsModel);
+    if (paused && Date.now() < paused.until) throw paused.reason;
+    try {
+      const blob = await synthesize(item.text, item.lang, s.gemini.voice, s.gemini.ttsModel, s.gemini.apiKey, item.style);
+      await db.audio.put({ key, blob, createdAt: Date.now() });
+      return blob;
+    } catch (e) {
+      if (e instanceof GeminiError && e.kind === 'quota') {
+        quotaPauses.set(s.gemini.ttsModel, { until: Date.now() + quotaCooldown(e), reason: e });
+      }
+      throw e;
+    }
+  })();
+  inFlight.set(key, pending);
+  try {
+    return await pending;
+  } finally {
+    if (inFlight.get(key) === pending) inFlight.delete(key);
+  }
+}
+
+/** Respect the user's very small free TTS RPM: at most two new story requests / model / minute.
+ * Existing cached audio bypasses this entirely. This is a local conservative limit;
+ * Google may enforce lower quotas for a given project.
+ */
+const recentStoryRequests = new Map<string, number[]>();
+const STORY_RPM_SAFETY = 2;
+
+function claimStoryRequest(model: string, now: number): boolean {
+  const previous = (recentStoryRequests.get(model) ?? []).filter((at) => now - at < 60_000);
+  if (previous.length >= STORY_RPM_SAFETY) {
+    recentStoryRequests.set(model, previous);
+    return false;
+  }
+  previous.push(now);
+  recentStoryRequests.set(model, previous);
+  return true;
+}
+
+/** First reuse any cached line from any eligible engine, then try available free engines.
+ * One request succeeds at most once. Never retry bad keys, network errors or other unexpected failures.
+ */
+export async function storyClipFor(
+  item: Speech,
+  s: Settings & { gemini: NonNullable<Settings['gemini']> },
+  switching: boolean,
+): Promise<{ blob: Blob; model: string; cached: boolean }> {
+  const models = storyTtsModels(s.gemini.ttsModel, switching);
+  for (const model of models) {
+    const selected = { ...s, gemini: { ...s.gemini, ttsModel: model } };
+    const cached = await db.audio.get(clipKey(item, selected));
+    if (cached) return { blob: cached.blob, model, cached: true };
+  }
+
+  let lastLimit: GeminiError | undefined;
+  let delayed = false;
+  for (const model of models) {
+    const selected = { ...s, gemini: { ...s.gemini, ttsModel: model } };
+    const paused = quotaPauses.get(model);
+    if (paused && Date.now() < paused.until) {
+      lastLimit = paused.reason;
+      continue;
+    }
+    if (!claimStoryRequest(model, Date.now())) {
+      delayed = true;
+      continue;
+    }
+    try {
+      return { blob: await clipFor(item, selected), model, cached: false };
+    } catch (e) {
+      if (!switching || !canSwitchTtsModel(e)) throw e;
+      if (e.kind === 'quota') lastLimit = e;
+      // Google may not grant a fallback model to this API project (404). Skip it.
+    }
+  }
+  if (delayed) throw new GeminiError('Gemini 음성 요청이 빠르게 이어졌어요. 잠시 기기 음성으로 읽고, 나중에 다시 시도해 주세요.', 'quota', 'minute');
+  if (lastLimit) throw lastLimit;
+  throw new GeminiError('선택할 수 있는 Gemini 음성 모델이 없어요. 설정에서 모델을 확인해 주세요.', 'model');
+}
+
+/** 읽기에서 다음 대사 하나만 미리 준비한다 (Gemini를 켰을 때만, 저장은 기기 안). */
+export async function prefetchSpeech(item: Speech, s: Settings | undefined, voice?: string): Promise<void> {
+  if (!geminiOn(s) || !navigator.onLine) return;
+  const selected = voice ? { ...s, gemini: { ...s.gemini, voice } } : s;
+  try {
+    await clipFor(item, selected);
+  } catch {
+    // 재생할 때 다시 시도하거나 기기 음성을 쓴다.
+  }
 }
 
 let token = 0;
 let current: HTMLAudioElement | null = null;
+
+/** Change speed immediately for audio already playing; no new Gemini API call. */
+export function setPlaybackRate(rate: number): void {
+  if (current && Number.isFinite(rate) && rate > 0) current.playbackRate = rate;
+}
 
 export function stopAll(): void {
   token++;
@@ -51,11 +161,12 @@ export function stopAll(): void {
   stopSpeaking();
 }
 
-function playBlob(blob: Blob, my: number): Promise<void> {
+function playBlob(blob: Blob, my: number, rate = 1): Promise<void> {
   return new Promise((resolve, reject) => {
     if (my !== token) return resolve();
     const url = URL.createObjectURL(blob);
     const a = new Audio(url);
+    a.playbackRate = rate;
     current = a;
     const done = () => {
       URL.revokeObjectURL(url);
@@ -76,38 +187,59 @@ function playBlob(blob: Blob, my: number): Promise<void> {
 export interface PlayResult {
   /** 실제로 쓴 음성 */
   via: 'gemini' | 'device' | 'none';
+  /** 이미 이 기기에 저장된 Gemini 음성인지 */
+  cached?: boolean;
+  /** 재생한 Gemini 모델 이름(키 자체는 노출하지 않음) */
+  model?: string;
   /** Gemini가 안 돼서 기기 음성으로 바꿨을 때 그 이유 */
   error?: string;
   /** 기기에 음성이 없어서 읽지 못한 언어 (예: ['es-ES']) */
   missing?: string[];
 }
 
-export async function play(items: readonly Speech[], s: Settings | undefined): Promise<PlayResult> {
+export async function play(items: readonly Speech[], s: Settings | undefined, opts?: { timeoutMs?: number; onSource?: (result: PlayResult) => void; voice?: string; rate?: number; storyAutoModel?: boolean }): Promise<PlayResult> {
   stopAll();
   const list = items.filter((i) => i.text.trim());
   if (!list.length) return { via: 'none' };
   const my = token;
-  if (geminiOn(s)) {
+  const selected = geminiOn(s) && opts?.voice ? { ...s, gemini: { ...s.gemini, voice: opts.voice } } : s;
+  if (geminiOn(selected)) {
     try {
       for (const it of list) {
         // 처음 만드는 음성이 늦으면 기다리지 않고 기기 음성으로 읽는다 (만드는 건 계속해서 저장됨)
-        const blob = await withTimeout(clipFor(it, s), 10_000, '자연스러운 음성을 만드는 데 시간이 걸려요');
+        let blob: Blob;
+        let usedModel = selected.gemini.ttsModel;
+        let cached = false;
+        if (it.style === 'story') {
+          const resolved = await withTimeout(storyClipFor(it, selected, opts?.storyAutoModel !== false), opts?.timeoutMs ?? 30_000, '자연스러운 음성을 만드는 데 시간이 걸려요');
+          blob = resolved.blob;
+          usedModel = resolved.model;
+          cached = resolved.cached;
+        } else {
+          cached = !!(await db.audio.get(clipKey(it, selected)));
+          blob = await withTimeout(clipFor(it, selected), opts?.timeoutMs ?? 10_000, '자연스러운 음성을 만드는 데 시간이 걸려요');
+        }
         if (my !== token) return { via: 'gemini' };
-        await playBlob(blob, my);
+        opts?.onSource?.({ via: 'gemini', model: usedModel, cached });
+        await playBlob(blob, my, opts?.rate ?? 1);
       }
       return { via: 'gemini' };
     } catch (e) {
       if (my !== token) return { via: 'gemini' };
       await voicesReady();
       if (my !== token) return { via: 'device' };
-      const ok = deviceSpeak(list, s.voices);
-      return { via: ok ? 'device' : 'none', error: e instanceof Error ? e.message : undefined, missing: ok ? undefined : missingVoiceLangs(list) };
+      const ok = deviceSpeak(list, selected.voices, opts?.rate ?? 0.9);
+      const result: PlayResult = { via: ok ? 'device' : 'none', error: e instanceof Error ? e.message : undefined, missing: ok ? undefined : missingVoiceLangs(list) };
+      opts?.onSource?.(result);
+      return result;
     }
   }
   await voicesReady();
   if (my !== token) return { via: 'device' };
-  const ok = deviceSpeak(list, s?.voices);
-  return { via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list) };
+  const ok = deviceSpeak(list, s?.voices, opts?.rate ?? 0.9);
+  const result: PlayResult = { via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list) };
+  opts?.onSource?.(result);
+  return result;
 }
 
 /** 노트 하나의 모든 카드에서 읽을 텍스트 (중복 제거) */
@@ -180,8 +312,10 @@ export async function generateAll(
         await clipFor(it, s as Settings & { gemini: NonNullable<Settings['gemini']> });
         break;
       } catch (e) {
-        if (e instanceof GeminiError && e.kind === 'quota' && tries++ < 2) {
-          await sleep(30_000);
+        // Retry only a confirmed short-term limit. Daily/unknown 429s should stop,
+        // not repeat background requests that consume the user's small free quota.
+        if (e instanceof GeminiError && e.kind === 'quota' && e.limit === 'minute' && tries++ < 2) {
+          await sleep(Math.max(75_000, e.retryAfterMs ?? 0));
           continue;
         }
         return { done, total: todo.length, stopped: e instanceof Error ? e.message : '음성을 만들지 못했어요' };

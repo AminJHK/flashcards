@@ -38,6 +38,9 @@ async function mockGemini(page: Page, calls: { story: number; prompts: string[] 
     const url = route.request().url();
     if (url.includes('/models?')) return route.fulfill({ json: { models: [{ name: 'models/gemini-flash-latest' }, { name: 'models/gemini-3.8-flash-tts' }] } });
     if (url.includes('-tts:generateContent')) return route.fulfill({ json: { candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/L16;codec=pcm;rate=24000', data: '' } }] } }] } });
+    if (url.endsWith('/interactions')) return route.fulfill({ json: {
+      steps: [{ type: 'model_output', content: [{ type: 'audio', data: btoa('RIFF' + '\\0'.repeat(4) + 'WAVE'), mime_type: 'audio/wav' }] }],
+    } });
     calls.story++;
     if (delayMs) await new Promise((r) => setTimeout(r, delayMs));
     calls.prompts.push(route.request().postDataJSON().contents[0].parts[0].text);
@@ -80,6 +83,31 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await expect(page.locator('.story-line')).toHaveCount(1);
   await expect(page.locator('.story-line').first()).toContainText('Budi');
 
+  // Each character and the narrator have their own selectable Gemini voice.
+  await page.getByRole('button', { name: '음성 속도와 목소리 설정' }).click();
+  const audio = page.getByRole('dialog', { name: '이야기 음성 설정' });
+  await expect(audio.getByRole('switch', { name: '무료 TTS 모델 자동 전환' })).toHaveAttribute('aria-checked', 'true');
+  await expect(audio.getByLabel('나레이션 목소리', { exact: true })).toHaveValue('Charon');
+  await expect(audio.getByLabel('Budi 목소리', { exact: true })).toHaveValue('Aoede');
+  await expect(audio.getByLabel('Sari 목소리', { exact: true })).toHaveValue('Puck');
+  await expect(audio.getByRole('slider', { name: '이야기 읽기 속도' })).toHaveValue('0.85');
+  await audio.getByRole('slider', { name: '이야기 읽기 속도' }).focus();
+  await audio.getByRole('slider', { name: '이야기 읽기 속도' }).press('ArrowLeft');
+  await expect(audio.getByRole('slider', { name: '이야기 읽기 속도' })).toHaveValue('0.8');
+  await audio.getByLabel('Sari 목소리', { exact: true }).selectOption('Orus');
+  await expect(audio.getByLabel('Sari 목소리', { exact: true })).toHaveValue('Orus');
+  await audio.getByRole('button', { name: '완료' }).click();
+  await page.getByRole('button', { name: '음성 속도와 목소리 설정' }).click();
+  await expect(page.getByRole('dialog', { name: '이야기 음성 설정' }).getByLabel('Sari 목소리', { exact: true })).toHaveValue('Orus');
+  await expect(page.getByRole('dialog', { name: '이야기 음성 설정' }).getByRole('slider', { name: '이야기 읽기 속도' })).toHaveValue('0.8');
+  await page.getByRole('button', { name: '음성 설정 닫기' }).click();
+  // Reading always reports which speech provider was actually used or why it fell back.
+  await expect(page.locator('.story-playback-status')).toBeVisible();
+  // Auto-read is enabled on new installs, but can be switched off by the reader.
+  await expect(page.getByRole('button', { name: '줄이 나올 때 자동으로 읽기' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: '줄이 나올 때 자동으로 읽기' }).click();
+  await expect(page.getByRole('button', { name: '줄이 나올 때 자동으로 읽기' })).toHaveAttribute('aria-pressed', 'false');
+
   // 소리 버튼 3개: 이전 문장 / 현재 문장 다시 / 다음 문장. 지금 가리키는 줄이 강조된다
   const prev = page.getByRole('button', { name: '이전 문장 읽기' });
   const again = page.getByRole('button', { name: '현재 문장 다시 읽기' });
@@ -103,17 +131,19 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await page.locator('.story-narration').getByRole('button', { name: 'bakso' }).click();
   const sheet = page.getByRole('dialog', { name: 'bakso 뜻' });
   await expect(sheet).toContainText('바소 (미트볼 수프)');
-  await expect(sheet).toContainText('영어: meatball soup');
-  await expect(sheet).toContainText('이 문장: 내레이션');
+  await expect(sheet.locator('.story-sheet-meaning')).toBeVisible();
+  await expect(sheet.getByRole('button', { name: '읽기 계속하기' })).toBeVisible();
+  await expect(sheet).toContainText('meatball soup');
+  await expect(sheet).toContainText('이야기 속 문장');
   await page.screenshot({ path: 'test-results/shots/41-read-word.png' });
-  await sheet.getByRole('button', { name: '덱에 추가' }).click();
+  await sheet.getByRole('button', { name: '내 덱에 추가' }).click();
   await expect(page.getByText('덱에 넣었어요. 새 카드로 나와요')).toBeVisible();
   await expect(sheet.getByText('덱에 있어요 · 아직 안 배움')).toBeVisible();
-  await sheet.getByRole('button', { name: '닫기' }).click();
+  await sheet.getByRole('button', { name: '읽기 계속하기' }).click();
   // 덱에 있는 단어 → 덱의 뜻
   await page.locator('.story-narration').getByRole('button', { name: 'aku', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'aku 뜻' })).toContainText('나');
-  await page.getByRole('dialog', { name: 'aku 뜻' }).getByRole('button', { name: '닫기' }).click();
+  await page.getByRole('dialog', { name: 'aku 뜻' }).getByRole('button', { name: '읽기 계속하기' }).click();
 
   // 질문이 나오면 답하기 전에는 계속을 못 누른다
   await page.getByRole('button', { name: '계속' }).click();

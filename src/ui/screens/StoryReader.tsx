@@ -1,13 +1,16 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { play } from '../../adapters/speech/speech';
+import { play, setPlaybackRate, stopAll, type PlayResult } from '../../adapters/speech/speech';
+import { GEMINI_VOICES } from '../../adapters/gemini/tts';
 import { db } from '../../adapters/storage/db';
 import { addNote, saveSettings } from '../../adapters/storage/repo';
 import { getProgress, saveProgress } from '../../adapters/storage/stories';
 import { nameSet } from '../../core/stories/plan';
+import { NARRATOR, roleOf, storyVoice } from '../../core/stories/voices';
 import type { StoryBlock, StoryLine, StoryProgress, StoryQuestion, Story } from '../../core/stories/types';
 import { analyzeText, findGloss, glossFor, type Lexicon, type Span } from '../../core/stories/vocab';
 import { Icon } from '../components/Icon';
+import { Switch } from '../components/Controls';
 import { useNotes, useSettings } from '../hooks';
 import { go } from '../router';
 import { useToast } from '../toast';
@@ -40,9 +43,28 @@ export function StoryReader({ id }: { id: string }) {
   const [picked, setPicked] = useState<Picked>();
   /** 재생 버튼이 가리키는 줄 (블록 번호). 없으면 지금 보이는 마지막 줄 */
   const [cursor, setCursor] = useState<number>();
+  const [audioStatus, setAudioStatus] = useState('');
+  const [audioOpen, setAudioOpen] = useState(false);
+  const [rateDraft, setRateDraft] = useState<number>();
+  const [voiceDraft, setVoiceDraft] = useState<Record<string, Record<string, string>>>({});
   const lex = useLexicon();
   const settings = useSettings();
   const end = useRef<HTMLDivElement>(null);
+  const autoplay = settings?.storyAutoplay !== false;
+  const autoModelSwitch = settings?.storyAutoModelSwitch !== false;
+  const playbackRate = rateDraft ?? settings?.storyPlaybackRate ?? 0.85;
+  const voiceAssignments = useMemo(
+    () => ({ ...(settings?.storyVoices?.[id] ?? {}), ...(voiceDraft[id] ?? {}) }),
+    [settings?.storyVoices, voiceDraft, id],
+  );
+  // A short debounce avoids writing the whole settings record on every slider tick.
+  useEffect(() => {
+    if (rateDraft === undefined) return;
+    const timer = setTimeout(() => { void saveSettings({ storyPlaybackRate: rateDraft }); }, 350);
+    return () => clearTimeout(timer);
+  }, [rateDraft]);
+  // Leave the story: stop a voice that would otherwise continue on the next screen.
+  useEffect(() => () => stopAll(), []);
 
   useEffect(() => {
     void getProgress(id).then((p) => {
@@ -53,6 +75,9 @@ export function StoryReader({ id }: { id: string }) {
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [progress?.position]);
+
+  // Free TTS quotas can be very small. Don't synthesize upcoming lines in the background:
+  // generate only when the user actually reaches/plays the line; audio is still cached.
 
   if (story === undefined || !progress || !lex) return <div className="screen" />;
   if (!story) {
@@ -75,8 +100,35 @@ export function StoryReader({ id }: { id: string }) {
     setProgress(p);
     void saveProgress(p);
   };
-  const say = (b: StoryLine) => void play([{ text: b.text, lang: 'id-ID' }], settings);
-  const isLine = (i: number) => story.blocks[i]?.kind === 'line';
+  const speakLine = (line: StoryLine, requestedVoice?: string) => {
+    const voice = requestedVoice ?? storyVoice(story, roleOf(story, line), voiceAssignments);
+    setAudioStatus(settings?.gemini?.useTts && settings.gemini.apiKey ? 'Gemini 음성 준비 중…' : '기기 음성 준비 중…');
+    void play([{ text: line.text, lang: 'id-ID', style: 'story' }], settings, {
+      timeoutMs: 30_000,
+      voice,
+      rate: playbackRate,
+      storyAutoModel: autoModelSwitch,
+      onSource: (source: PlayResult) => {
+        if (source.via === 'gemini') {
+          const switched = source.model !== settings?.gemini?.ttsModel;
+          setAudioStatus(`Gemini AI · ${source.model}${switched ? ' (자동 전환)' : ''} · ${voice} · ${source.cached ? '저장된 음성' : '새 음성'} · ${playbackRate.toFixed(2)}배속`);
+        }
+        else if (source.via === 'device') setAudioStatus(source.error ? `기기 음성으로 대체됨 · Gemini 오류: ${source.error}` : '기기 음성으로 읽는 중 · 역할별 목소리는 Gemini에서 지원');
+        else setAudioStatus(source.error ? `음성 오류: ${source.error}` : '사용할 수 있는 음성이 없어요');
+      },
+    });
+  };
+  const changeVoice = (role: string, voice: string) => {
+    const updated = { ...voiceAssignments, [role]: voice };
+    setVoiceDraft((prev) => ({ ...prev, [id]: updated }));
+    void saveSettings({ storyVoices: { ...(settings?.storyVoices ?? {}), [id]: updated } });
+  };
+  const changeRate = (rate: number) => {
+    setRateDraft(rate);
+    setPlaybackRate(rate);
+  };
+
+    const isLine = (i: number) => story.blocks[i]?.kind === 'line';
   // 재생 버튼: 이전 줄 / 지금 줄 다시 / 다음 줄 (보이는 줄 안에서 움직이고, 맨 끝에서 다음 줄이 이야기 줄이면 이어서 펼친다)
   let at = cursor !== undefined && cursor < shown.length && isLine(cursor) ? cursor : -1;
   for (let i = shown.length - 1; at < 0 && i >= 0; i--) if (isLine(i)) at = i;
@@ -91,11 +143,12 @@ export function StoryReader({ id }: { id: string }) {
   const canReveal = nextShown < 0 && !waiting && !last && isLine(progress.position);
   const playAt = (i: number) => {
     setCursor(i);
-    say(story.blocks[i] as StoryLine);
+    speakLine(story.blocks[i] as StoryLine);
   };
-  const next = (autoplay = !!settings?.storyAutoplay) => {
+  const next = (forcePlay = false) => {
     setCursor(undefined);
     if (last) {
+      stopAll();
       update({ ...progress, completedAt: Date.now(), readCount: progress.readCount + 1 });
       setResult(true);
       return;
@@ -103,7 +156,19 @@ export function StoryReader({ id }: { id: string }) {
     const position = progress.position + 1;
     update({ ...progress, position });
     const b = story.blocks[position - 1]!;
-    if (b.kind === 'line' && autoplay) say(b);
+    if (b.kind === 'line' && (autoplay || forcePlay)) speakLine(b);
+    else {
+      stopAll();
+      setAudioStatus('');
+    }
+  };
+  const toggleAutoplay = () => {
+    const enabled = !autoplay;
+    void saveSettings({ storyAutoplay: enabled });
+    if (!enabled) {
+      stopAll();
+      setAudioStatus('');
+    } else if (current.kind === 'line') speakLine(current);
   };
   const answer = (index: number, correct: boolean) => {
     if (progress.answers[index] !== undefined) return;
@@ -122,17 +187,21 @@ export function StoryReader({ id }: { id: string }) {
             <div className="progress-fill" style={{ width: `${result ? 100 : pct}%` }} />
           </div>
         </div>
+        <button type="button" className="icon-btn" aria-label="음성 속도와 목소리 설정" aria-expanded={audioOpen} onClick={() => setAudioOpen(true)}>
+          <Icon name="settings" size={22} />
+        </button>
         <button
           type="button"
           className="icon-btn"
           aria-label="줄이 나올 때 자동으로 읽기"
-          aria-pressed={!!settings?.storyAutoplay}
-          style={settings?.storyAutoplay ? { color: 'var(--accent)' } : undefined}
-          onClick={() => void saveSettings({ storyAutoplay: !settings?.storyAutoplay })}
+          aria-pressed={autoplay}
+          style={autoplay ? { color: 'var(--accent)' } : undefined}
+          onClick={toggleAutoplay}
         >
           <Icon name="speaker" size={22} />
         </button>
       </div>
+      {!!audioStatus && !result && <div className="story-playback-status" role="status" aria-live="polite">{audioStatus}</div>}
       {result ? (
         <StoryResult story={story} progress={progress} lex={lex} onRestart={() => {
           update({ ...progress, position: 1, answers: {}, completedAt: undefined });
@@ -147,7 +216,10 @@ export function StoryReader({ id }: { id: string }) {
             </div>
             {shown.map((b, i) =>
               b.kind === 'line' ? (
-                <LineView key={i} line={b} active={i === at} story={story} lex={lex} names={names} onPick={(span) => setPicked({ span, line: b })} onSay={() => setCursor(i)} />
+                <LineView key={i} line={b} active={i === at} story={story} lex={lex} names={names} onPick={(span) => setPicked({ span, line: b })} onSay={() => {
+                    setCursor(i);
+                    speakLine(b);
+                  }} />
               ) : i === shown.length - 1 ? (
                 <QuestionView key={i} q={b} seed={`${story.id}:${i}`} result={progress.answers[i]} onAnswer={(c) => answer(i, c)} />
               ) : (
@@ -183,7 +255,88 @@ export function StoryReader({ id }: { id: string }) {
         </>
       )}
       {picked && <WordSheet picked={picked} story={story} lex={lex} onClose={() => setPicked(undefined)} />}
+      {audioOpen && (
+        <StoryAudioSheet
+          story={story}
+          rate={playbackRate}
+          voices={voiceAssignments}
+          onRate={changeRate}
+          onVoice={changeVoice}
+          onPreview={(line, voice) => speakLine(line, voice)}
+          onClose={() => {
+            if (rateDraft !== undefined) void saveSettings({ storyPlaybackRate: playbackRate });
+            setAudioOpen(false);
+          }}
+          hasGemini={!!(settings?.gemini?.apiKey && settings.gemini.useTts)}
+          autoModelSwitch={autoModelSwitch}
+          onAutoModelSwitch={(enabled) => void saveSettings({ storyAutoModelSwitch: enabled })}
+        />
+      )}
     </>
+  );
+}
+
+/** Reading-only audio controls. Every line is synthesized separately, so the cast may have >2 voices. */
+function StoryAudioSheet({ story, rate, voices, onRate, onVoice, onPreview, onClose, hasGemini, autoModelSwitch, onAutoModelSwitch }: {
+  story: Story;
+  rate: number;
+  voices: Record<string, string>;
+  onRate: (v: number) => void;
+  onVoice: (role: string, voice: string) => void;
+  onPreview: (line: StoryLine, voice: string) => void;
+  onClose: () => void;
+  hasGemini: boolean;
+  autoModelSwitch: boolean;
+  onAutoModelSwitch: (enabled: boolean) => void;
+}) {
+  const cast = [{ id: NARRATOR, name: '나레이션' }, ...story.characters.map((c) => ({ id: c.id, name: c.name }))];
+  return (
+    <div className="dialog-backdrop story-word-backdrop" onClick={onClose}>
+      <div className="dialog story-audio-sheet" role="dialog" aria-modal="true" aria-label="이야기 음성 설정" onClick={(e) => e.stopPropagation()}>
+        <div className="story-sheet-handle" aria-hidden="true" />
+        <div className="story-audio-header">
+          <h2>이야기 음성</h2>
+          <button type="button" className="icon-btn" aria-label="음성 설정 닫기" onClick={onClose}><Icon name="close" size={20} /></button>
+        </div>
+        <section className="story-audio-section">
+          <div className="story-audio-title"><strong>읽기 속도</strong><strong className="story-audio-rate">{rate.toFixed(2)}×</strong></div>
+          <input type="range" className="story-audio-slider" aria-label="이야기 읽기 속도" min="0.6" max="1.2" step="0.05" value={rate}
+            onChange={(e) => onRate(Number(e.target.value))} />
+          <div className="story-audio-range"><span>천천히 · 0.6×</span><span>빠르게 · 1.2×</span></div>
+          <span className="story-audio-hint">재생 중에도 바뀌고, 저장된 음성을 다시 만들지 않아요.</span>
+        </section>
+        <section className="story-audio-section">
+          <div className="story-audio-title">
+            <strong>무료 TTS 모델 자동 전환</strong>
+            <Switch checked={autoModelSwitch} onChange={onAutoModelSwitch} label="무료 TTS 모델 자동 전환" />
+          </div>
+          <p className="story-audio-hint">선택한 모델이 사용량 제한에 걸리면 다른 무료 TTS 모델로 바꿔요. 이미 저장된 음성은 먼저 재사용하고, 모델에 따라 목소리 느낌이 조금 달라질 수 있어요.</p>
+        </section>
+        <section className="story-audio-section">
+          <div className="story-audio-title"><strong>역할별 목소리</strong><span className="story-audio-hint">Gemini TTS</span></div>
+          {!hasGemini && <p className="story-audio-hint">현재 기기 음성이에요. 역할별 목소리를 들으려면 설정에서 Gemini 음성을 켜 주세요.</p>}
+          <div className="story-audio-cast">
+            {cast.map((person) => {
+              const voice = storyVoice(story, person.id, voices);
+              const sample = story.blocks.find((block): block is StoryLine => block.kind === 'line' && roleOf(story, block) === person.id);
+              return (
+                <div className="story-audio-person" key={person.id}>
+                  <span className="story-audio-person-name">{person.name}</span>
+                  <select className="select" aria-label={`${person.name} 목소리`} value={voice} onChange={(e) => onVoice(person.id, e.target.value)}>
+                    {GEMINI_VOICES.map(([name, description]) => <option key={name} value={name}>{name} · {description}</option>)}
+                  </select>
+                  <button type="button" className="icon-btn story-audio-preview" disabled={!sample} aria-label={`${person.name} 목소리 미리 듣기`}
+                    onClick={() => { if (sample) onPreview(sample, voice); }}>
+                    <Icon name="speaker" size={19} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+        <button type="button" className="btn btn-primary story-audio-done" onClick={onClose}>완료</button>
+      </div>
+    </div>
   );
 }
 
@@ -220,16 +373,11 @@ function Tokens({ text, lex, names, onPick }: { text: string; lex: Lexicon; name
 }
 
 function LineView({ line, active, story, lex, names, onPick, onSay }: { line: StoryLine; active: boolean; story: Story; lex: Lexicon; names: Set<string>; onPick: (s: Span) => void; onSay: () => void }) {
-  const settings = useSettings();
-  const say = () => {
-    onSay();
-    void play([{ text: line.text, lang: 'id-ID' }], settings);
-  };
   const speakerName = story.characters.find((c) => c.id === line.speaker)?.name;
   if (!speakerName) {
     return (
       <div className={`story-narration${active ? ' story-active' : ''}`}>
-        <button type="button" className="icon-btn story-say" aria-label="이 문장 듣기" onClick={say}>
+        <button type="button" className="icon-btn story-say" aria-label="이 문장 듣기" onClick={onSay}>
           <Icon name="speaker" size={20} />
         </button>
         <p>
@@ -244,7 +392,7 @@ function LineView({ line, active, story, lex, names, onPick, onSay }: { line: St
       <div className="story-bubble">
         <span className="story-name">{speakerName}</span>
         <div className="story-bubble-row">
-          <button type="button" className="icon-btn story-say" aria-label="이 문장 듣기" onClick={say}>
+          <button type="button" className="icon-btn story-say" aria-label="이 문장 듣기" onClick={onSay}>
             <Icon name="speaker" size={20} />
           </button>
           <p>
@@ -429,32 +577,47 @@ function WordSheet({ picked, story, lex, onClose }: { picked: Picked; story: Sto
     }
   };
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
-      <div className="dialog story-sheet" role="dialog" aria-label={`${span.text} 뜻`} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <strong style={{ fontSize: 24, flex: 1 }}>{span.text}</strong>
-          <button type="button" className="icon-btn" aria-label="단어 듣기" onClick={() => void play([{ text: span.text, lang: 'id-ID' }], settings)}>
-            <Icon name="speaker" size={22} />
+    <div className="dialog-backdrop story-word-backdrop" onClick={onClose}>
+      <div className="dialog story-sheet" role="dialog" aria-modal="true" aria-label={`${span.text} 뜻`} onClick={(e) => e.stopPropagation()}>
+        <div className="story-sheet-handle" aria-hidden="true" />
+        <div className="story-sheet-head">
+          <div className="story-sheet-word">
+            <span className="story-sheet-eyebrow">인도네시아어 · 단어 살펴보기</span>
+            <strong>{span.text}</strong>
+          </div>
+          <button type="button" className="story-sheet-audio" aria-label="단어 듣기" onClick={() => void play([{ text: span.text, lang: 'id-ID' }], settings)}>
+            <Icon name="speaker" size={23} />
           </button>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 16, lineHeight: 1.5 }}>
-          <span>{g.ko || '뜻 정보가 없어요'}</span>
-          {g.en && <span className="muted small">영어: {g.en}</span>}
-          {g.root && <span className="muted small">어근·표준형: {g.root}</span>}
-          {line.ko && <span className="faint small">이 문장: {line.ko}</span>}
+        <div className="story-sheet-meaning">
+          <span className="story-sheet-eyebrow">뜻 · MEANING</span>
+          <span className="story-sheet-ko">{g.ko || '뜻 정보가 없어요'}</span>
+          {g.en && <span className="story-sheet-en">{g.en}</span>}
         </div>
+        {g.root && (
+          <div className="story-sheet-meta">
+            <span className="story-sheet-eyebrow">어근 · 표준형</span>
+            <span>{g.root}</span>
+          </div>
+        )}
+        {line.ko && (
+          <div className="story-sheet-example">
+            <span className="story-sheet-eyebrow">이야기 속 문장</span>
+            <p>{line.text}</p>
+            <span>{line.ko}</span>
+          </div>
+        )}
         {entry ? (
-          <span className="chip" style={{ alignSelf: 'flex-start' }}>
-            {STATUS_TEXT[entry.status]}
-          </span>
+          <div className="story-sheet-known">
+            <Icon name="check" size={18} />
+            <span>{STATUS_TEXT[entry.status]}</span>
+          </div>
         ) : (
-          <button type="button" className="btn btn-primary" style={{ height: 48 }} onClick={add} disabled={busy}>
-            덱에 추가
+          <button type="button" className="btn btn-primary story-sheet-add" onClick={add} disabled={busy}>
+            {busy ? '추가하는 중…' : '내 덱에 추가'}
           </button>
         )}
-        <button type="button" className="btn btn-quiet" onClick={onClose}>
-          닫기
-        </button>
+        <button type="button" className="story-sheet-close" onClick={onClose}>읽기 계속하기</button>
       </div>
     </div>
   );
