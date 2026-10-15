@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { play, prefetchSpeech, setPlaybackRate, stopAll, type PlayResult } from '../../adapters/speech/speech';
+import { play, setPlaybackRate, stopAll, type PlayResult } from '../../adapters/speech/speech';
 import { GEMINI_VOICES } from '../../adapters/gemini/tts';
 import { db } from '../../adapters/storage/db';
 import { addNote, saveSettings } from '../../adapters/storage/repo';
@@ -72,15 +72,8 @@ export function StoryReader({ id }: { id: string }) {
     end.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [progress?.position]);
 
-  // Prepare one upcoming sentence. Never preload the entire story (free API limits).
-  useEffect(() => {
-    if (!story || !progress || !autoplay) return;
-    const upcoming = story.blocks.slice(progress.position).find((block) => block.kind === 'line');
-    if (upcoming?.kind === 'line') {
-      const voice = storyVoice(story, roleOf(story, upcoming), voiceAssignments);
-      void prefetchSpeech({ text: upcoming.text, lang: 'id-ID', style: 'story' }, settings, voice);
-    }
-  }, [story, progress, autoplay, settings, voiceAssignments]);
+  // Free TTS quotas can be very small. Don't synthesize upcoming lines in the background:
+  // generate only when the user actually reaches/plays the line; audio is still cached.
 
   if (story === undefined || !progress || !lex) return <div className="screen" />;
   if (!story) {
