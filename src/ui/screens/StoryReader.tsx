@@ -128,6 +128,7 @@ export function StoryReader({ id }: { id: string }) {
   };
   const next = () => {
     if (last) {
+      stopAll();
       update({ ...progress, completedAt: Date.now(), readCount: progress.readCount + 1 });
       setResult(true);
       return;
@@ -136,7 +137,10 @@ export function StoryReader({ id }: { id: string }) {
     update({ ...progress, position });
     const b = story.blocks[position - 1]!;
     if (b.kind === 'line' && autoplay) speakLine(b);
-    else setAudioStatus('');
+    else {
+      stopAll();
+      setAudioStatus('');
+    }
   };
   const toggleAutoplay = () => {
     const enabled = !autoplay;
