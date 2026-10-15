@@ -33,7 +33,7 @@ describe('story speech generation', () => {
     wav.set([82, 73, 70, 70], 0);
     wav.set([87, 65, 86, 69], 8);
     const data = btoa(String.fromCharCode(...wav));
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(JSON.stringify({
       steps: [{ type: 'model_output', content: [{ type: 'audio', data, mime_type: 'audio/wav' }] }],
     }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);
