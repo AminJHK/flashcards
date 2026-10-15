@@ -139,6 +139,41 @@ export async function storyClipFor(
   throw new GeminiError('선택할 수 있는 Gemini 음성 모델이 없어요. 설정에서 모델을 확인해 주세요.', 'model');
 }
 
+/** Prepare saved story lines without playing them. Reuses model/voice-specific cached clips.
+ * Sequential requests respect the same conservative per-model RPM guard as playback.
+ * A quota error stops preparation; it never loops through exhausted daily quotas.
+ */
+export async function prepareStoryAudio(
+  story: import('../../core/stories/types').Story,
+  settings: Settings | undefined,
+  onProgress: (done: number, total: number, stopped?: string) => void,
+  cancelled: () => boolean = () => false,
+): Promise<void> {
+  const { roleOf, storyVoice } = await import('../../core/stories/voices');
+  const lines = story.blocks.filter((b): b is import('../../core/stories/types').StoryLine => b.kind === 'line');
+  const total = lines.length;
+  if (!geminiOn(settings) || !navigator.onLine) {
+    onProgress(0, total, 'Gemini TTS가 꺼져 있거나 오프라인이에요');
+    return;
+  }
+  const overrides = settings.storyVoices?.[story.id] ?? {};
+  onProgress(0, total);
+  for (let i = 0; i < total; i++) {
+    if (cancelled()) return;
+    const line = lines[i]!;
+    const voice = storyVoice(story, roleOf(story, line), overrides);
+    const selected = { ...settings, gemini: { ...settings.gemini, voice } };
+    try {
+      await storyClipFor({ text: line.text, lang: story.lang, style: 'story' }, selected, settings.storyAutoModelSwitch !== false);
+      onProgress(i + 1, total);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : '음성을 준비하지 못했어요';
+      onProgress(i, total, reason);
+      return;
+    }
+  }
+}
+
 /** 읽기에서 다음 대사 하나만 미리 준비한다 (Gemini를 켰을 때만, 저장은 기기 안). */
 export async function prefetchSpeech(item: Speech, s: Settings | undefined, voice?: string): Promise<void> {
   if (!geminiOn(s) || !navigator.onLine) return;
