@@ -11,6 +11,9 @@ export class GeminiError extends Error {
   constructor(
     message: string,
     readonly kind: 'key' | 'quota' | 'model' | 'network' | 'empty' | 'busy' | 'other',
+    /** More specific classification of Google's 429 error; don't mistake minute limits for daily exhaustion. */
+    readonly limit?: 'daily' | 'minute' | 'unknown',
+    readonly retryAfterMs?: number,
   ) {
     super(message);
   }
@@ -32,20 +35,43 @@ async function call(path: string, key: string, init: RequestInit = {}, timeoutMs
 }
 
 /** HTTP 오류 응답을 알아보기 쉬운 오류로 바꾼다 */
+/** Quota metadata differs between REST endpoints and models, so treat unidentified 429s honestly. */
+export function classifyRateLimit(message: string, details: unknown): 'daily' | 'minute' | 'unknown' {
+  const diagnostic = `${message} ${JSON.stringify(details ?? [])}`;
+  if (/quota_exceeded|(?:requests?|tokens?)[_-]?per[_-]?day|per.?day|daily|\\bRPD\\b/i.test(diagnostic)) return 'daily';
+  if (/rate_limit_exceeded|too_many_requests|per.?minute|per.?second|\\bRPM\\b|\\bTPM\\b/i.test(diagnostic)) return 'minute';
+  return 'unknown';
+}
+
+/** HTTP 오류 응답을 알아보기 쉬운 오류로 바꾼다 */
 async function errorFrom(res: Response): Promise<GeminiError> {
   let msg = '';
+  let details: unknown;
   try {
-    msg = ((await res.json()) as { error?: { message?: string } }).error?.message ?? '';
+    const data = (await res.json()) as { error?: { message?: string; details?: unknown } };
+    msg = data.error?.message ?? '';
+    details = data.error?.details;
   } catch {
     /* 본문 없음 */
   }
   if (res.status === 400 && /api key/i.test(msg)) return new GeminiError('API 키가 올바르지 않아요. 다시 복사해 붙여넣어 주세요', 'key');
   if (res.status === 401 || res.status === 403) return new GeminiError('API 키를 쓸 수 없어요. 키를 다시 확인해 주세요', 'key');
-  if (res.status === 429) return new GeminiError('오늘 무료 사용량을 다 썼거나 너무 빨리 요청했어요. 잠시 뒤에 다시 시도해요', 'quota');
-  // 서버가 붐비거나 잠깐 고장 (503 "high demand" 등): 기다렸다 다시 하면 된다
-  if (res.status === 500 || res.status === 502 || res.status === 503 || res.status === 504) return new GeminiError('Gemini 서버가 지금 붐벼요. 잠시 뒤에 다시 시도해요', 'busy');
+  if (res.status === 429) {
+    const limit = classifyRateLimit(msg, details);
+    const retryHeader = res.headers.get('Retry-After');
+    const numericSeconds = retryHeader ? Number(retryHeader) : NaN;
+    const retryAfterMs = Number.isFinite(numericSeconds) && numericSeconds >= 0
+      ? numericSeconds * 1000
+      : retryHeader ? Math.max(0, Date.parse(retryHeader) - Date.now()) : undefined;
+    const reason = limit === 'daily'
+      ? '이 Gemini 모델의 오늘 사용량 한도에 도달했어요. Google AI Studio에서 확인해 주세요.'
+      : limit === 'minute'
+        ? 'Gemini 요청이 너무 빠르게 이어졌어요. 잠시 기다렸다 다시 시도해 주세요.'
+        : 'Gemini 요청 제한(429)이 발생했어요. 분당 한도인지 일일 한도인지 AI Studio에서 확인해 주세요.';
+    return new GeminiError(reason, 'quota', limit, Number.isFinite(retryAfterMs) ? retryAfterMs : undefined);
+  }
+  if ([500, 502, 503, 504].includes(res.status)) return new GeminiError('Gemini 서버가 지금 붐벼요. 잠시 뒤에 다시 시도해요', 'busy');
   if (res.status === 404) return new GeminiError('이 모델을 쓸 수 없어요', 'model');
-  // 원인을 알 수 있게 Google이 준 이유를 짧게 붙인다
   return new GeminiError(`Gemini 오류 (${res.status}${msg ? `: ${msg.slice(0, 80)}` : ''})`, 'other');
 }
 
