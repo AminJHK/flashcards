@@ -58,10 +58,11 @@ async function clipFor(item: Speech, s: Settings & { gemini: NonNullable<Setting
 }
 
 /** 읽기에서 다음 대사 하나만 미리 준비한다 (Gemini를 켰을 때만, 저장은 기기 안). */
-export async function prefetchSpeech(item: Speech, s: Settings | undefined): Promise<void> {
+export async function prefetchSpeech(item: Speech, s: Settings | undefined, voice?: string): Promise<void> {
   if (!geminiOn(s) || !navigator.onLine) return;
+  const selected = voice ? { ...s, gemini: { ...s.gemini, voice } } : s;
   try {
-    await clipFor(item, s);
+    await clipFor(item, selected);
   } catch {
     // 재생할 때 다시 시도하거나 기기 음성을 쓴다.
   }
@@ -70,6 +71,11 @@ export async function prefetchSpeech(item: Speech, s: Settings | undefined): Pro
 let token = 0;
 let current: HTMLAudioElement | null = null;
 
+/** Change speed immediately for audio already playing; no new Gemini API call. */
+export function setPlaybackRate(rate: number): void {
+  if (current && Number.isFinite(rate) && rate > 0) current.playbackRate = rate;
+}
+
 export function stopAll(): void {
   token++;
   current?.pause();
@@ -77,11 +83,12 @@ export function stopAll(): void {
   stopSpeaking();
 }
 
-function playBlob(blob: Blob, my: number): Promise<void> {
+function playBlob(blob: Blob, my: number, rate = 1): Promise<void> {
   return new Promise((resolve, reject) => {
     if (my !== token) return resolve();
     const url = URL.createObjectURL(blob);
     const a = new Audio(url);
+    a.playbackRate = rate;
     current = a;
     const done = () => {
       URL.revokeObjectURL(url);
@@ -112,27 +119,28 @@ export interface PlayResult {
   missing?: string[];
 }
 
-export async function play(items: readonly Speech[], s: Settings | undefined, opts?: { timeoutMs?: number; onSource?: (result: PlayResult) => void }): Promise<PlayResult> {
+export async function play(items: readonly Speech[], s: Settings | undefined, opts?: { timeoutMs?: number; onSource?: (result: PlayResult) => void; voice?: string; rate?: number }): Promise<PlayResult> {
   stopAll();
   const list = items.filter((i) => i.text.trim());
   if (!list.length) return { via: 'none' };
   const my = token;
-  if (geminiOn(s)) {
+  const selected = geminiOn(s) && opts?.voice ? { ...s, gemini: { ...s.gemini, voice: opts.voice } } : s;
+  if (geminiOn(selected)) {
     try {
       for (const it of list) {
         // 처음 만드는 음성이 늦으면 기다리지 않고 기기 음성으로 읽는다 (만드는 건 계속해서 저장됨)
-        const cached = !!(await db.audio.get(clipKey(it, s)));
-        const blob = await withTimeout(clipFor(it, s), opts?.timeoutMs ?? 10_000, '자연스러운 음성을 만드는 데 시간이 걸려요');
+        const cached = !!(await db.audio.get(clipKey(it, selected)));
+        const blob = await withTimeout(clipFor(it, selected), opts?.timeoutMs ?? 10_000, '자연스러운 음성을 만드는 데 시간이 걸려요');
         if (my !== token) return { via: 'gemini' };
-        opts?.onSource?.({ via: 'gemini', model: s.gemini.ttsModel, cached });
-        await playBlob(blob, my);
+        opts?.onSource?.({ via: 'gemini', model: selected.gemini.ttsModel, cached });
+        await playBlob(blob, my, opts?.rate ?? 1);
       }
       return { via: 'gemini' };
     } catch (e) {
       if (my !== token) return { via: 'gemini' };
       await voicesReady();
       if (my !== token) return { via: 'device' };
-      const ok = deviceSpeak(list, s.voices);
+      const ok = deviceSpeak(list, selected.voices, opts?.rate ?? 0.9);
       const result: PlayResult = { via: ok ? 'device' : 'none', error: e instanceof Error ? e.message : undefined, missing: ok ? undefined : missingVoiceLangs(list) };
       opts?.onSource?.(result);
       return result;
@@ -140,7 +148,7 @@ export async function play(items: readonly Speech[], s: Settings | undefined, op
   }
   await voicesReady();
   if (my !== token) return { via: 'device' };
-  const ok = deviceSpeak(list, s?.voices);
+  const ok = deviceSpeak(list, s?.voices, opts?.rate ?? 0.9);
   const result: PlayResult = { via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list) };
   opts?.onSource?.(result);
   return result;
