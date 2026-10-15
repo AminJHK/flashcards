@@ -1967,9 +1967,39 @@ textarea.input-sentence {
   padding: 0 4px;
 }
 
+.story-word-backdrop { padding: 0; align-items: flex-end; }
 .story-sheet {
-  gap: 14px;
+  width: 100%;
+  max-width: 520px;
+  max-height: min(84dvh, 720px);
+  overflow-y: auto;
+  padding: 10px 22px calc(20px + var(--safe-bottom));
+  border-radius: 28px 28px 0 0;
+  gap: 20px;
+  box-shadow: 0 -12px 45px rgb(0 0 0 / 0.15);
 }
+.story-sheet-handle {
+  width: 38px;
+  height: 4px;
+  margin: 0 auto 2px;
+  border-radius: 4px;
+  background: var(--line);
+}
+.story-sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.story-sheet-word { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.story-sheet-word strong { font: 700 calc(30px * var(--scale))/1.25 var(--font-latin); overflow-wrap: anywhere; letter-spacing: -0.025em; }
+.story-sheet-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.045em; color: var(--text3); }
+.story-sheet-audio { display: grid; place-items: center; width: 50px; height: 50px; flex-shrink: 0; background: var(--accent-soft); color: var(--accent); border: none; border-radius: 16px; }
+.story-sheet-meaning { display: flex; flex-direction: column; gap: 6px; padding: 18px; border-radius: 18px; background: var(--surface2); }
+.story-sheet-ko { font-size: calc(20px * var(--scale)); font-weight: 700; line-height: 1.4; overflow-wrap: anywhere; }
+.story-sheet-en { font-size: 15px; color: var(--text2); overflow-wrap: anywhere; }
+.story-sheet-meta { display: flex; flex-direction: column; gap: 5px; font-size: 16px; }
+.story-sheet-example { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border-left: 3px solid var(--accent); border-radius: 0 15px 15px 0; background: var(--accent-soft); line-height: 1.5; }
+.story-sheet-example p { margin: 0; font: 600 16px/1.5 var(--font-latin); overflow-wrap: anywhere; }
+.story-sheet-example > span:last-child { font-size: 14px; color: var(--text2); }
+.story-sheet-known { display: flex; align-items: center; gap: 8px; padding: 12px 14px; color: var(--accent); background: var(--accent-soft); border-radius: 14px; font-size: 14px; font-weight: 600; }
+.story-sheet-add { min-height: 52px; }
+.story-sheet-close { border: none; background: transparent; color: var(--text2); min-height: 44px; font-size: 14px; font-weight: 600; }
 
 .story-row {
   border: none;
