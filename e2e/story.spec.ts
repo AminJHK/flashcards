@@ -86,6 +86,7 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   // Each character and the narrator have their own selectable Gemini voice.
   await page.getByRole('button', { name: '음성 속도와 목소리 설정' }).click();
   const audio = page.getByRole('dialog', { name: '이야기 음성 설정' });
+  await expect(audio.getByRole('switch', { name: '무료 TTS 모델 자동 전환' })).toHaveAttribute('aria-checked', 'true');
   await expect(audio.getByLabel('나레이션 목소리')).toHaveValue('Charon');
   await expect(audio.getByLabel('Budi 목소리')).toHaveValue('Aoede');
   await expect(audio.getByLabel('Sari 목소리')).toHaveValue('Puck');
