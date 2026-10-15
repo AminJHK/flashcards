@@ -10,6 +10,7 @@ import { NARRATOR, roleOf, storyVoice } from '../../core/stories/voices';
 import type { StoryBlock, StoryLine, StoryProgress, StoryQuestion, Story } from '../../core/stories/types';
 import { analyzeText, findGloss, glossFor, type Lexicon, type Span } from '../../core/stories/vocab';
 import { Icon } from '../components/Icon';
+import { Switch } from '../components/Controls';
 import { useNotes, useSettings } from '../hooks';
 import { go } from '../router';
 import { useToast } from '../toast';
@@ -48,6 +49,7 @@ export function StoryReader({ id }: { id: string }) {
   const settings = useSettings();
   const end = useRef<HTMLDivElement>(null);
   const autoplay = settings?.storyAutoplay !== false;
+  const autoModelSwitch = settings?.storyAutoModelSwitch !== false;
   const playbackRate = rateDraft ?? settings?.storyPlaybackRate ?? 0.85;
   const voiceAssignments = useMemo(
     () => ({ ...(settings?.storyVoices?.[id] ?? {}), ...(voiceDraft[id] ?? {}) }),
@@ -103,8 +105,12 @@ export function StoryReader({ id }: { id: string }) {
       timeoutMs: 30_000,
       voice,
       rate: playbackRate,
+      storyAutoModel: autoModelSwitch,
       onSource: (source: PlayResult) => {
-        if (source.via === 'gemini') setAudioStatus(`Gemini AI · ${voice} · ${source.cached ? '저장된 음성' : '새 음성'} · ${playbackRate.toFixed(2)}배속`);
+        if (source.via === 'gemini') {
+          const switched = source.model !== settings?.gemini?.ttsModel;
+          setAudioStatus(`Gemini AI · ${source.model}${switched ? ' (자동 전환)' : ''} · ${voice} · ${source.cached ? '저장된 음성' : '새 음성'} · ${playbackRate.toFixed(2)}배속`);
+        }
         else if (source.via === 'device') setAudioStatus(source.error ? `기기 음성으로 대체됨 · Gemini 오류: ${source.error}` : '기기 음성으로 읽는 중 · 역할별 목소리는 Gemini에서 지원');
         else setAudioStatus(source.error ? `음성 오류: ${source.error}` : '사용할 수 있는 음성이 없어요');
       },
@@ -219,6 +225,8 @@ export function StoryReader({ id }: { id: string }) {
             setAudioOpen(false);
           }}
           hasGemini={!!(settings?.gemini?.apiKey && settings.gemini.useTts)}
+          autoModelSwitch={autoModelSwitch}
+          onAutoModelSwitch={(enabled) => void saveSettings({ storyAutoModelSwitch: enabled })}
         />
       )}
     </>
@@ -226,7 +234,7 @@ export function StoryReader({ id }: { id: string }) {
 }
 
 /** Reading-only audio controls. Every line is synthesized separately, so the cast may have >2 voices. */
-function StoryAudioSheet({ story, rate, voices, onRate, onVoice, onPreview, onClose, hasGemini }: {
+function StoryAudioSheet({ story, rate, voices, onRate, onVoice, onPreview, onClose, hasGemini, autoModelSwitch, onAutoModelSwitch }: {
   story: Story;
   rate: number;
   voices: Record<string, string>;
@@ -235,6 +243,8 @@ function StoryAudioSheet({ story, rate, voices, onRate, onVoice, onPreview, onCl
   onPreview: (line: StoryLine, voice: string) => void;
   onClose: () => void;
   hasGemini: boolean;
+  autoModelSwitch: boolean;
+  onAutoModelSwitch: (enabled: boolean) => void;
 }) {
   const cast = [{ id: NARRATOR, name: '나레이션' }, ...story.characters.map((c) => ({ id: c.id, name: c.name }))];
   return (
@@ -251,6 +261,13 @@ function StoryAudioSheet({ story, rate, voices, onRate, onVoice, onPreview, onCl
             onChange={(e) => onRate(Number(e.target.value))} />
           <div className="story-audio-range"><span>천천히 · 0.6×</span><span>빠르게 · 1.2×</span></div>
           <span className="story-audio-hint">재생 중에도 바뀌고, 저장된 음성을 다시 만들지 않아요.</span>
+        </section>
+        <section className="story-audio-section">
+          <div className="story-audio-title">
+            <strong>무료 TTS 모델 자동 전환</strong>
+            <Switch checked={autoModelSwitch} onChange={onAutoModelSwitch} label="무료 TTS 모델 자동 전환" />
+          </div>
+          <p className="story-audio-hint">선택한 모델이 사용량 제한에 걸리면 다른 무료 TTS 모델로 바꿔요. 이미 저장된 음성은 먼저 재사용하고, 모델에 따라 목소리 느낌이 조금 달라질 수 있어요.</p>
         </section>
         <section className="story-audio-section">
           <div className="story-audio-title"><strong>역할별 목소리</strong><span className="story-audio-hint">Gemini TTS</span></div>
