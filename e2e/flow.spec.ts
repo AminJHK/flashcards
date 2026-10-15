@@ -179,6 +179,7 @@ test('PC 키보드: 스페이스로 정답을 보고, 1·2(4버튼이면 1~4)로
   await page.keyboard.press('2'); // 알았음
   await expect(page.getByText('kamu', { exact: true })).toBeVisible();
   await page.keyboard.press('Space');
+  await expect(page.getByText('Kamu udah makan?')).toBeVisible();
   await page.keyboard.press('1'); // 다시
   await expect(page.getByText('saya', { exact: true })).toBeVisible(); // 다시를 누른 kamu는 기다리고, 다음 새 카드가 나온다
 });

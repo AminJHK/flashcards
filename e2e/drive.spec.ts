@@ -189,7 +189,9 @@ test('동기화 상태: 왼쪽 위 구름 아이콘에 올리지 않은 기록 �
   await expect(page.getByText(/연결했어요 · nurse@example.com/)).toBeVisible();
   const icon = page.locator('.sync-corner .sync-icon');
   await expect(icon).toHaveAttribute('aria-label', /동기화됨 · .* 종료해도 돼요/);
-  expect((await icon.boundingBox())!.x).toBeLessThan(40); // 왼쪽 위 구석
+  const box = (await icon.boundingBox())!;
+  expect(box.x + box.width).toBeGreaterThan(1440 - 60); // 오른쪽 위 구석
+  expect(box.y).toBeLessThan(30);
   // 복습 한 장 → 올리지 않은 기록 1개 (복습 화면을 닫지 않고 오늘 화면으로 가서 본다)
   await page.goto('/#/decks');
   await page.getByRole('button', { name: /인도네시아어 구어체/ }).click();

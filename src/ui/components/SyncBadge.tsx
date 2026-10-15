@@ -3,6 +3,7 @@ import { driveErrorMessage } from '../driveBackup';
 import { syncWithDrive } from '../driveSync';
 import { useSyncStatus } from '../useSyncStatus';
 import { useToast } from '../toast';
+import { go } from '../router';
 import { Icon, type IconName } from './Icon';
 
 function ago(t: number | undefined, now: number): string {
@@ -27,7 +28,16 @@ export function SyncBadge({ inline = false }: { inline?: boolean }) {
     const t = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(t);
   }, []);
-  if (!st) return null;
+  // Drive를 연결하지 않았으면 흐린 구름: 누르면 설정으로 가서 연결할 수 있다
+  if (!st) {
+    const label = 'Drive와 아직 안 이어짐 · 누르면 설정으로';
+    return (
+      <button type="button" className={`sync-icon sync-off${inline ? ' sync-inline' : ''}`} onClick={() => go('settings')} aria-label={label} title={label}>
+        <Icon name="cloud" size={inline ? 20 : 18} strokeWidth={2} />
+        {inline && <span>{label}</span>}
+      </button>
+    );
+  }
 
   const sync = async () => {
     try {

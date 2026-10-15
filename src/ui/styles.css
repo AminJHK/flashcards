@@ -1426,7 +1426,7 @@ textarea.input-sentence {
 @media (min-width: 900px) {
   .sync-corner {
     top: 10px;
-    left: 12px;
+    right: 16px;
   }
 
   .app {
@@ -1446,7 +1446,7 @@ textarea.input-sentence {
   }
 
   .app:has(> .tabbar) > .sync-corner {
-    grid-column: 1;
+    grid-column: 2;
     grid-row: 1;
   }
 
@@ -1468,7 +1468,7 @@ textarea.input-sentence {
     grid-row: 1 / span 2;
     flex-direction: column;
     gap: 4px;
-    padding: 52px 14px 24px;
+    padding: 28px 14px 24px;
     border-top: none;
     border-right: 1px solid var(--line);
   }
@@ -1699,7 +1699,7 @@ textarea.input-sentence {
 .sync-corner {
   position: absolute;
   top: 6px;
-  left: 8px;
+  right: 8px;
   z-index: 6;
 }
 
@@ -1719,7 +1719,12 @@ textarea.input-sentence {
 }
 
 .sync-ok {
+  color: var(--accent);
+}
+
+.sync-off {
   color: var(--text3);
+  opacity: 0.6;
 }
 
 .sync-warn {
