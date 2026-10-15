@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { pcm16ToWav, sampleRateOf } from '../audio/wav';
-import { GeminiError, listModels, pickModel } from './api';
+import { GeminiError, classifyRateLimit, listModels, pickModel } from './api';
 import { transcribe } from './stt';
 import { synthesize, ttsPrompt } from './tts';
 
@@ -32,6 +32,23 @@ describe('Gemini API', () => {
     await expect(listModels('k')).rejects.toMatchObject({ kind: 'quota' });
     vi.stubGlobal('fetch', vi.fn(async () => Promise.reject(new TypeError('offline'))));
     await expect(listModels('k')).rejects.toMatchObject({ kind: 'network' });
+  });
+
+  it('429: minute/day/unknown limit are not falsely reported as daily exhaustion', async () => {
+    expect(classifyRateLimit('Too many requests', [{ violations: [{ quotaId: 'GenerateRequestsPerMinutePerProject' }] }])).toBe('minute');
+    expect(classifyRateLimit('Quota exceeded', [{ violations: [{ quotaId: 'GenerateRequestsPerDayPerProject' }] }])).toBe('daily');
+    expect(classifyRateLimit('Resource exhausted', undefined)).toBe('unknown');
+
+    vi.stubGlobal('fetch', vi.fn(async () => json(429, {
+      error: { message: 'Quota exceeded for GenerateRequestsPerMinutePerProject', details: [{ quotaId: 'RequestsPerMinute' }] },
+    })));
+    await expect(listModels('key')).rejects.toMatchObject({ kind: 'quota', limit: 'minute' });
+    vi.stubGlobal('fetch', vi.fn(async () => json(429, {
+      error: { message: 'Quota exceeded for GenerateRequestsPerDayPerProject', details: [{ quotaId: 'RequestsPerDay' }] },
+    })));
+    await expect(listModels('key')).rejects.toMatchObject({ kind: 'quota', limit: 'daily' });
+    vi.stubGlobal('fetch', vi.fn(async () => json(429, { error: { message: 'RESOURCE_EXHAUSTED' } })));
+    await expect(listModels('key')).rejects.toMatchObject({ kind: 'quota', limit: 'unknown' });
   });
 
   it('선호하는 TTS 모델을 고르고, 없으면 이름에 tts가 든 모델을 쓴다', () => {
