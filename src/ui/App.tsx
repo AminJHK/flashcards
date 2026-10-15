@@ -17,7 +17,6 @@ import { ConfirmHost, ErrorBoundary } from './confirm';
 import { StartSync } from './StartSync';
 import { FirstTapSync } from './FirstTapSync';
 import { useSyncStatus } from './useSyncStatus';
-import { SyncBadge } from './components/SyncBadge';
 import { syncWithDrive } from './driveSync';
 import { ToastProvider, useToast } from './toast';
 
@@ -127,21 +126,11 @@ export function App() {
     <div className="app">
       <ToastProvider high={!showTabs}>
         <ErrorBoundary resetKey={route.join('/')}>{screen}</ErrorBoundary>
-        {showTabs && <SyncCorner />}
         {showTabs && <TabBar current={tab ?? ''} />}
         {tapSync && <FirstTapSync clientId={tapSync} />}
         <GlobalErrors />
         <ConfirmHost />
       </ToastProvider>
-    </div>
-  );
-}
-
-/** 왼쪽 위 구석의 동기화 아이콘 */
-function SyncCorner() {
-  return (
-    <div className="sync-corner">
-      <SyncBadge />
     </div>
   );
 }

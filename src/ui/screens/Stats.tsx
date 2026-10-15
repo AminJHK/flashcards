@@ -1,3 +1,4 @@
+import { ScreenSync } from '../components/ScreenSync';
 import { useState } from 'react';
 import { dayToDate, yearColumns } from '../../core/stats/heatmap';
 import { Heatmap, HeatmapNumbers } from '../components/Heatmap';
@@ -20,6 +21,7 @@ export function Stats() {
 
   return (
     <div className="screen">
+      <ScreenSync />
       <button type="button" className="back-btn" onClick={() => go('')}>
         <Icon name="chevronLeft" size={20} />
         오늘

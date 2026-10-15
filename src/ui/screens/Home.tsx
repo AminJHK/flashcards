@@ -1,3 +1,4 @@
+import { ScreenSync } from '../components/ScreenSync';
 import { useMemo } from 'react';
 import { getCardType } from '../../core/cardTypes/registry';
 import { buildQueue } from '../../core/scheduler/queue';
@@ -82,6 +83,7 @@ export function Home() {
   return (
     <>
       <div className="screen">
+        <ScreenSync />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '0 4px' }}>
           <span className="muted" style={{ fontSize: 14 }}>
             {dateLabel}

@@ -1424,7 +1424,7 @@ textarea.input-sentence {
    폰 화면은 위에서 그대로 두고, 900px 이상일 때만 바꾼다.
    왼쪽에 메뉴를 세로로 놓고, 본문은 가운데에 넓게 둔다. */
 @media (min-width: 900px) {
-  .sync-corner {
+  .screen-sync {
     top: 10px;
     right: 16px;
   }
@@ -1443,11 +1443,6 @@ textarea.input-sentence {
 
   .app:has(> .tabbar) > * {
     grid-column: 2;
-  }
-
-  .app:has(> .tabbar) > .sync-corner {
-    grid-column: 2;
-    grid-row: 1;
   }
 
   .app:has(> .tabbar) > .screen {
@@ -1696,11 +1691,16 @@ textarea.input-sentence {
 }
 
 /* ---------- 동기화 상태 (왼쪽 위 구석의 작은 구름 아이콘) ---------- */
-.sync-corner {
+/* 화면 안에 들어 있는 아이콘: 스크롤하면 내용과 함께 올라간다 */
+.screen {
+  position: relative;
+}
+
+.screen-sync {
   position: absolute;
   top: 6px;
   right: 8px;
-  z-index: 6;
+  z-index: 2;
 }
 
 .sync-icon {

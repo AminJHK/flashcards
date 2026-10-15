@@ -187,11 +187,15 @@ test('동기화 상태: 왼쪽 위 구름 아이콘에 올리지 않은 기록 �
   await page.getByLabel('Google 클라이언트 ID').fill('123-abc.apps.googleusercontent.com');
   await page.getByRole('button', { name: 'Google로 로그인' }).click();
   await expect(page.getByText(/연결했어요 · nurse@example.com/)).toBeVisible();
-  const icon = page.locator('.sync-corner .sync-icon');
+  const icon = page.locator('.screen-sync .sync-icon');
   await expect(icon).toHaveAttribute('aria-label', /동기화됨 · .* 종료해도 돼요/);
   const box = (await icon.boundingBox())!;
   expect(box.x + box.width).toBeGreaterThan(1440 - 60); // 오른쪽 위 구석
   expect(box.y).toBeLessThan(30);
+  // 떠다니지 않는다: 긴 화면을 스크롤하면 내용과 함께 올라간다
+  await page.locator('.screen').first().evaluate((el) => { el.scrollTop = 400; });
+  await expect.poll(async () => (await icon.boundingBox())!.y).toBeLessThan(-20);
+  await page.locator('.screen').first().evaluate((el) => { el.scrollTop = 0; });
   // 복습 한 장 → 올리지 않은 기록 1개 (복습 화면을 닫지 않고 오늘 화면으로 가서 본다)
   await page.goto('/#/decks');
   await page.getByRole('button', { name: /인도네시아어 구어체/ }).click();

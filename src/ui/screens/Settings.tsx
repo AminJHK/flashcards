@@ -1,3 +1,4 @@
+import { ScreenSync } from '../components/ScreenSync';
 import { useEffect, useState } from 'react';
 import type { AccentKey, FontScale, Settings as SettingsT, ThemePref } from '../../core/model/types';
 import { requestPersistence } from '../../adapters/files/share';
@@ -47,6 +48,7 @@ export function Settings() {
 
   return (
     <div className="screen" style={{ gap: 12 }}>
+      <ScreenSync />
       <div className="screen-head" style={{ marginBottom: 6 }}>
         <h1 className="title">설정</h1>
       </div>

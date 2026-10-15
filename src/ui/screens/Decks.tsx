@@ -1,3 +1,4 @@
+import { ScreenSync } from '../components/ScreenSync';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { CARD_TYPES, getCardType, hasCardType } from '../../core/cardTypes/registry';
@@ -33,6 +34,7 @@ export function DeckList() {
   if (!decks || !counts) return <div className="screen" />;
   return (
     <div className="screen">
+      <ScreenSync />
       <div className="screen-head">
         <h1 className="title">덱</h1>
       </div>
