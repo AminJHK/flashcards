@@ -38,6 +38,15 @@ export async function dropStaleClips(): Promise<void> {
 /** 미리 만들기와 재생이 겹쳐도 같은 문장에 API를 두 번 호출하지 않는다. */
 const inFlight = new Map<string, Promise<Blob>>();
 
+/** Avoid repeatedly hitting Google's quota API after an exhausted response. Session-only; cached clips remain playable. */
+const quotaPauses = new Map<string, { until: number; reason: GeminiError }>();
+function quotaCooldown(error: GeminiError): number {
+  // Daily limits won't be resolved by an immediate retry. An unknown 429 is treated cautiously.
+  const defaultMs = error.limit === 'daily' ? 15 * 60_000 : 75_000;
+  return Math.max(defaultMs, Math.min(error.retryAfterMs ?? defaultMs, 60 * 60_000));
+}
+
+
 async function clipFor(item: Speech, s: Settings & { gemini: NonNullable<Settings['gemini']> }): Promise<Blob> {
   const key = clipKey(item, s);
   const existing = inFlight.get(key);
@@ -45,9 +54,18 @@ async function clipFor(item: Speech, s: Settings & { gemini: NonNullable<Setting
   const pending = (async () => {
     const have = await db.audio.get(key);
     if (have) return have.blob;
-    const blob = await synthesize(item.text, item.lang, s.gemini.voice, s.gemini.ttsModel, s.gemini.apiKey, item.style);
-    await db.audio.put({ key, blob, createdAt: Date.now() });
-    return blob;
+    const paused = quotaPauses.get(s.gemini.ttsModel);
+    if (paused && Date.now() < paused.until) throw paused.reason;
+    try {
+      const blob = await synthesize(item.text, item.lang, s.gemini.voice, s.gemini.ttsModel, s.gemini.apiKey, item.style);
+      await db.audio.put({ key, blob, createdAt: Date.now() });
+      return blob;
+    } catch (e) {
+      if (e instanceof GeminiError && e.kind === 'quota') {
+        quotaPauses.set(s.gemini.ttsModel, { until: Date.now() + quotaCooldown(e), reason: e });
+      }
+      throw e;
+    }
   })();
   inFlight.set(key, pending);
   try {
@@ -224,8 +242,10 @@ export async function generateAll(
         await clipFor(it, s as Settings & { gemini: NonNullable<Settings['gemini']> });
         break;
       } catch (e) {
-        if (e instanceof GeminiError && e.kind === 'quota' && tries++ < 2) {
-          await sleep(30_000);
+        // Retry only a confirmed short-term limit. Daily/unknown 429s should stop,
+        // not repeat background requests that consume the user's small free quota.
+        if (e instanceof GeminiError && e.kind === 'quota' && e.limit === 'minute' && tries++ < 2) {
+          await sleep(Math.max(75_000, e.retryAfterMs ?? 0));
           continue;
         }
         return { done, total: todo.length, stopped: e instanceof Error ? e.message : '음성을 만들지 못했어요' };
