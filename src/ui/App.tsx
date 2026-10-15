@@ -12,6 +12,8 @@ import { NoteEditor } from './screens/NoteEditor';
 import { Review } from './screens/Review';
 import { Settings } from './screens/Settings';
 import { Stats } from './screens/Stats';
+import { Stories } from './screens/Stories';
+import { StoryReader } from './screens/StoryReader';
 import { applyTheme } from './theme';
 import { ConfirmHost, ErrorBoundary } from './confirm';
 import { StartSync } from './StartSync';
@@ -94,8 +96,9 @@ export function App() {
 
   const [a, b, c, ...rest] = route;
   const inReview = a === 'review';
+  const reading = a === 'read' && !!b;
   const editingNote = a === 'notes' && c === 'edit';
-  const tab = a === 'add' ? 'add' : a === 'decks' ? 'decks' : a === 'settings' ? 'settings' : a === undefined || a === 'stats' ? '' : null;
+  const tab = a === 'add' ? 'add' : a === 'decks' ? 'decks' : a === 'settings' ? 'settings' : a === 'read' ? 'read' : a === undefined || a === 'stats' ? '' : null;
 
   if (settings && askSync) {
     return (
@@ -110,6 +113,8 @@ export function App() {
 
   let screen;
   if (inReview) screen = <Review key={b ?? 'all'} deckId={b} />;
+  else if (reading) screen = <StoryReader key={b} id={b!} />;
+  else if (a === 'read') screen = <Stories />;
   else if (editingNote && b) screen = <NoteEditor mode="edit" noteId={b} onDone={() => go(rest.join('/') || 'decks')} />;
   else if (a === 'add') screen = <NoteEditor mode="add" />;
   else if (a === 'decks' && b === 'new') screen = <DeckNew />;
@@ -120,7 +125,7 @@ export function App() {
   else if (a === 'stats') screen = <Stats />;
   else screen = <Home />;
 
-  const showTabs = !inReview && !editingNote;
+  const showTabs = !inReview && !editingNote && !reading;
 
   return (
     <div className="app">

@@ -4,6 +4,7 @@ const TABS: [string, string, IconName][] = [
   ['', '오늘', 'home'],
   ['add', '추가', 'add'],
   ['decks', '덱', 'decks'],
+  ['read', '읽기', 'book'],
   ['settings', '설정', 'settings'],
 ];
 

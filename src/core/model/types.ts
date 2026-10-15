@@ -111,6 +111,8 @@ export interface Settings {
   fontScale: FontScale;
   /** 전체 화면 (상태 표시줄·내비게이션 바 숨기기). 기본은 끔 */
   immersive: boolean;
+  /** 이야기 읽기에서 줄이 나올 때 자동으로 읽어 줄지 */
+  storyAutoplay?: boolean;
   /** 언어별로 고른 기기 음성 이름 */
   voices: Record<Lang, string>;
   lastBackupAt?: Millis;

@@ -1652,6 +1652,249 @@ textarea.input-sentence {
   }
 }
 
+/* ---------- 읽기 (이야기) ---------- */
+.story-body {
+  gap: 14px;
+  padding-top: 12px;
+}
+
+.story-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 4px 6px;
+}
+
+.story-title h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  font-family: var(--font-latin);
+}
+
+.story-line {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.story-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 17px;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.av-0 { background: var(--accent); color: var(--on-accent); }
+.av-1 { background: var(--again); color: var(--on-accent); }
+.av-2 { background: var(--text2); color: var(--bg); }
+.av-3 { background: var(--accent-soft); color: var(--accent); }
+.av-4 { background: var(--again-soft); color: var(--again); }
+.av-5 { background: var(--surface2); color: var(--text); }
+
+.story-bubble {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  padding: 6px 12px 8px 6px;
+}
+
+.story-name {
+  display: block;
+  padding-left: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text3);
+}
+
+.story-bubble-row,
+.story-narration {
+  display: flex;
+  gap: 2px;
+  align-items: flex-start;
+}
+
+.story-bubble-row p,
+.story-narration p {
+  margin: 0;
+  padding-top: 4px;
+  font-family: var(--font-latin);
+  font-size: calc(18px * var(--scale));
+  line-height: 1.55;
+}
+
+.story-narration p {
+  color: var(--text2);
+}
+
+.icon-btn.story-say {
+  width: 34px;
+  height: 34px;
+  color: var(--accent);
+}
+
+/* 단어: 누를 수 있다. 모르는 단어는 색 밑줄 */
+.w {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  border-bottom: 1.5px dashed var(--line);
+}
+
+.w-deckNew,
+.w-outside {
+  border-bottom: 2px solid var(--accent);
+}
+
+.story-question {
+  background: var(--surface);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.story-q-kind {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.story-q-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.story-gap {
+  font-family: var(--font-latin);
+}
+
+.story-blank {
+  display: inline-block;
+  min-width: 72px;
+  border-bottom: 2px solid var(--accent);
+  text-align: center;
+  color: var(--accent);
+}
+
+.story-options,
+.story-match > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.story-option {
+  min-height: 52px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.story-option.sel {
+  border-color: var(--accent);
+}
+
+.story-option.right {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.story-option.wrong {
+  border-color: var(--again);
+  background: var(--again-soft);
+  color: var(--again);
+}
+
+.story-tf {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.story-tf .story-option {
+  height: 84px;
+}
+
+.story-match {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.story-feedback {
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.story-feedback.ok,
+.story-answered.ok {
+  color: var(--accent);
+}
+
+.story-feedback.ok {
+  background: var(--accent-soft);
+}
+
+.story-feedback.miss,
+.story-answered.miss {
+  color: var(--again);
+}
+
+.story-feedback.miss {
+  background: var(--again-soft);
+}
+
+.story-answered {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+  padding: 0 4px;
+}
+
+.story-sheet {
+  gap: 14px;
+}
+
+.story-row {
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 /* ---------- 업데이트 알림 ---------- */
 .update-banner {
   position: absolute;
