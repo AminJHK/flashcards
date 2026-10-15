@@ -282,7 +282,14 @@ export function Review({ deckId }: { deckId?: string }) {
   }
 
   const close = () => {
-    if (history.length) void syncWithDrive({ interactive: false }).catch(() => {}); // 나갈 때도 맞춘다
+    // 나갈 때도 창 없이 맞춘다. 받아 둔 로그인이 없으면 억지로 창을 띄우지 않고, 배지를 누르라고만 알린다
+    if (history.length) {
+      void syncWithDrive({ interactive: false })
+        .then((r) => {
+          if (!r) toast('Drive에는 아직 안 올렸어요. 오늘 화면의 동기화 배지를 누르면 올라가요');
+        })
+        .catch(() => {});
+    }
     go(''); // 복습을 닫으면(끝났든 중간이든) 메인 화면으로
   };
   const remaining = q.counts.review + q.counts.learning + q.counts.newc;

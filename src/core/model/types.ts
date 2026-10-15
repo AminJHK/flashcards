@@ -128,7 +128,7 @@ export interface GoogleDriveSettings {
   lastDriveBackupAt?: Millis;
   /** 마지막으로 다른 기기와 동기화한 시각 */
   lastSyncAt?: Millis;
-  /** 앱을 연 뒤 화면을 처음 누를 때 자동으로 로그인해서 동기화할지 (없으면 켜짐) */
+  /** 앱을 연 뒤 화면을 처음 누를 때 로그인 창을 띄워 자동으로 동기화할지 (없으면 꺼짐 — 동기화는 사용자가 누를 때) */
   syncOnStart?: boolean;
   /** 앱을 열 때 "Google로 로그인하고 시작" 화면을 먼저 보여 줄지 (없으면 꺼짐) */
   startScreen?: boolean;

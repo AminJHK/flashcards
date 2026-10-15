@@ -129,8 +129,8 @@ function Connected({ s }: { s: Settings }) {
           {busy === 'sync' ? '동기화 중…' : '지금 동기화'}
         </button>
       </Row>
-      <Row title="자동으로 동기화" desc="앱을 연 뒤 처음 누를 때 Google 로그인 창이 잠깐 떴다 닫히면서 맞춰요. 그 뒤로는 몇 분마다, 그리고 앱을 닫을 때 맞춰요.">
-        <Switch label="자동으로 동기화" checked={d.syncOnStart !== false} onChange={(v) => void saveSettings({ googleDrive: { ...d, syncOnStart: v } })} />
+      <Row title="처음 누를 때 자동 로그인" desc="꺼 두면 로그인 창이 마음대로 뜨지 않아요. 복습을 마치고 배지(왼쪽 메뉴·오늘 화면)를 누르거나 「지금 동기화」를 누를 때만 맞춰요. 켜면 앱을 연 뒤 처음 누를 때 창이 잠깐 떴다 닫혀요.">
+        <Switch label="처음 누를 때 자동 로그인" checked={d.syncOnStart === true} onChange={(v) => void saveSettings({ googleDrive: { ...d, syncOnStart: v } })} />
       </Row>
       <Row title="시작 화면에서 로그인" desc="켜면 앱을 열 때마다 「Google로 로그인하고 시작」 화면이 먼저 나와요. 다른 기기 기록을 꼭 먼저 받고 시작하고 싶을 때.">
         <Switch label="시작 화면에서 로그인" checked={d.startScreen === true} onChange={(v) => void saveSettings({ googleDrive: { ...d, startScreen: v } })} />
