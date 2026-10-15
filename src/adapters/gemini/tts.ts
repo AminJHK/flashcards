@@ -49,11 +49,10 @@ export function ttsPrompt(text: string, lang: string): string {
  * 구버전: 기존 프롬프트 방식 유지. 3.8은 이미 WAV를 보낼 수 있으므로 중복 헤더를 씌우지 않는다.
  */
 export function ttsBody(text: string, lang: string, voice: string, model: string, style?: 'story') {
-  const modern = model.includes('3.8');
   return {
     contents: [{ parts: [{
       // Legacy generateContent accepts instructions in the text, not Interactions speech_metadata.
-      text: style === 'story' ? `Read naturally in conversational Indonesian with friendly, relaxed intonation, without reading these instructions aloud: ${text.trim()}` : modern ? text.trim() : ttsPrompt(text, lang),
+      text: style === 'story' ? `Read naturally in conversational Indonesian with friendly, relaxed intonation, without reading these instructions aloud: ${text.trim()}` : ttsPrompt(text, lang),
     }] }],
     generationConfig: {
       responseModalities: ['AUDIO'],
