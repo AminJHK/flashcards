@@ -21,16 +21,17 @@ export function geminiOn(s: Settings | undefined): s is Settings & { gemini: Non
 /** 음성을 만드는 글(프롬프트)을 바꾸면 올린다. 그러면 예전 방식으로 만든 음성은 쓰지 않고 새로 만든다. */
 const CLIP_VERSION = 'v2';
 const MODERN_CLIP_VERSION = 'v4'; // Gemini 3.8 Interactions + speech_metadata; discard old, unstyled v3 clips
+const LEGACY_STORY_VERSION = 'v3-story'; // Changed conversational directions; preserve ordinary v2 card clips
 
 export function clipKey(item: Speech, s: Settings & { gemini: NonNullable<Settings['gemini']> }): string {
-  const version = s.gemini.ttsModel.includes('3.8') ? MODERN_CLIP_VERSION : CLIP_VERSION;
+  const version = s.gemini.ttsModel.includes('3.8') ? MODERN_CLIP_VERSION : item.style === 'story' ? LEGACY_STORY_VERSION : CLIP_VERSION;
   return `${version}|${s.gemini.ttsModel}|${s.gemini.voice}|${item.lang}|${item.text}${item.style ? `|style:${item.style}` : ''}`;
 }
 
 /** 예전 방식으로 만든 음성 파일(설명까지 읽어 버린 것 포함)을 지운다. */
 export async function dropStaleClips(): Promise<void> {
   const keys = (await db.audio.toCollection().primaryKeys()) as string[];
-  const stale = keys.filter((k) => (!k.startsWith(`${CLIP_VERSION}|`) && !k.startsWith(`${MODERN_CLIP_VERSION}|`)) || k.startsWith('v2|gemini-3.8-'));
+  const stale = keys.filter((k) => (!k.startsWith(`${CLIP_VERSION}|`) && !k.startsWith(`${MODERN_CLIP_VERSION}|`) && !k.startsWith(`${LEGACY_STORY_VERSION}|`)) || k.startsWith('v2|gemini-3.8-'));
   if (stale.length) await db.audio.bulkDelete(stale);
 }
 
