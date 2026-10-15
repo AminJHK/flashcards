@@ -4,6 +4,7 @@ import type { Card, Deck, Note, Settings } from '../../core/model/types';
 import { GeminiError } from '../gemini/api';
 import { withTimeout } from '../net';
 import { synthesize } from '../gemini/tts';
+import { canSwitchTtsModel, storyTtsModels } from './modelFallback';
 import { db } from '../storage/db';
 import { missingVoiceLangs, speak as deviceSpeak, stopSpeaking, voicesReady } from '../tts/webSpeech';
 
@@ -75,6 +76,65 @@ async function clipFor(item: Speech, s: Settings & { gemini: NonNullable<Setting
   }
 }
 
+/** Respect the user's very small free TTS RPM: at most two new story requests / model / minute.
+ * Existing cached audio bypasses this entirely. This is a local conservative limit;
+ * Google may enforce lower quotas for a given project.
+ */
+const recentStoryRequests = new Map<string, number[]>();
+const STORY_RPM_SAFETY = 2;
+
+function claimStoryRequest(model: string, now: number): boolean {
+  const previous = (recentStoryRequests.get(model) ?? []).filter((at) => now - at < 60_000);
+  if (previous.length >= STORY_RPM_SAFETY) {
+    recentStoryRequests.set(model, previous);
+    return false;
+  }
+  previous.push(now);
+  recentStoryRequests.set(model, previous);
+  return true;
+}
+
+/** First reuse any cached line from any eligible engine, then try available free engines.
+ * One request succeeds at most once. Never retry bad keys, network errors or other unexpected failures.
+ */
+async function storyClipFor(
+  item: Speech,
+  s: Settings & { gemini: NonNullable<Settings['gemini']> },
+  switching: boolean,
+): Promise<{ blob: Blob; model: string; cached: boolean }> {
+  const models = storyTtsModels(s.gemini.ttsModel, switching);
+  for (const model of models) {
+    const selected = { ...s, gemini: { ...s.gemini, ttsModel: model } };
+    const cached = await db.audio.get(clipKey(item, selected));
+    if (cached) return { blob: cached.blob, model, cached: true };
+  }
+
+  let lastLimit: GeminiError | undefined;
+  let delayed = false;
+  for (const model of models) {
+    const selected = { ...s, gemini: { ...s.gemini, ttsModel: model } };
+    const paused = quotaPauses.get(model);
+    if (paused && Date.now() < paused.until) {
+      lastLimit = paused.reason;
+      continue;
+    }
+    if (!claimStoryRequest(model, Date.now())) {
+      delayed = true;
+      continue;
+    }
+    try {
+      return { blob: await clipFor(item, selected), model, cached: false };
+    } catch (e) {
+      if (!switching || !canSwitchTtsModel(e)) throw e;
+      if (e.kind === 'quota') lastLimit = e;
+      // Google may not grant a fallback model to this API project (404). Skip it.
+    }
+  }
+  if (delayed) throw new GeminiError('Gemini 음성 요청이 빠르게 이어졌어요. 잠시 기기 음성으로 읽고, 나중에 다시 시도해 주세요.', 'quota', 'minute');
+  if (lastLimit) throw lastLimit;
+  throw new GeminiError('선택할 수 있는 Gemini 음성 모델이 없어요. 설정에서 모델을 확인해 주세요.', 'model');
+}
+
 /** 읽기에서 다음 대사 하나만 미리 준비한다 (Gemini를 켰을 때만, 저장은 기기 안). */
 export async function prefetchSpeech(item: Speech, s: Settings | undefined, voice?: string): Promise<void> {
   if (!geminiOn(s) || !navigator.onLine) return;
@@ -137,7 +197,7 @@ export interface PlayResult {
   missing?: string[];
 }
 
-export async function play(items: readonly Speech[], s: Settings | undefined, opts?: { timeoutMs?: number; onSource?: (result: PlayResult) => void; voice?: string; rate?: number }): Promise<PlayResult> {
+export async function play(items: readonly Speech[], s: Settings | undefined, opts?: { timeoutMs?: number; onSource?: (result: PlayResult) => void; voice?: string; rate?: number; storyAutoModel?: boolean }): Promise<PlayResult> {
   stopAll();
   const list = items.filter((i) => i.text.trim());
   if (!list.length) return { via: 'none' };
@@ -147,10 +207,20 @@ export async function play(items: readonly Speech[], s: Settings | undefined, op
     try {
       for (const it of list) {
         // 처음 만드는 음성이 늦으면 기다리지 않고 기기 음성으로 읽는다 (만드는 건 계속해서 저장됨)
-        const cached = !!(await db.audio.get(clipKey(it, selected)));
-        const blob = await withTimeout(clipFor(it, selected), opts?.timeoutMs ?? 10_000, '자연스러운 음성을 만드는 데 시간이 걸려요');
+        let blob: Blob;
+        let usedModel = selected.gemini.ttsModel;
+        let cached = false;
+        if (it.style === 'story') {
+          const resolved = await withTimeout(storyClipFor(it, selected, opts?.storyAutoModel !== false), opts?.timeoutMs ?? 30_000, '자연스러운 음성을 만드는 데 시간이 걸려요');
+          blob = resolved.blob;
+          usedModel = resolved.model;
+          cached = resolved.cached;
+        } else {
+          cached = !!(await db.audio.get(clipKey(it, selected)));
+          blob = await withTimeout(clipFor(it, selected), opts?.timeoutMs ?? 10_000, '자연스러운 음성을 만드는 데 시간이 걸려요');
+        }
         if (my !== token) return { via: 'gemini' };
-        opts?.onSource?.({ via: 'gemini', model: selected.gemini.ttsModel, cached });
+        opts?.onSource?.({ via: 'gemini', model: usedModel, cached });
         await playBlob(blob, my, opts?.rate ?? 1);
       }
       return { via: 'gemini' };
