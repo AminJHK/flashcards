@@ -48,7 +48,7 @@ describe('AI 이야기 만들기', () => {
     const f = vi.fn().mockResolvedValueOnce(reply(story(['bakso', 'sate', 'kerupuk', 'es', 'teh', 'jeruk', 'soto', 'mie']))).mockResolvedValueOnce(reply(story(['bakso'])));
     vi.stubGlobal('fetch', f);
     const steps: string[] = [];
-    const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'food', key: 'K', onStep: (x) => steps.push(`${x.attempt}:${x.stage}`) });
+    const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'food', key: 'K', stream: false, onStep: (x) => steps.push(`${x.attempt}:${x.stage}`) });
     expect(f).toHaveBeenCalledTimes(2);
     const second = JSON.parse(f.mock.calls[1]![1].body);
     expect(second.generationConfig.responseMimeType).toBe('application/json');
@@ -69,14 +69,14 @@ describe('AI 이야기 만들기', () => {
   it(`끝까지 목표를 못 맞추면 ${MAX_ATTEMPTS}번에서 멈추고, 가장 나은 결과를 이유와 함께 돌려준다`, async () => {
     const f = vi.fn().mockImplementation(async () => reply(story(['satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh'])));
     vi.stubGlobal('fetch', f);
-    const s = await createStory({ lex, plan: planStory(lex, 'easy'), topicKey: 'free', key: 'K' });
+    const s = await createStory({ lex, plan: planStory(lex, 'easy'), topicKey: 'free', key: 'K', stream: false });
     expect(f).toHaveBeenCalledTimes(MAX_ATTEMPTS);
     expect(s.warning).toMatch(/목표는 아는 단어 98%였는데 실제로는 93%예요/);
   });
 
   it('쓸 수 있는 결과가 한 번도 없으면 오류', async () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => reply({ title: 'x', characters: [], blocks: [], glossary: [] })));
-    await expect(createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K' })).rejects.toThrow(/만들지 못했어요/);
+    await expect(createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', stream: false })).rejects.toThrow(/만들지 못했어요/);
   });
 });
 
@@ -88,7 +88,7 @@ describe('서버가 붐빌 때 (503)', () => {
     const f = vi.fn().mockResolvedValueOnce(busy()).mockResolvedValueOnce(busy()).mockResolvedValueOnce(reply(story([])));
     vi.stubGlobal('fetch', f);
     const waits: number[] = [];
-    const s = await createStory({ lex, plan: plan(), topicKey: 'free', key: 'K', sleep: async (ms) => void waits.push(ms) });
+    const s = await createStory({ lex, plan: plan(), topicKey: 'free', key: 'K', stream: false, sleep: async (ms) => void waits.push(ms) });
     expect(f).toHaveBeenCalledTimes(3);
     expect(waits).toEqual([2000, 6000]);
     expect(f.mock.calls.every((c) => String(c[0]).includes('gemini-flash-latest:'))).toBe(true);
@@ -98,14 +98,44 @@ describe('서버가 붐빌 때 (503)', () => {
   it('계속 붐비면 다음 모델(flash-lite)로 넘어간다', async () => {
     const f = vi.fn().mockImplementation(async (url: string) => (String(url).includes('flash-lite') ? reply(story([])) : busy()));
     vi.stubGlobal('fetch', f);
-    const s = await createStory({ lex, plan: plan(), topicKey: 'free', key: 'K', sleep: async () => {} });
+    const s = await createStory({ lex, plan: plan(), topicKey: 'free', key: 'K', stream: false, sleep: async () => {} });
     expect(f).toHaveBeenCalledTimes(4); // 첫 모델 3번 + lite 1번
     expect(s.model).toBe('gemini-flash-lite-latest');
   });
 
   it('모든 모델이 붐비면 쉬운 한국어로 알려준다 (영어 원문을 그대로 보이지 않는다)', async () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => busy()));
-    await expect(createStory({ lex, plan: plan(), topicKey: 'free', key: 'K', sleep: async () => {} })).rejects.toThrow('Gemini 서버가 지금 붐벼요. 잠시 뒤에 다시 시도해요');
+    await expect(createStory({ lex, plan: plan(), topicKey: 'free', key: 'K', stream: false, sleep: async () => {} })).rejects.toThrow('Gemini 서버가 지금 붐벼요. 잠시 뒤에 다시 시도해요');
+  });
+});
+
+const sse = (chunks: string[]) =>
+  new Response(chunks.map((c) => `data: ${JSON.stringify({ candidates: [{ content: { parts: [{ text: c }] } }] })}\r\n\r\n`).join(''), { status: 200 });
+
+describe('조금씩 받기 (진행률)', () => {
+  it('받은 글자 수로 진행률을 알려 주고, 조각을 이어 붙여 이야기를 만든다', async () => {
+    const text = JSON.stringify(story([]));
+    const cut = [text.slice(0, 1500), text.slice(1500, 3000), text.slice(3000)];
+    const f = vi.fn().mockResolvedValue(sse(cut));
+    vi.stubGlobal('fetch', f);
+    const pcts: number[] = [];
+    const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', onStep: (x) => x.stage === 'writing' && x.pct !== undefined && pcts.push(Math.round(x.pct * 100)) });
+    expect(String(f.mock.calls[0]![0])).toContain('models/gemini-flash-latest:streamGenerateContent?alt=sse');
+    expect(JSON.parse(f.mock.calls[0]![1].body).generationConfig.thinkingConfig).toEqual({ thinkingBudget: 0 });
+    expect(pcts.length).toBeGreaterThanOrEqual(2);
+    expect(pcts).toEqual([...pcts].sort((a, b) => a - b)); // 줄어들지 않는다
+    expect(Math.max(...pcts)).toBeLessThanOrEqual(95);
+    expect(s.title).toBe('Pagi');
+  });
+
+  it('모델이 thinking 설정을 못 받으면 그 설정만 빼고 같은 모델로 다시 한다', async () => {
+    const err = new Response(JSON.stringify({ error: { message: 'Thinking is not supported by this model' } }), { status: 400 });
+    const f = vi.fn().mockResolvedValueOnce(err).mockResolvedValueOnce(sse([JSON.stringify(story([]))]));
+    vi.stubGlobal('fetch', f);
+    const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {} });
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(f.mock.calls[1]![1].body).generationConfig.thinkingConfig).toBeUndefined();
+    expect(s.model).toBe('gemini-flash-latest');
   });
 });
 
@@ -114,7 +144,7 @@ describe('이야기 저장', () => {
     const d = new FlashcardsDB('stories-test');
     await d.open();
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply(story([]))));
-    const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', now: 5 });
+    const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', stream: false, now: 5 });
     const later = { ...s, id: 'later', createdAt: 9 };
     await saveStory(s, d);
     await saveStory(later, d);

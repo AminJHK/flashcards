@@ -1673,6 +1673,70 @@ textarea.input-sentence {
   }
 }
 
+/* ---------- 이야기 만드는 중 ---------- */
+.job-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.job-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.job-line strong {
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.job-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.job-fill,
+.job-top-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.4s;
+}
+
+.job-wait {
+  width: 35%;
+  animation: job-slide 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes job-slide {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(185%);
+  }
+}
+
+/* 어느 화면에서든 맨 위에 붙는 얇은 막대 */
+.job-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  z-index: 60;
+  background: var(--accent-soft);
+}
+
 /* ---------- 읽기 (이야기) ---------- */
 .story-body {
   gap: 14px;

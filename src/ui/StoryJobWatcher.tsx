@@ -16,5 +16,12 @@ export function StoryJobWatcher() {
     if (job.status === 'done') toast(`이야기 「${job.title}」가 완성됐어요. 읽기 탭에서 볼 수 있어요`);
     if (job.status === 'error') toast(`이야기를 만들지 못했어요 · ${job.error}`);
   }, [job.seq, job.status, job.title, job.error, a, toast]);
-  return null;
+  // 어느 화면에서든 보이는 얇은 진행 막대 (만드는 동안만)
+  if (job.status !== 'running') return null;
+  const pct = Math.round((job.step?.pct ?? 0) * 100);
+  return (
+    <div className="job-top" role="progressbar" aria-label="이야기 만드는 중" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+      <div className="job-top-fill" style={{ width: `${Math.max(pct, 4)}%` }} />
+    </div>
+  );
 }

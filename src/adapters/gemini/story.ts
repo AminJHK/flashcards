@@ -2,14 +2,18 @@ import { newId } from '../../core/model/ids';
 import { nameSet, parseDraft, revisionPrompt, STORY_SCHEMA, STORY_TOPICS, storyTexts, systemPrompt, userPrompt, type StoryDraft, type StoryPlan } from '../../core/stories/plan';
 import type { Coverage, Story } from '../../core/stories/types';
 import { measureCoverage, meetsTarget, type Lexicon } from '../../core/stories/vocab';
-import { GeminiError, generate } from './api';
+import { GeminiError, generate, generateStream } from './api';
 
 /** 이야기(글) 모델 (선호 순서). 'latest' 별칭이라 새 모델을 따라간다. */
 export const STORY_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
 /** 처음 + 고쳐 달라는 요청 2번까지 */
 export const MAX_ATTEMPTS = 3;
 
-export type StoryStep = { attempt: number; stage: 'writing' | 'checking' | 'revising' | 'waiting' };
+/** pct: 0~1. 쓰는 중에는 지금까지 받은 글자 수로 어림한 값 (실제 길이는 이야기마다 달라서 어림이다) */
+export type StoryStep = { attempt: number; stage: 'writing' | 'checking' | 'revising' | 'waiting'; pct?: number };
+
+/** 이야기 JSON의 보통 길이 (글자 수). 진행률을 어림하는 데만 쓴다 */
+export const EXPECTED_CHARS = 4500;
 
 interface Turn {
   role: 'user' | 'model';
@@ -19,28 +23,43 @@ interface Turn {
 /** 서버가 붐빌 때 같은 모델에 다시 시도하는 기다림 (밀리초). 그래도 안 되면 다음 모델로 */
 export const BUSY_WAITS = [2_000, 6_000];
 
-async function ask(models: readonly string[], key: string, contents: Turn[], sleep: (ms: number) => Promise<void>, onBusy?: () => void): Promise<{ text: string; model: string }> {
+async function ask(
+  models: readonly string[],
+  key: string,
+  contents: Turn[],
+  sleep: (ms: number) => Promise<void>,
+  hooks: { onBusy?: () => void; onProgress?: (chars: number) => void; stream: boolean },
+): Promise<{ text: string; model: string }> {
   let last: unknown;
+  // 생각하는 시간(thinking)을 끄면 훨씬 빠르다. 모델이 이 설정을 못 받으면 빼고 다시 한다
+  let thinking = true;
   for (const model of models) {
     for (let busy = 0; busy <= BUSY_WAITS.length; busy++) {
       try {
-        const r = await generate(
-          model,
-          key,
-          {
-            systemInstruction: { parts: [{ text: systemPrompt() }] },
-            contents,
-            generationConfig: { temperature: 0.9, responseMimeType: 'application/json', responseSchema: STORY_SCHEMA },
+        const body = {
+          systemInstruction: { parts: [{ text: systemPrompt() }] },
+          contents,
+          generationConfig: {
+            temperature: 0.9,
+            responseMimeType: 'application/json',
+            responseSchema: STORY_SCHEMA,
+            ...(thinking ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
           },
-          90_000,
-        );
-        const text = (r.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? '').join('');
+        };
+        let text: string;
+        if (hooks.stream) text = await generateStream(model, key, body, hooks.onProgress ?? (() => {}));
+        else text = ((await generate(model, key, body, 180_000)).candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? '').join('');
         if (!text.trim()) throw new GeminiError('Gemini가 빈 답을 보냈어요', 'empty');
         return { text, model };
       } catch (e) {
         last = e;
+        if (thinking && e instanceof GeminiError && e.kind === 'other' && /thinking/i.test(e.message)) {
+          thinking = false;
+          busy--; // 같은 모델로 설정만 빼고 다시 (기다림 횟수는 쓰지 않는다)
+          continue;
+        }
         if (e instanceof GeminiError && e.kind === 'busy' && busy < BUSY_WAITS.length) {
-          onBusy?.();
+          hooks.onBusy?.();
           await sleep(BUSY_WAITS[busy]!);
           continue;
         }
@@ -74,6 +93,8 @@ export async function createStory(opts: {
   now?: number;
   /** 테스트용: 기다림을 건너뛴다 */
   sleep?: (ms: number) => Promise<void>;
+  /** 테스트용: false면 조금씩 받지 않고 한 번에 받는다 */
+  stream?: boolean;
 }): Promise<Story> {
   const { lex, plan } = opts;
   const topic = STORY_TOPICS.find((t) => t.key === opts.topicKey) ?? STORY_TOPICS[0]!;
@@ -84,9 +105,19 @@ export async function createStory(opts: {
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     attempts = attempt;
     opts.onStep?.({ attempt, stage: attempt === 1 ? 'writing' : 'revising' });
-    const res = await ask(opts.models ?? STORY_MODELS, opts.key, contents, opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms))), () => opts.onStep?.({ attempt, stage: 'waiting' }));
+    let lastPct = -1;
+    const res = await ask(opts.models ?? STORY_MODELS, opts.key, contents, opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms))), {
+      stream: opts.stream ?? true,
+      onBusy: () => opts.onStep?.({ attempt, stage: 'waiting' }),
+      onProgress: (chars) => {
+        const pct = Math.min(0.95, chars / EXPECTED_CHARS);
+        if (Math.round(pct * 100) === lastPct) return;
+        lastPct = Math.round(pct * 100);
+        opts.onStep?.({ attempt, stage: attempt === 1 ? 'writing' : 'revising', pct });
+      },
+    });
     model = res.model;
-    opts.onStep?.({ attempt, stage: 'checking' });
+    opts.onStep?.({ attempt, stage: 'checking', pct: 1 });
     let raw: unknown;
     try {
       raw = JSON.parse(res.text);

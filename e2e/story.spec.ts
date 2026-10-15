@@ -40,7 +40,9 @@ async function mockGemini(page: Page, calls: { story: number; prompts: string[] 
     calls.story++;
     if (delayMs) await new Promise((r) => setTimeout(r, delayMs));
     calls.prompts.push(route.request().postDataJSON().contents[0].parts[0].text);
-    return route.fulfill({ json: { candidates: [{ content: { parts: [{ text: JSON.stringify(STORY) }] } }] } });
+    const body = { candidates: [{ content: { parts: [{ text: JSON.stringify(STORY) }] } }] };
+    if (url.includes(':streamGenerateContent')) return route.fulfill({ contentType: 'text/event-stream', body: `data: ${JSON.stringify(body)}\r\n\r\n` });
+    return route.fulfill({ json: body });
   });
 }
 
@@ -164,10 +166,14 @@ test('읽기: 이야기를 만드는 동안 다른 화면(복습)으로 가도 �
   await page.getByRole('button', { name: '이야기 만들기' }).click();
   await expect(page.getByText('이야기를 쓰는 중…')).toBeVisible();
   await expect(page.getByText(/다른 화면으로 가도 뒤에서 계속 만들어요/)).toBeVisible();
+  await expect(page.getByRole('progressbar', { name: '이야기 만드는 중' }).first()).toBeVisible(); // 진행 막대
+  await page.screenshot({ path: 'test-results/shots/45-read-progress.png' });
 
   // 바로 복습하러 간다: 화면이 멈추지 않고 복습할 수 있다
   await page.getByRole('navigation', { name: '메인 메뉴' }).getByRole('link', { name: '오늘' }).click();
   await expect(page.getByRole('navigation', { name: '메인 메뉴' }).locator('.tab-spin')).toBeVisible(); // 읽기 탭에 만드는 중 표시
+  await expect(page.locator('.job-top')).toBeVisible(); // 어느 화면에서든 맨 위의 얇은 막대
+  await page.screenshot({ path: 'test-results/shots/46-job-top-bar.png' });
   await page.getByRole('button', { name: /복습 시작/ }).click();
   await expect(page.getByText('aku', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();

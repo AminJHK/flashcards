@@ -17,6 +17,27 @@ import { useLexicon } from '../useLexicon';
 const DIFF_OPTIONS = (Object.keys(DIFFICULTIES) as StoryDifficulty[]).map((k) => [k, `${DIFFICULTIES[k].label} ${Math.round(DIFFICULTIES[k].known * 100)}%`] as const);
 const STEP_TEXT: Record<StoryStep['stage'], string> = { writing: '이야기를 쓰는 중…', checking: '아는 단어 비율을 확인하는 중…', revising: '모르는 단어를 줄여 다시 쓰는 중…', waiting: 'Gemini 서버가 붐벼서 잠시 기다리는 중…' };
 
+/** 만드는 중: 진행 막대와 퍼센트 (쓰는 중에는 받은 글자 수로 어림한 값) */
+export function StoryProgress({ step }: { step: StoryStep }) {
+  const pct = Math.round((step.pct ?? 0) * 100);
+  // 첫 글자가 오기 전(0%)에는 퍼센트 대신 움직이는 막대 (멈춘 것처럼 보이지 않게)
+  const known = step.stage === 'checking' || ((step.stage === 'writing' || step.stage === 'revising') && (step.pct ?? 0) > 0);
+  return (
+    <div className="job-card" role="status" aria-live="polite">
+      <div className="job-line">
+        <span>
+          {STEP_TEXT[step.stage]}
+          {step.attempt > 1 ? ` (${step.attempt}번째)` : ''}
+        </span>
+        {known && <strong>{pct}%</strong>}
+      </div>
+      <div className="job-track" role="progressbar" aria-valuenow={known ? pct : undefined} aria-valuemin={0} aria-valuemax={100} aria-label="이야기 만드는 중">
+        <div className={`job-fill${known ? '' : ' job-wait'}`} style={known ? { width: `${Math.max(pct, 3)}%` } : undefined} />
+      </div>
+    </div>
+  );
+}
+
 /** 읽기 탭: 이야기 만들기 + 만든 이야기 목록 */
 export function Stories() {
   const settings = useSettings();
@@ -72,9 +93,13 @@ export function Stories() {
             <Segmented label="난이도" options={DIFF_OPTIONS} value={difficulty} onChange={setDifficulty} />
             <span className="faint small">숫자는 이야기 속 아는 단어 비율이에요. 실제 비율은 만든 뒤 앱이 직접 세서 보여 줘요.</span>
             <Segmented label="주제" wrap options={STORY_TOPICS.map((t) => [t.key, t.label] as const)} value={topic} onChange={setTopic} />
-            <button type="button" className="btn btn-primary" style={{ height: 52 }} onClick={generate} disabled={!!step}>
-              {step ? `${STEP_TEXT[step.stage]}${step.attempt > 1 ? ` (${step.attempt}번째)` : ''}` : '이야기 만들기'}
-            </button>
+            {step ? (
+              <StoryProgress step={step} />
+            ) : (
+              <button type="button" className="btn btn-primary" style={{ height: 52 }} onClick={generate}>
+                이야기 만들기
+              </button>
+            )}
             {step && <span className="faint small">다른 화면으로 가도 뒤에서 계속 만들어요. 다 되면 알려 드려요. (앱을 닫으면 멈춰요)</span>}
             {job.status === 'done' && job.title && !step && <span className="small" style={{ color: 'var(--accent)', fontWeight: 600 }}>「{job.title}」가 완성됐어요. 아래 목록에 있어요.</span>}
             {error && (
