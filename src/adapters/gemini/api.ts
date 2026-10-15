@@ -10,7 +10,7 @@ const BASE = 'https://generativelanguage.googleapis.com/v1beta';
 export class GeminiError extends Error {
   constructor(
     message: string,
-    readonly kind: 'key' | 'quota' | 'model' | 'network' | 'empty' | 'other',
+    readonly kind: 'key' | 'quota' | 'model' | 'network' | 'empty' | 'busy' | 'other',
   ) {
     super(message);
   }
@@ -37,6 +37,8 @@ async function call(path: string, key: string, init: RequestInit = {}, timeoutMs
   if (res.status === 400 && /api key/i.test(msg)) throw new GeminiError('API 키가 올바르지 않아요. 다시 복사해 붙여넣어 주세요', 'key');
   if (res.status === 401 || res.status === 403) throw new GeminiError('API 키를 쓸 수 없어요. 키를 다시 확인해 주세요', 'key');
   if (res.status === 429) throw new GeminiError('오늘 무료 사용량을 다 썼거나 너무 빨리 요청했어요. 잠시 뒤에 다시 시도해요', 'quota');
+  // 서버가 붐비거나 잠깐 고장 (503 "high demand" 등): 기다렸다 다시 하면 된다
+  if (res.status === 500 || res.status === 502 || res.status === 503 || res.status === 504) throw new GeminiError('Gemini 서버가 지금 붐벼요. 잠시 뒤에 다시 시도해요', 'busy');
   if (res.status === 404) throw new GeminiError('이 모델을 쓸 수 없어요', 'model');
   // 원인을 알 수 있게 Google이 준 이유를 짧게 붙인다
   throw new GeminiError(`Gemini 오류 (${res.status}${msg ? `: ${msg.slice(0, 80)}` : ''})`, 'other');

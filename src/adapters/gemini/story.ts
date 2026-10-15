@@ -9,33 +9,45 @@ export const STORY_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
 /** 처음 + 고쳐 달라는 요청 2번까지 */
 export const MAX_ATTEMPTS = 3;
 
-export type StoryStep = { attempt: number; stage: 'writing' | 'checking' | 'revising' };
+export type StoryStep = { attempt: number; stage: 'writing' | 'checking' | 'revising' | 'waiting' };
 
 interface Turn {
   role: 'user' | 'model';
   parts: { text: string }[];
 }
 
-async function ask(models: readonly string[], key: string, contents: Turn[]): Promise<{ text: string; model: string }> {
+/** 서버가 붐빌 때 같은 모델에 다시 시도하는 기다림 (밀리초). 그래도 안 되면 다음 모델로 */
+export const BUSY_WAITS = [2_000, 6_000];
+
+async function ask(models: readonly string[], key: string, contents: Turn[], sleep: (ms: number) => Promise<void>, onBusy?: () => void): Promise<{ text: string; model: string }> {
   let last: unknown;
   for (const model of models) {
-    try {
-      const r = await generate(
-        model,
-        key,
-        {
-          systemInstruction: { parts: [{ text: systemPrompt() }] },
-          contents,
-          generationConfig: { temperature: 0.9, responseMimeType: 'application/json', responseSchema: STORY_SCHEMA },
-        },
-        90_000,
-      );
-      const text = (r.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? '').join('');
-      if (!text.trim()) throw new GeminiError('Gemini가 빈 답을 보냈어요', 'empty');
-      return { text, model };
-    } catch (e) {
-      last = e;
-      if (!(e instanceof GeminiError) || (e.kind !== 'model' && e.kind !== 'quota' && e.kind !== 'empty')) throw e;
+    for (let busy = 0; busy <= BUSY_WAITS.length; busy++) {
+      try {
+        const r = await generate(
+          model,
+          key,
+          {
+            systemInstruction: { parts: [{ text: systemPrompt() }] },
+            contents,
+            generationConfig: { temperature: 0.9, responseMimeType: 'application/json', responseSchema: STORY_SCHEMA },
+          },
+          90_000,
+        );
+        const text = (r.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? '').join('');
+        if (!text.trim()) throw new GeminiError('Gemini가 빈 답을 보냈어요', 'empty');
+        return { text, model };
+      } catch (e) {
+        last = e;
+        if (e instanceof GeminiError && e.kind === 'busy' && busy < BUSY_WAITS.length) {
+          onBusy?.();
+          await sleep(BUSY_WAITS[busy]!);
+          continue;
+        }
+        // 모델이 없거나 한도·붐빔·빈 답이면 다음 모델로
+        if (!(e instanceof GeminiError) || (e.kind !== 'model' && e.kind !== 'quota' && e.kind !== 'empty' && e.kind !== 'busy')) throw e;
+        break;
+      }
     }
   }
   throw last;
@@ -60,6 +72,8 @@ export async function createStory(opts: {
   models?: readonly string[];
   onStep?: (s: StoryStep) => void;
   now?: number;
+  /** 테스트용: 기다림을 건너뛴다 */
+  sleep?: (ms: number) => Promise<void>;
 }): Promise<Story> {
   const { lex, plan } = opts;
   const topic = STORY_TOPICS.find((t) => t.key === opts.topicKey) ?? STORY_TOPICS[0]!;
@@ -70,7 +84,7 @@ export async function createStory(opts: {
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     attempts = attempt;
     opts.onStep?.({ attempt, stage: attempt === 1 ? 'writing' : 'revising' });
-    const res = await ask(opts.models ?? STORY_MODELS, opts.key, contents);
+    const res = await ask(opts.models ?? STORY_MODELS, opts.key, contents, opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms))), () => opts.onStep?.({ attempt, stage: 'waiting' }));
     model = res.model;
     opts.onStep?.({ attempt, stage: 'checking' });
     let raw: unknown;

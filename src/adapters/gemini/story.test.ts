@@ -80,6 +80,35 @@ describe('AI 이야기 만들기', () => {
   });
 });
 
+describe('서버가 붐빌 때 (503)', () => {
+  const busy = () => new Response(JSON.stringify({ error: { message: 'This model is currently experiencing high demand.' } }), { status: 503 });
+  const plan = () => planStory(lex, 'normal');
+
+  it('같은 모델에 기다렸다 다시 시도해서 성공하면 그 결과를 쓴다', async () => {
+    const f = vi.fn().mockResolvedValueOnce(busy()).mockResolvedValueOnce(busy()).mockResolvedValueOnce(reply(story([])));
+    vi.stubGlobal('fetch', f);
+    const waits: number[] = [];
+    const s = await createStory({ lex, plan: plan(), topicKey: 'free', key: 'K', sleep: async (ms) => void waits.push(ms) });
+    expect(f).toHaveBeenCalledTimes(3);
+    expect(waits).toEqual([2000, 6000]);
+    expect(f.mock.calls.every((c) => String(c[0]).includes('gemini-flash-latest:'))).toBe(true);
+    expect(s.model).toBe('gemini-flash-latest');
+  });
+
+  it('계속 붐비면 다음 모델(flash-lite)로 넘어간다', async () => {
+    const f = vi.fn().mockImplementation(async (url: string) => (String(url).includes('flash-lite') ? reply(story([])) : busy()));
+    vi.stubGlobal('fetch', f);
+    const s = await createStory({ lex, plan: plan(), topicKey: 'free', key: 'K', sleep: async () => {} });
+    expect(f).toHaveBeenCalledTimes(4); // 첫 모델 3번 + lite 1번
+    expect(s.model).toBe('gemini-flash-lite-latest');
+  });
+
+  it('모든 모델이 붐비면 쉬운 한국어로 알려준다 (영어 원문을 그대로 보이지 않는다)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => busy()));
+    await expect(createStory({ lex, plan: plan(), topicKey: 'free', key: 'K', sleep: async () => {} })).rejects.toThrow('Gemini 서버가 지금 붐벼요. 잠시 뒤에 다시 시도해요');
+  });
+});
+
 describe('이야기 저장', () => {
   it('저장·목록·읽은 위치·처음부터·삭제 (카드와 복습 기록 표는 건드리지 않는다)', async () => {
     const d = new FlashcardsDB('stories-test');
