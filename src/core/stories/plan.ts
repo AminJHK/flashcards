@@ -29,7 +29,7 @@ export function planStory(lex: Lexicon, difficulty: StoryDifficulty): StoryPlan 
   return {
     difficulty,
     knownTarget: DIFFICULTIES[difficulty].known,
-    familiar: familiar.slice(0, 700),
+    familiar: familiar.slice(0, 450),
     reinforce: familiar
       .filter((e) => e.status === 'learning')
       .sort((a, b) => (a.recall ?? 0) - (b.recall ?? 0))
@@ -76,7 +76,8 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     plan.fallback
       ? `- The learner knows few words yet. If a sentence is impossible with KNOWN WORDS, you may use DECK WORDS. Words outside all lists must stay under ${unknownPct}% of word occurrences.`
       : `- Words that are not KNOWN WORDS (including the new words) must stay under ${unknownPct}% of word occurrences.`,
-    '- Put every word or expression that is not a KNOWN WORD into "glossary" with Korean meaning (ko), English meaning (en) and its root when useful. Use multi-word entries for expressions like "nggak apa-apa".',
+    '- "glossary": only words or expressions that are in none of the lists below (the app already knows the meanings of listed words). Give a short Korean meaning (ko), English meaning (en) and the root when useful. Usually 0 to 8 entries. Use multi-word entries for expressions like "nggak apa-apa".',
+    '- Keep the JSON compact: short translations, no repeated entries.',
     '',
     `KNOWN WORDS: ${plan.familiar.map(form).join(', ')}`,
     plan.reinforce.length ? `REVIEW WORDS: ${plan.reinforce.map(form).join(', ')}` : '',

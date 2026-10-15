@@ -14,6 +14,25 @@ export type StoryStep = { attempt: number; stage: 'writing' | 'checking' | 'revi
 
 /** 이야기 JSON의 보통 길이 (글자 수). 진행률을 어림하는 데만 쓴다 */
 export const EXPECTED_CHARS = 4500;
+/** 이보다 길면 같은 말을 반복하는 등 고장 난 답으로 보고 끊는다 */
+export const MAX_CHARS = 30_000;
+
+/** 받은 글이 끝까지 온 이야기 JSON인지 (연결이 안 닫혀도 여기서 끝낸다) */
+export function isCompleteStory(text: string): boolean {
+  const t = text.trim();
+  if (!t.endsWith('}')) return false;
+  try {
+    const j = JSON.parse(t) as { blocks?: unknown };
+    return Array.isArray(j.blocks);
+  } catch {
+    return false;
+  }
+}
+
+/** 진행률 어림: 글자가 올수록 오르되 100%에는 닿지 않는다 (길이를 미리 알 수 없어서) */
+export function progressOf(chars: number): number {
+  return Math.min(0.97, 1 - Math.exp(-chars / EXPECTED_CHARS * 1.6));
+}
 
 interface Turn {
   role: 'user' | 'model';
@@ -42,11 +61,13 @@ async function ask(
             temperature: 0.9,
             responseMimeType: 'application/json',
             responseSchema: STORY_SCHEMA,
+            // 끝없이 길어지지 않게 (이야기 JSON은 보통 2천 토큰 안팎)
+            maxOutputTokens: 8192,
             ...(THINKING[variant] ? { thinkingConfig: THINKING[variant] } : {}),
           },
         };
         let text: string;
-        if (hooks.stream) text = await generateStream(model, key, body, hooks.onProgress ?? (() => {}));
+        if (hooks.stream) text = (await generateStream(model, key, body, hooks.onProgress ?? (() => {}), { isComplete: isCompleteStory, maxChars: MAX_CHARS })).text;
         else text = ((await generate(model, key, body, 180_000)).candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? '').join('');
         if (!text.trim()) throw new GeminiError('Gemini가 빈 답을 보냈어요', 'empty');
         return { text, model };
@@ -122,7 +143,7 @@ export async function createStory(opts: {
       stream: opts.stream ?? true,
       onBusy: () => opts.onStep?.({ attempt, stage: 'waiting' }),
       onProgress: (chars) => {
-        const pct = Math.min(0.95, chars / EXPECTED_CHARS);
+        const pct = progressOf(chars);
         if (Math.round(pct * 100) === lastPct) return;
         lastPct = Math.round(pct * 100);
         opts.onStep?.({ attempt, stage: attempt === 1 ? 'writing' : 'revising', pct });
@@ -144,6 +165,11 @@ export async function createStory(opts: {
       const cand: Candidate = { draft: parsed.draft, coverage, ok, problems: parsed.problems };
       if (!best || score(cand, plan) > score(best, plan)) best = cand;
       if (ok) break;
+    }
+    if (attempt < MAX_ATTEMPTS && raw === undefined) {
+      // 끝까지 안 오거나 깨진 답: 그 답은 대화에 넣지 않고 처음 요청을 짧게 다시 한다
+      contents.splice(0, contents.length, { role: 'user', parts: [{ text: `${userPrompt(plan, topic.en)}\n\nIMPORTANT: the previous answer was too long or not valid JSON. Keep it short (120-180 words, at most 18 lines, glossary only for unlisted words) and return complete valid JSON.` }] });
+      continue;
     }
     if (attempt < MAX_ATTEMPTS) {
       contents.push({ role: 'model', parts: [{ text: res.text }] }, { role: 'user', parts: [{ text: revisionPrompt(plan, coverage, parsed.problems) }] });

@@ -62,8 +62,15 @@ export async function generateStream(
   key: string,
   body: unknown,
   onProgress: (chars: number) => void,
-  opts: { totalMs?: number; idleMs?: number } = {},
-): Promise<string> {
+  opts: {
+    totalMs?: number;
+    idleMs?: number;
+    /** 받은 글이 이미 완성됐는지 (예: 끝까지 온 JSON). 그러면 연결이 안 닫혀도 바로 끝낸다 */
+    isComplete?: (text: string) => boolean;
+    /** 이보다 길어지면 (같은 말을 끝없이 반복하는 등) 끊고 받은 데까지 돌려준다 */
+    maxChars?: number;
+  } = {},
+): Promise<StreamResult> {
   const totalMs = opts.totalMs ?? 240_000;
   const idleMs = opts.idleMs ?? 60_000;
   const ctrl = new AbortController();
@@ -95,6 +102,8 @@ export async function generateStream(
     }
     if (!res.ok) throw await errorFrom(res);
     let text = '';
+    let finishReason: string | undefined;
+    let ended: StreamResult['ended'];
     const take = (event: string) => {
       const data = event
         .split('\n')
@@ -103,7 +112,8 @@ export async function generateStream(
         .join('');
       if (!data || data === '[DONE]') return;
       try {
-        const j = JSON.parse(data) as GenerateResponse;
+        const j = JSON.parse(data) as GenerateResponse & { candidates?: { finishReason?: string }[] };
+        finishReason = j.candidates?.[0]?.finishReason ?? finishReason;
         const piece = (j.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? '').join('');
         if (piece) {
           text += piece;
@@ -120,6 +130,14 @@ export async function generateStream(
         const dec = new TextDecoder();
         let buf = '';
         for (;;) {
+          if (opts.isComplete?.(text)) {
+            ended = 'complete';
+            break;
+          }
+          if (opts.maxChars && text.length > opts.maxChars) {
+            ended = 'tooLong';
+            break;
+          }
           const { done, value } = await reader.read();
           if (done) break;
           bump();
@@ -131,16 +149,27 @@ export async function generateStream(
           }
         }
         if (buf.trim()) take(buf);
+        if (ended) void reader.cancel().catch(() => {});
       }
     } catch (e) {
-      if (reason) throw new GeminiError(reason, 'network');
+      // 시간이 다 됐어도 받은 글이 완성돼 있으면 그대로 쓴다 (연결만 안 닫힌 경우)
+      if (opts.isComplete?.(text)) return { text, ended: 'complete', finishReason };
+      if (reason) throw new GeminiError(text ? `${reason} (받은 글 ${text.length}자에서 멈춤)` : reason, 'network');
       throw e;
     }
-    return text;
+    return { text, ended, finishReason };
   } finally {
     clearTimeout(idle);
     clearTimeout(total);
   }
+}
+
+export interface StreamResult {
+  text: string;
+  /** complete: 완성된 글을 받고 먼저 끝냄, tooLong: 너무 길어서 끊음 */
+  ended?: 'complete' | 'tooLong';
+  /** Google이 알려 준 끝난 이유 (STOP, MAX_TOKENS …) */
+  finishReason?: string;
 }
 
 export function generate(model: string, key: string, body: unknown, timeoutMs = 45_000): Promise<GenerateResponse> {

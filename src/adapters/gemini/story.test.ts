@@ -154,6 +154,52 @@ describe('조금씩 받기 (진행률)', () => {
   });
 });
 
+/** SSE 조각들을 보내고, close=false면 연결을 닫지 않는다 (실제로 멈춰 있던 상황) */
+function sseStream(chunks: string[], close: boolean) {
+  const enc = new TextEncoder();
+  return new Response(
+    new ReadableStream({
+      start(c) {
+        for (const ch of chunks) c.enqueue(enc.encode(`data: ${JSON.stringify({ candidates: [{ content: { parts: [{ text: ch }] } }] })}\r\n\r\n`));
+        if (close) c.close();
+      },
+    }),
+    { status: 200 },
+  );
+}
+
+describe('조금씩 받다가 멈출 때', () => {
+  it('이야기가 끝까지 왔는데 연결이 안 닫혀도, 기다리지 않고 바로 쓴다', async () => {
+    const text = JSON.stringify(story([]));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(sseStream([text.slice(0, 2000), text.slice(2000)], false)));
+    const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {} });
+    expect(s.title).toBe('Pagi');
+  });
+
+  it('같은 말을 끝없이 늘어놓으면 3만 자에서 끊고, 그 답은 버리고 짧게 다시 요청한다', async () => {
+    const junk = Array.from({ length: 80 }, () => '{"text":"aku","ko":"나"},'.repeat(20));
+    const f = vi.fn().mockResolvedValueOnce(sseStream(['{"blocks":[', ...junk], false)).mockResolvedValueOnce(sseStream([JSON.stringify(story([]))], true));
+    vi.stubGlobal('fetch', f);
+    const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {} });
+    expect(f).toHaveBeenCalledTimes(2);
+    const second = JSON.parse(f.mock.calls[1]![1].body);
+    expect(second.contents).toHaveLength(1); // 고장 난 답은 대화에 넣지 않는다
+    expect(second.contents[0].parts[0].text).toMatch(/previous answer was too long or not valid JSON/);
+    expect(second.generationConfig.maxOutputTokens).toBe(8192);
+    expect(s.title).toBe('Pagi');
+  });
+});
+
+describe('진행률 어림', () => {
+  it('글자가 올수록 오르지만 100%에 닿지 않는다', async () => {
+    const { progressOf } = await import('./story');
+    expect(progressOf(0)).toBe(0);
+    expect(progressOf(4500)).toBeGreaterThan(0.75);
+    expect(progressOf(9000)).toBeGreaterThan(progressOf(4500));
+    expect(progressOf(100_000)).toBe(0.97);
+  });
+});
+
 describe('이야기 저장', () => {
   it('저장·목록·읽은 위치·처음부터·삭제 (카드와 복습 기록 표는 건드리지 않는다)', async () => {
     const d = new FlashcardsDB('stories-test');
