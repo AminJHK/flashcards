@@ -3,7 +3,7 @@
 다른 AI 도구나 새 대화에서 이어서 작업할 때 이 문서부터 읽는다. 규칙은 `AGENTS.md`, 설계는 `docs/DESIGN.md`.
 작업을 마칠 때마다 이 문서를 고친다.
 
-마지막 갱신: 2026-10-16 (Gemini 3.8 읽기 TTS 실제 API 수정)
+마지막 갱신: 2026-10-16 (읽기: 속도·역할별 목소리)
 
 ## 사용자
 
@@ -64,6 +64,8 @@ npm run dev        # 개발 서버
 - **읽기 TTS·UI (2026-10-16, 별도 브랜치 feat/story-audio-word-sheet):** 이야기 자동 읽기를 기본 켬(기존에 직접 꺼 둔 설정은 유지). '계속'으로 다음 대사가 나타나면 발음 재생, 다음 대사 1개를 미리 만들어 IndexedDB에 저장, 같은 발음 API 중복 요청 방지, 이야기 재생의 Gemini 대기 상한 25초(기존 10초), 떠나면 음성 중단. Gemini에서 이야기는 부드러운 구어체 인도네시아어로 읽도록 요청(기존 generateContent 경로). 3.8 모델 음성에 WAV 헤더가 이미 있으면 중복 생성하지 않음. 단어 팝업은 상단 단어·오디오, 뜻 카드, 어근, 예문, 덱 상태/추가, 닫기 버튼이 있는 bottom sheet로 바꿈. **실제 폰 음질은 확인 필요.** Gemini 3.8의 speech_metadata는 새 Interactions API에 해당하므로 기존 generateContent 요청 본문에는 넣지 않음. 이전 PR의 검사 통과·main 병합. 이번 TTS 수정은 별도 PR에서 검사 중.
 
 - **읽기 음성이 그대로인 문제 — Gemini 3.8 TTS 근본 수정 (2026-10-16):** 이전 버전은 자연스러운 말투를 `generateContent` 텍스트 프롬프트로 보냈지만 Google Gemini 3.8 공식 문서에 따르면 음성 말투는 새 `v1beta/interactions`의 `input[].content[].annotations[{type:'speech_metadata',style:...}]`으로 보내야 하고 REST 오디오는 `steps[].content[].data`에 온다. 이제 3.8 Flash/Lite TTS에 Interactions API를 사용, 한국어/중국어/스페인어 단어는 style 지정 없이 정확한 transcript만 전달하고, 읽기 인도네시아어 이야기에는 자연스러운 일상회화 style 메타데이터를 붙임. 이전 Gemini 3.8 캐시(v2/v3)는 새 v4 키로 구별해 새로 만듦. 3.1 구형 모델 이야기도 변경된 프롬프트가 반영되도록 별도 버전을 써서 캐시 무효화. 기존 일반 카드 클립은 유지. **읽기 화면에 실제 재생 출처(사용 중인 Gemini 모델/캐시 여부 또는 기기 음성 fallback과 오류 이유)를 작게 표시**해 기기 음성인 줄 모르고 듣는 일을 막음. 설정 > 자연스러운 음성에 `음성 모델` 선택기를 추가(기존 연결 사용자도 무료 3.8 모델로 선택 가능, listModels로 해당 키에서 사용 가능한 모델만 목록 표시). 기본 fallback 규칙 D7 유지. 테스트는 fake 요청/응답으로만, 실제 키는 사용 안 함. 실제 삼성 인터넷 품질과 권한/무료 한도 확인 필요.
+
+- **읽기 TTS 속도·역할별 음성 (2026-10-16):** 읽기 상단 톱니(음성 속도와 목소리 설정)에서 0.60~1.20×, 기본 0.85×. HTMLAudioElement.playbackRate로 재생 중에도 바로 속도 적용(캐시 WAV 다시 생성 안 함), Gemini 실패 시 기기 TTS의 `speak(items, voices, rate)`에도 적용. `Settings.storyPlaybackRate`를 기기에 저장. `src/core/stories/voices.ts`에 나레이션=Charon, 등장인물 순서대로 Aoede/Puck/Leda/Orus/Kore를 지정(6명 이상이면 순환); 기존 이야기에도 동작, 이름 대신 기존 불변 speaker id로 연결. 읽기 음성 설정 팝업에서 역할별로 Gemini 목소리를 변경·대사 샘플 재생 가능. 변경 값은 `Settings.storyVoices[storyId][speakerId]`로 저장(캐릭터별 설정, 원래 Gemini 카드 목소리는 변경 안 함). 매 문장 `play`와 다음 줄 `prefetchSpeech`가 동일한 선택 음성을 사용하며 클립 키에 모델/목소리가 들어 있으므로 다른 음성 캐시는 구분. 한 문장씩 API를 호출하기 때문에 이야기에 2명 이상 캐릭터도 가능(단일 multi-speaker 요청 아님). Gemini 미연결·실패 시 기기 TTS는 역할별 서로 다른 음성이 보장되지 않음을 UI에 안내. UI 라이트/다크 공통 CSS 토큰만 사용. 확인: 기본 역할 배정 단위 테스트 및 `e2e/story.spec.ts` 속도·목소리 변경 테스트; 실기기 음성 자연스러움·재생 속도 체감 확인 필요.
 
 ## 아직 실제 폰에서 확인하지 못한 것
 

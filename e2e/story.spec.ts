@@ -82,6 +82,24 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await page.getByRole('button', { name: '계속' }).click();
   await expect(page.locator('.story-line')).toHaveCount(1);
   await expect(page.locator('.story-line').first()).toContainText('Budi');
+
+  // Each character and the narrator have their own selectable Gemini voice.
+  await page.getByRole('button', { name: '음성 속도와 목소리 설정' }).click();
+  const audio = page.getByRole('dialog', { name: '이야기 음성 설정' });
+  await expect(audio.getByLabel('나레이션 목소리')).toHaveValue('Charon');
+  await expect(audio.getByLabel('Budi 목소리')).toHaveValue('Aoede');
+  await expect(audio.getByLabel('Sari 목소리')).toHaveValue('Puck');
+  await expect(audio.getByRole('slider', { name: '이야기 읽기 속도' })).toHaveValue('0.85');
+  await audio.getByRole('slider', { name: '이야기 읽기 속도' }).focus();
+  await audio.getByRole('slider', { name: '이야기 읽기 속도' }).press('ArrowLeft');
+  await expect(audio.getByRole('slider', { name: '이야기 읽기 속도' })).toHaveValue('0.8');
+  await audio.getByLabel('Sari 목소리').selectOption('Orus');
+  await expect(audio.getByLabel('Sari 목소리')).toHaveValue('Orus');
+  await audio.getByRole('button', { name: '완료' }).click();
+  await page.getByRole('button', { name: '음성 속도와 목소리 설정' }).click();
+  await expect(page.getByRole('dialog', { name: '이야기 음성 설정' }).getByLabel('Sari 목소리')).toHaveValue('Orus');
+  await expect(page.getByRole('dialog', { name: '이야기 음성 설정' }).getByRole('slider', { name: '이야기 읽기 속도' })).toHaveValue('0.8');
+  await page.getByRole('button', { name: '음성 설정 닫기' }).click();
   // Reading always reports which speech provider was actually used or why it fell back.
   await expect(page.locator('.story-playback-status')).toBeVisible();
   // Auto-read is enabled on new installs, but can be switched off by the reader.
