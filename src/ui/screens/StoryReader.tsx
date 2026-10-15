@@ -60,7 +60,7 @@ export function StoryReader({ id }: { id: string }) {
     if (!story || !progress || !autoplay) return;
     const upcoming = story.blocks.slice(progress.position).find((block) => block.kind === 'line');
     if (upcoming?.kind === 'line') void prefetchSpeech({ text: upcoming.text, lang: 'id-ID', style: 'story' }, settings);
-  }, [story, progress?.position, autoplay, settings?.gemini?.ttsModel, settings?.gemini?.voice, settings?.gemini?.useTts]);
+  }, [story, progress, autoplay, settings]);
 
   if (story === undefined || !progress || !lex) return <div className="screen" />;
   if (!story) {
