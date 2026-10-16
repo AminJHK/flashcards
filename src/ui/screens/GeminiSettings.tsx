@@ -49,7 +49,7 @@ function Connect() {
       void synthesize('你好', 'zh-CN', 'Kore', ttsModel, k).then(
         (blob) => {
           void new Audio(URL.createObjectURL(blob)).play().catch(() => {});
-          toast('연결 완료 · 이제 자연스러운 음성으로 읽어줘요');
+          toast('연결 완료 · 이야기를 읽을 때 자연스러운 음성을 써요');
         },
         (e: unknown) => toast(`키는 연결됐지만 음성을 만들지 못했어요 · ${e instanceof Error ? e.message : ''}`),
       );
@@ -133,8 +133,11 @@ function Connected({ s, g }: { s: Settings; g: NonNullable<Settings['gemini']> }
 
   return (
     <div className="group">
-      <Row title="Gemini 음성으로 읽기" desc={`연결됨 · ${g.ttsModel}`}>
+      <Row title="Gemini 음성으로 읽기" desc={`이야기(읽기)를 자연스러운 음성으로 읽어요 · 연결됨 · ${g.ttsModel}`}>
         <Switch label="Gemini 음성으로 읽기" checked={g.useTts} onChange={(v) => set({ useTts: v })} />
+      </Row>
+      <Row title="단어 카드에도 Gemini 음성" desc="꺼 두면 단어 카드는 기기 음성으로 읽고, 무료 사용량을 이야기 읽기에 아껴요.">
+        <Switch label="단어 카드에도 Gemini 음성" checked={g.cardTts === true} onChange={(v) => set({ cardTts: v })} />
       </Row>
       <Row title="음성 모델" desc="3.8 Flash는 자연스러운 억양과 말투를 지원해요. 이 키에서 보이는 모델 중 고를 수 있어요.">
         <select className="select" aria-label="Gemini TTS 모델" value={g.ttsModel} onChange={(e) => set({ ttsModel: e.target.value })}>
@@ -157,7 +160,7 @@ function Connected({ s, g }: { s: Settings; g: NonNullable<Settings['gemini']> }
           type="button"
           className="btn-plain"
           onClick={async () => {
-            const r = await play(SAMPLES, { ...s, gemini: { ...g, useTts: true } });
+            const r = await play(SAMPLES, { ...s, gemini: { ...g, useTts: true, cardTts: true } });
             if (r.error) toast(r.error);
           }}
         >
@@ -172,7 +175,9 @@ function Connected({ s, g }: { s: Settings; g: NonNullable<Settings['gemini']> }
         desc={
           progress
             ? `만드는 중… ${progress.done} / ${progress.total}`
-            : missing === undefined
+            : g.cardTts !== true
+              ? '단어 카드에 Gemini 음성을 쓸 때만 필요해요. 위의 "단어 카드에도 Gemini 음성"을 켜면 만들 수 있어요.'
+              : missing === undefined
               ? '확인 중…'
               : missing.length
                 ? `${missing.length}개 남았어요. 한 번 만들면 인터넷 없이도 들려요.`
@@ -184,7 +189,7 @@ function Connected({ s, g }: { s: Settings; g: NonNullable<Settings['gemini']> }
             멈추기
           </button>
         ) : (
-          <button type="button" className="btn-soft" onClick={runAll} disabled={!missing?.length}>
+          <button type="button" className="btn-soft" onClick={runAll} disabled={g.cardTts !== true || !missing?.length}>
             만들기
           </button>
         )}

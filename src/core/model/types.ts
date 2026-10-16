@@ -147,8 +147,10 @@ export interface GeminiSettings {
   /** 키를 연결할 때 고른 TTS 모델 */
   ttsModel: string;
   voice: string;
-  /** 발음을 Gemini 음성으로 */
+  /** 이야기(읽기)를 Gemini 음성으로 */
   useTts: boolean;
+  /** 단어 카드의 발음도 Gemini 음성으로. 없으면(false) 카드는 기기 음성 (무료 한도를 읽기에 아낀다) */
+  cardTts?: boolean;
   /** 말하기 답을 Gemini로 받아쓰기 */
   useStt: boolean;
 }

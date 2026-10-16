@@ -19,6 +19,11 @@ export function geminiOn(s: Settings | undefined): s is Settings & { gemini: Non
   return !!s?.gemini?.apiKey && s.gemini.useTts;
 }
 
+/** 단어 카드(복습·단어 듣기)에서 Gemini 음성을 쓸지. 기본은 꺼짐: 무료 한도는 이야기 읽기에 쓰고, 카드는 기기 음성 */
+export function cardGeminiOn(s: Settings | undefined): s is Settings & { gemini: NonNullable<Settings['gemini']> } {
+  return geminiOn(s) && s.gemini.cardTts === true;
+}
+
 /** 음성을 만드는 글(프롬프트)을 바꾸면 올린다. 그러면 예전 방식으로 만든 음성은 쓰지 않고 새로 만든다. */
 const CLIP_VERSION = 'v2';
 const MODERN_CLIP_VERSION = 'v4'; // Gemini 3.8 Interactions + speech_metadata; discard old, unstyled v3 clips
@@ -259,7 +264,8 @@ export async function play(items: readonly Speech[], s: Settings | undefined, op
   if (!list.length) return { via: 'none' };
   const my = token;
   const selected = geminiOn(s) && opts?.voice ? { ...s, gemini: { ...s.gemini, voice: opts.voice } } : s;
-  if (geminiOn(selected)) {
+  // 이야기 줄은 Gemini를 켰으면 쓰고, 단어 카드는 "카드에도 Gemini" 설정을 켰을 때만 쓴다
+  if (geminiOn(selected) && list.every((it) => it.style === 'story' || selected.gemini.cardTts === true)) {
     try {
       for (const it of list) {
         // 처음 만드는 음성이 늦으면 기다리지 않고 기기 음성으로 읽는다 (만드는 건 계속해서 저장됨)
@@ -324,7 +330,7 @@ export function speechesOf(note: Note, cards: readonly Card[], deck: Deck): Spee
 
 /** 새로 만든 단어의 음성을 미리 만들어 둔다. 실패해도 조용히 넘어간다 (재생할 때 다시 시도). */
 export async function prefetchNote(noteId: string, s: Settings | undefined): Promise<void> {
-  if (!geminiOn(s) || !navigator.onLine) return;
+  if (!cardGeminiOn(s) || !navigator.onLine) return;
   const note = await db.notes.get(noteId);
   if (!note) return;
   const [cards, deck] = await Promise.all([db.cards.where('noteId').equals(noteId).toArray(), db.decks.get(note.deckId)]);
@@ -340,7 +346,7 @@ export async function prefetchNote(noteId: string, s: Settings | undefined): Pro
 
 /** 아직 음성 파일이 없는 텍스트 */
 export async function missingClips(s: Settings): Promise<Speech[]> {
-  if (!geminiOn(s)) return [];
+  if (!cardGeminiOn(s)) return [];
   const [notes, cards, decks, keys] = await Promise.all([db.notes.toArray(), db.cards.toArray(), db.decks.toArray(), db.audio.toCollection().primaryKeys()]);
   const have = new Set(keys as string[]);
   const deckById = new Map(decks.map((d) => [d.id, d]));

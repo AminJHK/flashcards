@@ -19,6 +19,11 @@ async function mockGemini(page: Page, calls: { tts: string[]; stt: number }) {
       return route.fulfill({ json: { models: [{ name: 'models/gemini-flash-latest' }, { name: 'models/gemini-3.8-flash-tts' }] } });
     }
     const body = route.request().postDataJSON();
+    // Gemini 3.8 음성은 /interactions 로 요청한다 (옛 모델은 -tts:generateContent)
+    if (url.endsWith('/interactions')) {
+      calls.tts.push(body.input[0].content[0].text);
+      return route.fulfill({ json: { steps: [{ type: 'model_output', content: [{ type: 'audio', data: silence, mime_type: 'audio/L16;codec=pcm;rate=24000' }] }] } });
+    }
     if (url.includes('-tts:generateContent')) {
       calls.tts.push(body.contents[0].parts[0].text);
       return route.fulfill({ json: { candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/L16;codec=pcm;rate=24000', data: silence } }] } }] } });
@@ -37,7 +42,11 @@ test('Gemini 키를 연결하면 단어 음성을 만들어 저장하고, 말한
   await page.getByLabel('Gemini API 키').fill('FAKE-KEY');
   await page.getByRole('button', { name: '연결' }).click();
   await expect(page.getByText(/연결했어요|연결 완료/)).toBeVisible();
-  await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();
+  await expect(page.getByText(/연결됨 · gemini-3.8-flash-tts/)).toBeVisible();
+  // 기본은 이야기 읽기에만 Gemini 음성: 단어 카드에도 쓰려면 스위치를 켠다
+  await expect(page.getByRole('switch', { name: '단어 카드에도 Gemini 음성' })).toHaveAttribute('aria-checked', 'false');
+  await page.getByRole('switch', { name: '단어 카드에도 Gemini 음성' }).click();
+  await expect(page.getByRole('switch', { name: '단어 카드에도 Gemini 음성' })).toHaveAttribute('aria-checked', 'true');
   await page.screenshot({ path: 'test-results/shots/10-gemini-settings.png', fullPage: true });
 
   // 작문 덱 + 문장 하나 → 저장할 때 음성을 미리 만든다
@@ -73,19 +82,46 @@ test('Gemini가 실패하면 기기 음성으로 대신 읽고 이유를 알려�
   await page.route('https://generativelanguage.googleapis.com/**', (route) =>
     route.request().url().includes('/models?')
       ? route.fulfill({ json: { models: [{ name: 'models/gemini-3.8-flash-tts' }] } })
-      : route.request().url().includes('-tts') && route.request().postDataJSON().contents[0].parts[0].text.includes('你好')
-        ? route.fulfill({ json: { candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/L16;codec=pcm;rate=24000', data: silence } }] } }] } })
+      : route.request().url().endsWith('/interactions') && JSON.stringify(route.request().postDataJSON()).includes('你好')
+        ? route.fulfill({ json: { steps: [{ type: 'model_output', content: [{ type: 'audio', data: silence, mime_type: 'audio/L16;codec=pcm;rate=24000' }] }] } })
         : route.fulfill({ status: 429, json: { error: { message: 'quota' } } }),
   );
   await page.goto('/#/settings');
   await page.getByLabel('Gemini API 키').fill('FAKE-KEY');
   await page.getByRole('button', { name: '연결' }).click();
-  await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();
+  await expect(page.getByText(/연결됨 · gemini-3.8-flash-tts/)).toBeVisible();
+  await page.getByRole('switch', { name: '단어 카드에도 Gemini 음성' }).click();
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: '만들기' }).click();
   await page.getByRole('link', { name: '추가' }).click();
   await page.getByLabel('한자').fill('朋友');
   await page.getByLabel('뜻').fill('친구');
   await page.getByRole('button', { name: '들어보기' }).click();
-  await expect(page.getByText(/무료 사용량/)).toBeVisible();
+  await expect(page.getByText(/Gemini 요청 제한\(429\)/)).toBeVisible();
+});
+
+test('기본값: 단어 카드는 Gemini를 부르지 않고 기기 음성, 이야기 읽기용 설정은 그대로', async ({ page }) => {
+  const calls = { tts: [] as string[], stt: 0 };
+  await mockGemini(page, calls);
+  await page.goto('/#/settings');
+  await page.getByLabel('Gemini API 키').fill('FAKE-KEY');
+  await page.getByRole('button', { name: '연결' }).click();
+  await expect(page.getByText(/연결됨 · gemini-3.8-flash-tts/)).toBeVisible();
+  await expect(page.getByRole('switch', { name: 'Gemini 음성으로 읽기' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('switch', { name: '단어 카드에도 Gemini 음성' })).toHaveAttribute('aria-checked', 'false');
+  await expect(page.getByText(/단어 카드에 Gemini 음성을 쓸 때만 필요해요/)).toBeVisible();
+  await expect(page.getByRole('button', { name: '만들기' })).toBeDisabled();
+  calls.tts.length = 0; // 연결할 때의 시험 음성은 뺀다
+
+  await page.goto('/#/decks/new');
+  await page.getByRole('button', { name: '만들기' }).click();
+  await page.getByRole('link', { name: '추가' }).click();
+  await page.getByLabel('한자').fill('朋友');
+  await page.getByLabel('뜻').fill('친구');
+  await page.getByRole('button', { name: '들어보기' }).click();
+  await page.waitForTimeout(800);
+  expect(calls.tts.filter((t) => t.includes('朋友'))).toHaveLength(0); // 카드 발음은 Gemini를 부르지 않는다
+  await page.getByRole('button', { name: '저장하고 다음 단어' }).click();
+  await page.waitForTimeout(500);
+  expect(calls.tts.filter((t) => t.includes('朋友'))).toHaveLength(0); // 저장할 때 음성을 미리 만들지도 않는다
 });
