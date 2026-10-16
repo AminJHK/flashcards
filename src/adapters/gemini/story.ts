@@ -14,9 +14,9 @@ export const MAX_ATTEMPTS = 3;
 export type StoryStep = { attempt: number; stage: 'writing' | 'checking' | 'revising' | 'retrying' | 'waiting'; pct?: number };
 
 /** 이야기 글의 보통 길이 (글자 수). 진행률을 어림하는 데만 쓴다 */
-export const EXPECTED_CHARS = 3500;
-/** 이보다 길면 같은 말을 반복하는 등 고장 난 답으로 보고 끊는다 (보통은 3~5천 자) */
-export const MAX_CHARS = 15_000;
+export const EXPECTED_CHARS = 5000;
+/** 이보다 길면 같은 말을 반복하는 등 고장 난 답으로 보고 끊는다 (보통은 4~7천 자) */
+export const MAX_CHARS = 20_000;
 
 /** END 줄까지 왔는지 (연결이 안 닫혀도 여기서 끝낸다) */
 export function isCompleteStory(text: string): boolean {

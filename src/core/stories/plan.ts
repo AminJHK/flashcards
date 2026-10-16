@@ -1,4 +1,5 @@
 import { DIFFICULTIES, type Coverage, type GlossEntry, type StoryBlock, type StoryCharacter, type StoryDifficulty, type StoryQuestion } from './types';
+import { chunkSegments } from './chunks';
 import { FALLBACK_MIN_FAMILIAR, norm, offendingWords, tokenize, type Lexicon, type VocabEntry } from './vocab';
 
 /** 이야기 하나를 만들 때 AI에게 줄 단어 목록 */
@@ -89,6 +90,7 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     '- GAP: copy one story line exactly, replace one word or short phrase with ___, and give 3 Indonesian options (the removed text is correct).',
     '- MATCH: 3 to 5 Indonesian words or expressions that appear in the story, each with its Korean meaning.',
     'Every question except MATCH needs a short Korean explanation.',
+    'MEANING UNITS (4th field of every LINE): split the Indonesian sentence, in order, into meaning units of 1 to 4 words that a learner would look up together (e.g. "di stasiun kereta = 기차역에서 / nunggu = 기다리다 / nggak apa-apa = 괜찮아"). Copy each unit exactly as written in the sentence, cover every word except names, and give a short Korean meaning that fits this sentence.',
     '',
     'FORMAT (one item per line, in story order; answer numbers start at 1; speaker is a character id or narrator):',
     'TITLE: <Indonesian title>',
@@ -96,8 +98,8 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     'CHARACTER: a | <name>',
     'CHARACTER: b | <name>',
     'PROPER: <place names and other proper nouns, comma separated>',
-    'LINE: narrator | <Indonesian> | <Korean translation>',
-    'LINE: a | <Indonesian> | <Korean translation>',
+    'LINE: narrator | <Indonesian> | <Korean translation> | <meaning unit> = <Korean> / <meaning unit> = <Korean>',
+    'LINE: a | <Indonesian> | <Korean translation> | <meaning unit> = <Korean> / <meaning unit> = <Korean>',
     'CHOICE: <Korean question> | <option 1> / <option 2> / <option 3> | <correct number> | <Korean explanation>',
     'TF: <Korean statement> | true | <Korean explanation>',
     'GAP: <story line with ___> | <option 1> / <option 2> / <option 3> | <correct number> | <Korean explanation>',
@@ -156,7 +158,12 @@ export function parseDraft(raw: unknown): { draft?: StoryDraft; problems: string
       const text = str(x.text);
       if (!text) continue;
       const speaker = ids.has(str(x.speaker)) ? str(x.speaker) : chars.find((c) => norm(c.name) === norm(str(x.speaker)))?.id ?? 'narrator';
-      blocks.push({ kind: 'line', speaker, text, ko: str(x.ko) });
+      // 의미 단위: 실제로 문장 안에 있는 것만 (없으면 화면이 단어 단위로 보여 준다)
+      const chunks = (Array.isArray(x.chunks) ? x.chunks : [])
+        .map((c) => ({ text: str((c as Record<string, unknown>)?.text), ko: str((c as Record<string, unknown>)?.ko) }))
+        .filter((c) => c.text && c.ko);
+      const found = chunkSegments(text, chunks).length;
+      blocks.push({ kind: 'line', speaker, text, ko: str(x.ko), ...(found ? { chunks } : {}) });
       lineTexts.push(text);
       continue;
     }

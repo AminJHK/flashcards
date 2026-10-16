@@ -1850,6 +1850,89 @@ textarea.input-sentence {
   color: var(--text2);
 }
 
+/* 길게 누르기: 글 선택·복사 메뉴가 뜨지 않게 */
+.story-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.story-p {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.story-ko {
+  align-self: flex-start;
+  border: none;
+  text-align: left;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text2);
+  background: var(--surface2);
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+
+.story-hint {
+  margin-top: 4px;
+}
+
+/* 단어·의미 단위를 눌렀을 때의 짧은 뜻 (듀오링고처럼) */
+.word-tip {
+  position: fixed;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: min(320px, calc(100vw - 24px));
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--toast-bg);
+  color: var(--toast-fg);
+  font-size: 17px;
+  line-height: 1.4;
+  border: 1px solid var(--line);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.word-tip::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--arrow, 50%) - 7px);
+  top: -7px;
+  border: 7px solid transparent;
+  border-top: none;
+  border-bottom-color: var(--toast-bg);
+}
+
+.word-tip.above::before {
+  top: auto;
+  bottom: -7px;
+  border-bottom: none;
+  border-top: 7px solid var(--toast-bg);
+}
+
+.word-tip-more {
+  border: none;
+  background: transparent;
+  color: var(--toast-accent);
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-right: -8px;
+}
+
+.w-on {
+  background: var(--accent-soft);
+  border-radius: 4px;
+}
+
 .story-player {
   display: flex;
   justify-content: center;

@@ -14,7 +14,8 @@ const STORY = {
   properNouns: ['Jakarta'],
   blocks: [
     { type: 'line', speaker: 'narrator', text: `${W.join(' ')} bakso.`, ko: '내레이션' },
-    line(1),
+    // 의미 단위가 있는 줄 (듀오링고처럼 묶음을 누르면 뜻)
+    { ...line(1), chunks: [{ text: 'aku kamu', ko: '나 너' }, { text: 'mau makan', ko: '먹고 싶다' }, { text: 'minum', ko: '마시다' }, { text: 'pulang nggak', ko: '집에 안 가' }, { text: 'udah lagi sini', ko: '이미 또 여기' }] },
     line(2),
     { type: 'choice', prompt: '부디는 무엇을 먹고 싶어 하나요?', options: ['바소', '나시고렝', '사테'], answer: 0, explain: 'bakso = 바소' },
     line(3),
@@ -127,7 +128,26 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await page.screenshot({ path: 'test-results/shots/45-read-player.png' });
 
   // 단어 누르기: 덱 밖 단어 → 생성할 때 받은 뜻 + 덱에 추가
+  // 의미 단위: 묶음을 누르면 말풍선으로 짧은 뜻, 다시 누르면 닫힌다
+  await page.locator('.story-line').first().getByRole('button', { name: 'mau makan', exact: true }).click();
+  await expect(page.getByRole('tooltip')).toHaveText(/먹고 싶다/);
+  await page.screenshot({ path: 'test-results/shots/48-read-chunk-tip.png' });
+  await page.locator('.story-line').first().getByRole('button', { name: 'mau makan', exact: true }).click();
+  await expect(page.getByRole('tooltip')).toHaveCount(0);
+  // 문장을 길게 누르면 전체 뜻
+  const p1 = page.locator('.story-line').first().locator('.story-p');
+  await p1.dispatchEvent('pointerdown', { clientX: 10, clientY: 10 });
+  await page.waitForTimeout(600);
+  await p1.dispatchEvent('pointerup');
+  await expect(page.getByRole('button', { name: '전체 뜻 닫기' })).toHaveText('번역 1');
+  await expect(page.getByRole('tooltip')).toHaveCount(0);
+  await page.getByRole('button', { name: '전체 뜻 닫기' }).click();
+  await expect(page.getByRole('button', { name: '전체 뜻 닫기' })).toHaveCount(0);
+
+  // 의미 단위가 없는 줄은 단어 단위로: 말풍선 → 자세히 보기(덱에 추가 등)
   await page.locator('.story-narration').getByRole('button', { name: 'bakso' }).click();
+  await expect(page.getByRole('tooltip')).toContainText('바소 (미트볼 수프)');
+  await page.getByRole('button', { name: 'bakso 자세히 보기' }).click();
   const sheet = page.getByRole('dialog', { name: 'bakso 뜻' });
   await expect(sheet).toContainText('바소 (미트볼 수프)');
   await expect(sheet.locator('.story-sheet-meaning')).toBeVisible();
@@ -141,6 +161,8 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await sheet.getByRole('button', { name: '읽기 계속하기' }).click();
   // 덱에 있는 단어 → 덱의 뜻
   await page.locator('.story-narration').getByRole('button', { name: 'aku', exact: true }).click();
+  await expect(page.getByRole('tooltip')).toContainText('나');
+  await page.getByRole('button', { name: 'aku 자세히 보기' }).click();
   await expect(page.getByRole('dialog', { name: 'aku 뜻' })).toContainText('나');
   await page.getByRole('dialog', { name: 'aku 뜻' }).getByRole('button', { name: '읽기 계속하기' }).click();
 

@@ -7,7 +7,7 @@
  * TITLE_KO: 한국어 제목
  * CHARACTER: a | Budi
  * PROPER: Jakarta
- * LINE: a | 인도네시아어 문장 | 한국어 번역        (말하는 사람 id 또는 narrator)
+ * LINE: a | 인도네시아어 문장 | 한국어 번역 | 의미 단위 = 뜻 / 의미 단위 = 뜻   (말하는 사람 id 또는 narrator)
  * CHOICE: 한국어 질문 | 선택지1 / 선택지2 / 선택지3 | 정답 번호(1부터) | 설명
  * TF: 한국어 문장 | true 또는 false | 설명
  * GAP: ___가 들어간 이야기 문장 | 선택지1 / 선택지2 / 선택지3 | 정답 번호 | 설명
@@ -15,6 +15,8 @@
  * GLOSS: 단어나 표현 | 한국어 뜻 | 영어 뜻 | 원형
  * END
  */
+
+import { formatChunks, parseChunks, type Chunk } from './chunks';
 
 /** parseDraft가 읽는 모양 (예전 JSON과 같다) */
 export interface RawStory {
@@ -61,7 +63,11 @@ export function parseStoryText(text: string): { raw: RawStory; complete: boolean
     else if (tag === 'TITLE_KO') raw.titleKo = body;
     else if (tag === 'CHARACTER' && f[1]) raw.characters.push({ id: f[0]!, name: f[1] });
     else if (tag === 'PROPER') raw.properNouns.push(...split(body, /\s*[,/|]\s*/).filter(Boolean));
-    else if (tag === 'LINE' && f.length >= 2) raw.blocks.push({ type: 'line', speaker: f.length >= 3 ? f[0] : 'narrator', text: f.length >= 3 ? f[1] : f[0], ko: f.length >= 3 ? f.slice(2).join(' | ') : f[1] });
+    else if (tag === 'LINE' && f.length >= 2) {
+      // 말하는 사람이 빠진 줄(문장 | 번역)도 받아 준다. 4번째 칸은 의미 단위
+      const [speaker, text, ko, chunks] = f.length >= 3 ? [f[0], f[1], f[2], f.slice(3).join(' / ')] : ['narrator', f[0], f[1], ''];
+      raw.blocks.push({ type: 'line', speaker, text, ko, chunks: parseChunks(chunks) });
+    }
     else if (tag === 'CHOICE' || tag === 'GAP') {
       const options = split(f[1] ?? '', /\s+\/\s+/).filter(Boolean);
       raw.blocks.push({ type: tag === 'CHOICE' ? 'choice' : 'gap', [tag === 'CHOICE' ? 'prompt' : 'sentence']: f[0], options, answer: answerIndex(f[2], options), explain: f.slice(3).join(' | ') });
@@ -88,7 +94,10 @@ export function formatStoryText(story: Partial<Omit<RawStory, 'blocks'>> & { blo
   for (const b of s.blocks) {
     const opts = (b.options as string[] | undefined)?.join(' / ') ?? '';
     const ans = typeof b.answer === 'number' ? b.answer + 1 : '';
-    if (b.type === 'line') out.push(`LINE: ${b.speaker as string} | ${b.text as string} | ${b.ko as string}`);
+    if (b.type === 'line') {
+      const ch = (b.chunks as Chunk[] | undefined) ?? [];
+      out.push(`LINE: ${b.speaker as string} | ${b.text as string} | ${b.ko as string}${ch.length ? ` | ${formatChunks(ch)}` : ''}`);
+    }
     else if (b.type === 'choice') out.push(`CHOICE: ${b.prompt as string} | ${opts} | ${ans} | ${(b.explain as string) ?? ''}`);
     else if (b.type === 'gap') out.push(`GAP: ${b.sentence as string} | ${opts} | ${ans} | ${(b.explain as string) ?? ''}`);
     else if (b.type === 'truefalse') out.push(`TF: ${b.statement as string} | ${String(b.answerTrue)} | ${(b.explain as string) ?? ''}`);

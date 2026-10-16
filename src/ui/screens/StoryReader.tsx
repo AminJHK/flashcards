@@ -1,10 +1,11 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { play, setPlaybackRate, stopAll, type PlayResult } from '../../adapters/speech/speech';
 import { GEMINI_VOICES } from '../../adapters/gemini/tts';
 import { db } from '../../adapters/storage/db';
 import { addNote, saveSettings } from '../../adapters/storage/repo';
 import { getProgress, saveProgress } from '../../adapters/storage/stories';
+import { chunkSegments } from '../../core/stories/chunks';
 import { nameSet } from '../../core/stories/plan';
 import { NARRATOR, roleOf, storyVoice } from '../../core/stories/voices';
 import type { StoryBlock, StoryLine, StoryProgress, StoryQuestion, Story } from '../../core/stories/types';
@@ -45,6 +46,8 @@ export function StoryReader({ id }: { id: string }) {
   const [replayLine, setReplayLine] = useState<number>();
   const replayToken = useRef(0);
   const [picked, setPicked] = useState<Picked>();
+  /** 단어·의미 단위를 눌렀을 때의 짧은 뜻 말풍선 */
+  const [tip, setTip] = useState<Tip>();
   /** 재생 버튼이 가리키는 줄 (블록 번호). 없으면 지금 보이는 마지막 줄 */
   const [cursor, setCursor] = useState<number>();
   const [audioStatus, setAudioStatus] = useState('');
@@ -277,10 +280,11 @@ export function StoryReader({ id }: { id: string }) {
             <div className="story-title">
               <h1>{story.title}</h1>
               {story.titleKo && <span className="faint small">{story.titleKo}</span>}
+              <span className="faint small story-hint">단어를 누르면 뜻 · 문장을 길게 누르면 전체 뜻</span>
             </div>
             {shown.map((b, i) =>
               b.kind === 'line' ? (
-                <LineView key={i} line={b} active={i === at} story={story} lex={lex} names={names} onPick={(span) => setPicked({ span, line: b })} onSay={() => {
+                <LineView key={i} line={b} active={i === at} story={story} lex={lex} names={names} tipKey={tip?.line === b ? tip.key : undefined} onTip={(t) => setTip((cur) => (cur?.line === b && cur.key === t.key ? undefined : { ...t, line: b }))} onSay={() => {
                     setCursor(i);
                     void speakLine(b);
                   }} />
@@ -313,6 +317,20 @@ export function StoryReader({ id }: { id: string }) {
           )}
           {waiting && <div className="story-player-hint" role="status">답을 골라 주세요</div>}
         </>
+      )}
+      {tip && (
+        <WordTip
+          tip={tip}
+          onClose={() => setTip(undefined)}
+          onMore={
+            tip.span
+              ? () => {
+                  setPicked({ span: tip.span!, line: tip.line });
+                  setTip(undefined);
+                }
+              : undefined
+          }
+        />
       )}
       {picked && <WordSheet picked={picked} story={story} lex={lex} onClose={() => setPicked(undefined)} />}
       {audioOpen && (
@@ -410,39 +428,126 @@ function Avatar({ story, speaker }: { story: Story; speaker: string }) {
   );
 }
 
-/** 한 줄: 단어마다 누를 수 있다. 모르는 단어(덱의 새 단어·덱 밖 단어)는 밑줄 */
-function Tokens({ text, lex, names, onPick }: { text: string; lex: Lexicon; names: Set<string>; onPick: (s: Span) => void }) {
+interface Tip {
+  /** 같은 줄에서 무엇을 눌렀는지 (다시 누르면 닫는다) */
+  key: string;
+  text: string;
+  ko?: string;
+  rect: DOMRect;
+  /** 자세히 보기(덱에 추가 등)로 열 단어 */
+  span?: Span;
+  line: StoryLine;
+}
+
+const WORSE: Record<string, number> = { known: 0, learning: 1, deckNew: 2, outside: 3, name: -1 };
+
+/**
+ * 한 줄의 글. 듀오링고처럼 의미 단위(없으면 단어)를 누르면 뜻이 말풍선으로 짧게 나온다.
+ * 모르는 단어(덱의 새 단어·덱 밖 단어)가 든 묶음은 색 밑줄.
+ */
+function Tokens({ line, story, lex, names, tipKey, onTip }: { line: StoryLine; story: Story; lex: Lexicon; names: Set<string>; tipKey?: string; onTip: (t: Omit<Tip, 'line'>) => void }) {
+  const text = line.text;
   const spans = useMemo(() => analyzeText(text, lex, names), [text, lex, names]);
+  const segs = useMemo(() => (line.chunks?.length ? chunkSegments(text, line.chunks) : []), [text, line.chunks]);
   const out: React.ReactNode[] = [];
-  let at = 0;
-  spans.forEach((s, i) => {
-    if (s.start > at) out.push(text.slice(at, s.start));
-    out.push(
-      s.cls === 'name' ? (
-        <span key={i}>{s.text}</span>
-      ) : (
-        <button key={i} type="button" className={`w w-${s.cls}`} onClick={() => onPick(s)}>
-          {s.text}
-        </button>
-      ),
+  const press = (key: string, label: string, ko: string | undefined, span: Span | undefined) => (e: React.MouseEvent<HTMLButtonElement>) =>
+    onTip({ key, text: label, ko, rect: e.currentTarget.getBoundingClientRect(), span });
+  const wordButton = (sp: Span, i: number) =>
+    sp.cls === 'name' ? (
+      <span key={`w${i}`}>{sp.text}</span>
+    ) : (
+      <button key={`w${i}`} type="button" className={`w w-${sp.cls}${tipKey === `w${sp.start}` ? ' w-on' : ''}`} onClick={press(`w${sp.start}`, sp.text, glossFor(sp, story.glossary).ko, sp)}>
+        {sp.text}
+      </button>
     );
-    at = s.end;
-  });
-  if (at < text.length) out.push(text.slice(at));
+  // 의미 단위가 덮지 않는 곳은 단어 단위로
+  const words = (from: number, to: number) => {
+    let at = from;
+    spans.forEach((sp, i) => {
+      if (sp.start < from || sp.end > to) return;
+      if (sp.start > at) out.push(text.slice(at, sp.start));
+      out.push(wordButton(sp, i));
+      at = sp.end;
+    });
+    if (at < to) out.push(text.slice(at, to));
+  };
+  let at = 0;
+  for (const seg of segs) {
+    words(at, seg.start);
+    const inside = spans.filter((sp) => sp.start >= seg.start && sp.end <= seg.end);
+    const worst = inside.reduce<Span | undefined>((w, sp) => (!w || WORSE[sp.cls]! > WORSE[w.cls]! ? sp : w), undefined);
+    const label = text.slice(seg.start, seg.end);
+    const key = `c${seg.start}`;
+    out.push(
+      <button key={key} type="button" className={`w w-${worst && worst.cls !== 'name' ? worst.cls : 'known'}${tipKey === key ? ' w-on' : ''}`} onClick={press(key, label, seg.ko, worst?.cls === 'name' ? undefined : worst)}>
+        {label}
+      </button>,
+    );
+    at = seg.end;
+  }
+  words(at, text.length);
   return <>{out}</>;
 }
 
-function LineView({ line, active, story, lex, names, onPick, onSay }: { line: StoryLine; active: boolean; story: Story; lex: Lexicon; names: Set<string>; onPick: (s: Span) => void; onSay: () => void }) {
+/** 길게 누르면 (0.45초) 문장 전체의 뜻을 보여 준다. 길게 누른 뒤의 클릭은 단어 뜻을 열지 않게 막는다 */
+function useLongPress(onLong: () => void) {
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const start = useRef<{ x: number; y: number }>(undefined);
+  const fired = useRef(false);
+  const clear = () => clearTimeout(timer.current);
+  return {
+    onPointerDown: (e: React.PointerEvent) => {
+      fired.current = false;
+      start.current = { x: e.clientX, y: e.clientY };
+      clear();
+      timer.current = setTimeout(() => {
+        fired.current = true;
+        onLong();
+      }, 450);
+    },
+    onPointerMove: (e: React.PointerEvent) => {
+      if (start.current && Math.hypot(e.clientX - start.current.x, e.clientY - start.current.y) > 10) clear();
+    },
+    onPointerUp: clear,
+    onPointerCancel: clear,
+    onPointerLeave: clear,
+    onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
+    onClickCapture: (e: React.MouseEvent) => {
+      if (fired.current) {
+        fired.current = false;
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    },
+  };
+}
+
+function LineView({ line, active, story, lex, names, tipKey, onTip, onSay }: { line: StoryLine; active: boolean; story: Story; lex: Lexicon; names: Set<string>; tipKey?: string; onTip: (t: Omit<Tip, 'line'>) => void; onSay: () => void }) {
+  const [showKo, setShowKo] = useState(false);
+  const long = useLongPress(() => setShowKo(true));
   const speakerName = story.characters.find((c) => c.id === line.speaker)?.name;
+  const body = (
+    <div className="story-text">
+      <p className="story-p" {...long}>
+        <Tokens line={line} story={story} lex={lex} names={names} tipKey={tipKey} onTip={onTip} />
+      </p>
+      {showKo && line.ko && (
+        <button type="button" className="story-ko" aria-label="전체 뜻 닫기" onClick={() => setShowKo(false)}>
+          {line.ko}
+        </button>
+      )}
+    </div>
+  );
+  const say = (
+    <button type="button" className="icon-btn story-say" aria-label="이 문장 듣기" onClick={onSay}>
+      <Icon name="speaker" size={20} />
+    </button>
+  );
   if (!speakerName) {
     return (
       <div className={`story-narration${active ? ' story-active' : ''}`}>
-        <button type="button" className="icon-btn story-say" aria-label="이 문장 듣기" onClick={onSay}>
-          <Icon name="speaker" size={20} />
-        </button>
-        <p>
-          <Tokens text={line.text} lex={lex} names={names} onPick={onPick} />
-        </p>
+        {say}
+        {body}
       </div>
     );
   }
@@ -452,14 +557,56 @@ function LineView({ line, active, story, lex, names, onPick, onSay }: { line: St
       <div className="story-bubble">
         <span className="story-name">{speakerName}</span>
         <div className="story-bubble-row">
-          <button type="button" className="icon-btn story-say" aria-label="이 문장 듣기" onClick={onSay}>
-            <Icon name="speaker" size={20} />
-          </button>
-          <p>
-            <Tokens text={line.text} lex={lex} names={names} onPick={onPick} />
-          </p>
+          {say}
+          {body}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** 누른 곳 바로 아래(공간이 없으면 위)에 뜨는 짧은 뜻. 바깥을 누르거나 화면이 움직이면 닫힌다 */
+function WordTip({ tip, onClose, onMore }: { tip: Tip; onClose: () => void; onMore?: () => void }) {
+  const box = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ left: number; top: number; arrow: number; above: boolean }>();
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+    const vw = window.innerWidth;
+    const cx = tip.rect.left + tip.rect.width / 2;
+    const left = Math.min(Math.max(12, cx - w / 2), vw - w - 12);
+    const above = tip.rect.bottom + 12 + h > window.innerHeight - 140;
+    setPos({ left, top: above ? tip.rect.top - h - 10 : tip.rect.bottom + 10, arrow: Math.min(Math.max(16, cx - left), w - 16), above });
+  }, [tip]);
+  useEffect(() => {
+    const down = (e: PointerEvent) => {
+      const t = e.target as Element | null;
+      if (box.current?.contains(t) || t?.closest?.('.w')) return;
+      onClose();
+    };
+    const scroll = () => onClose();
+    document.addEventListener('pointerdown', down);
+    window.addEventListener('scroll', scroll, true);
+    return () => {
+      document.removeEventListener('pointerdown', down);
+      window.removeEventListener('scroll', scroll, true);
+    };
+  }, [onClose]);
+  return (
+    <div
+      ref={box}
+      className={`word-tip${pos?.above ? ' above' : ''}`}
+      role="tooltip"
+      style={pos ? { left: pos.left, top: pos.top, ['--arrow' as string]: `${pos.arrow}px` } : { left: -9999, top: 0 }}
+    >
+      <span className="word-tip-ko">{tip.ko || '뜻 정보가 없어요'}</span>
+      {onMore && (
+        <button type="button" className="word-tip-more" aria-label={`${tip.text} 자세히 보기`} onClick={onMore}>
+          <Icon name="chevronRight" size={18} />
+        </button>
+      )}
     </div>
   );
 }

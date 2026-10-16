@@ -186,3 +186,29 @@ describe('줄 형식 읽기', () => {
     expect(again.raw.blocks).toEqual(raw.blocks);
   });
 });
+
+describe('의미 단위', () => {
+  it('묶음을 읽고, 문장 안에서 앞에서부터 차례로 겹치지 않게 찾는다 (낱말 중간은 안 맞춘다)', async () => {
+    const { parseChunks, chunkSegments } = await import('./chunks');
+    const chunks = parseChunks('Budi nunggu = 부디가 기다린다 / Sita = 시타를 / di stasiun kereta = 기차역에서 / ta = 없음');
+    expect(chunks.map((c) => c.text)).toEqual(['Budi nunggu', 'Sita', 'di stasiun kereta', 'ta']);
+    const text = 'Budi nunggu Sita di stasiun kereta.';
+    const segs = chunkSegments(text, chunks);
+    expect(segs.map((g) => text.slice(g.start, g.end))).toEqual(['Budi nunggu', 'Sita', 'di stasiun kereta']); // "ta"는 낱말 중간뿐이라 없음
+    expect(segs[2]!.ko).toBe('기차역에서');
+    expect(parseChunks('뜻 없음')).toEqual([]);
+  });
+
+  it('줄 형식의 4번째 칸으로 받고, 문장에 실제로 있는 묶음만 이야기에 남긴다', async () => {
+    const { parseStoryText, formatStoryText } = await import('./textFormat');
+    const { raw } = parseStoryText('LINE: a | Aku mau kopi. | 나 커피 원해. | Aku = 나 / mau kopi = 커피를 원해\nLINE: b | Ya. | 응.\nEND');
+    expect(raw.blocks[0]).toMatchObject({ ko: '나 커피 원해.', chunks: [{ text: 'Aku', ko: '나' }, { text: 'mau kopi', ko: '커피를 원해' }] });
+    expect(raw.blocks[1]).toMatchObject({ ko: '응.', chunks: [] });
+    expect(parseStoryText(formatStoryText(raw)).raw.blocks).toEqual(raw.blocks);
+    const base = goodRaw();
+    base.blocks[0] = { ...base.blocks[0]!, chunks: [{ text: 'tidak ada', ko: '없다' }] };
+    const r = parseDraft(base);
+    const first = r.draft!.blocks[0] as { chunks?: unknown };
+    expect(first.chunks).toBeUndefined(); // 문장에 없는 묶음뿐이면 버린다
+  });
+});

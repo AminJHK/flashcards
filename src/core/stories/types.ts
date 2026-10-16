@@ -26,8 +26,10 @@ export interface StoryLine {
   kind: 'line';
   speaker: string;
   text: string;
-  /** 한국어 번역 (단어를 눌렀을 때 "이 문장에서의 뜻") */
+  /** 한국어 번역 (문장을 길게 누르면 나온다) */
   ko: string;
+  /** 의미 단위와 그 뜻 (누르면 말풍선). 예전 이야기에는 없다 → 단어 단위로 보여 준다 */
+  chunks?: { text: string; ko: string }[];
 }
 
 export interface ChoiceQuestion {
