@@ -17,6 +17,8 @@ export class GeminiError extends Error {
   ) {
     super(message);
   }
+  /** 조금씩 받기에서 Gemini가 정해진 시간 안에 한 글자도 보내지 않았다 (오래 생각하거나 서버가 붐빔) → 다른 모델로 */
+  noStart?: boolean;
 }
 
 async function call(path: string, key: string, init: RequestInit = {}, timeoutMs = 20_000): Promise<unknown> {
@@ -93,6 +95,8 @@ export async function generateStream(
   opts: {
     totalMs?: number;
     idleMs?: number;
+    /** 첫 데이터가 올 때까지 기다리는 시간. Gemini는 쓰기 전에 생각하는 동안 아무것도 보내지 않아서 idleMs보다 길게 둔다 */
+    firstMs?: number;
     /** 받은 글이 이미 완성됐는지 (예: 끝까지 온 JSON). 그러면 연결이 안 닫혀도 바로 끝낸다 */
     isComplete?: (text: string) => boolean;
     /** 이보다 길어지면 (같은 말을 끝없이 반복하는 등) 끊고 받은 데까지 돌려준다 */
@@ -103,20 +107,34 @@ export async function generateStream(
 ): Promise<StreamResult> {
   const totalMs = opts.totalMs ?? 240_000;
   const idleMs = opts.idleMs ?? 60_000;
+  const firstMs = opts.firstMs ?? idleMs;
   const ctrl = new AbortController();
   let reason = '';
+  let started = false;
   let idle: ReturnType<typeof setTimeout> | undefined;
   const bump = () => {
     clearTimeout(idle);
+    const wait = started ? idleMs : firstMs;
     idle = setTimeout(() => {
-      reason = `응답이 ${Math.round(idleMs / 1000)}초 동안 오지 않아요. 인터넷 연결을 확인하고 다시 시도해 주세요`;
+      reason = started
+        ? `응답이 ${Math.round(idleMs / 1000)}초 동안 오지 않아요. 인터넷 연결을 확인하고 다시 시도해 주세요`
+        : `Gemini가 ${Math.round(firstMs / 1000)}초 동안 답을 시작하지 않았어요. 서버가 붐비는 것 같아요. 잠시 뒤에 다시 시도해 주세요`;
       ctrl.abort();
-    }, idleMs);
+    }, wait);
+  };
+  /** 한 글자도 받기 전에 시간이 다 됐으면 "시작 안 함" 오류 (다른 모델로 넘어가게) */
+  const timedOut = (text: string) => {
+    if (started || text) return new GeminiError(text ? `${reason} (받은 글 ${text.length}자에서 멈춤)` : reason, 'network');
+    const e = new GeminiError(reason, 'busy');
+    e.noStart = true;
+    return e;
   };
   const total = setTimeout(() => {
     reason = `너무 오래 걸려요 (${Math.round(totalMs / 1000)}초). 잠시 뒤에 다시 시도해 주세요`;
     ctrl.abort();
   }, totalMs);
+  const aborted = new Promise<never>((_, reject) => ctrl.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError'))));
+  aborted.catch(() => {});
   bump();
   try {
     let res: Response;
@@ -128,7 +146,8 @@ export async function generateStream(
         signal: ctrl.signal,
       });
     } catch (e) {
-      throw new GeminiError(reason || (e instanceof Error && /abort/i.test(e.name) ? '요청이 취소됐어요' : '인터넷에 연결되어 있지 않아요'), 'network');
+      if (reason) throw timedOut('');
+      throw new GeminiError(e instanceof Error && /abort/i.test(e.name) ? '요청이 취소됐어요' : '인터넷에 연결되어 있지 않아요', 'network');
     }
     if (!res.ok) throw await errorFrom(res);
     let text = '';
@@ -170,8 +189,11 @@ export async function generateStream(
             ended = 'tooLong';
             break;
           }
-          const { done, value } = await reader.read();
+          // 끊기 신호를 무시하는 연결도 있어서, 시간이 다 되면 읽기를 기다리지 않고 바로 끝낸다
+          const { done, value } = await Promise.race([reader.read(), aborted]);
           if (done) break;
+          // 생각 요약이나 빈 줄이라도 무언가 오면 살아 있는 것
+          started = true;
           bump();
           buf += dec.decode(value, { stream: true }).replace(/\r\n/g, '\n');
           let at: number;
@@ -186,7 +208,7 @@ export async function generateStream(
     } catch (e) {
       // 시간이 다 됐어도 받은 글이 완성돼 있으면 그대로 쓴다 (연결만 안 닫힌 경우)
       if (opts.isComplete?.(text)) return { text, ended: 'complete', finishReason, usage };
-      if (reason) throw new GeminiError(text ? `${reason} (받은 글 ${text.length}자에서 멈춤)` : reason, 'network');
+      if (reason) throw timedOut(text);
       throw e;
     }
     return { text, ended, finishReason, usage };

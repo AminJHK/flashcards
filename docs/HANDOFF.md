@@ -115,3 +115,9 @@ npm run dev        # 개발 서버
 - `Settings.gemini.cardTts`(기본 꺼짐): 꺼져 있으면 단어 카드 발음은 기기 음성이고 Gemini를 부르지 않는다(`speech.ts`의 `play`, `prefetchNote`, `missingClips`). 이야기 줄(`style: 'story'`)은 `useTts`가 켜져 있으면 Gemini. 설정 > Gemini에 "단어 카드에도 Gemini 음성" 스위치가 있다. 꺼 둔 동안 "모든 단어 음성 미리 만들기"는 비활성.
 - 이미 만들어 둔 카드 음성 파일은 그대로 남지만, 스위치를 켜기 전에는 쓰지 않는다.
 - 화면 테스트 `gemini.spec`·`voice.spec`의 가짜 서버를 3.8 음성(`/interactions`)과 새 429 문구에 맞게 고쳐서 다시 모두 통과한다.
+
+## 이야기 생성: "응답이 60초 동안 오지 않아요" (한 글자도 안 옴)
+- 원인: Gemini는 쓰기 전에 생각하는 동안 아무것도 보내지 않는다. 의미 단위를 요청하면서 생각이 길어져 첫 글자 전 60초 제한에 걸렸다.
+- `generateStream`의 `firstMs`(첫 데이터까지, 이야기는 2분) / `idleMs`(그 뒤 멈춤, 60초) / `totalMs`(5분)를 나눴다. 값은 `story.ts`의 `STREAM_TIMING`.
+- 첫 데이터 전에 시간이 다 되면 `GeminiError(kind 'busy', noStart=true)` → 같은 모델로 기다리지 않고 바로 다음 모델(flash-lite)로.
+- 읽기는 `Promise.race([reader.read(), aborted])`라서 끊기 신호를 무시하는 연결에서도 시간이 되면 끝난다.

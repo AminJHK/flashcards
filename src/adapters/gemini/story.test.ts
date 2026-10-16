@@ -7,7 +7,7 @@ import { formatStoryText } from '../../core/stories/textFormat';
 import { buildLexicon } from '../../core/stories/vocab';
 import { FlashcardsDB } from '../storage/db';
 import { deleteStory, getProgress, listStories, restartStory, saveProgress, saveStory } from '../storage/stories';
-import { createStory, looksLooping, MAX_ATTEMPTS, resetThinkingMemory } from './story';
+import { createStory, looksLooping, MAX_ATTEMPTS, resetThinkingMemory, STREAM_TIMING } from './story';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -275,5 +275,36 @@ describe('이야기 저장', () => {
     expect((await listStories(d)).map((x) => x.id)).toEqual(['later']);
     expect(await d.storyProgress.count()).toBe(0);
     expect(await d.reviewLogs.count()).toBe(0);
+  });
+});
+
+describe('Gemini가 답을 시작하지 않을 때 (오래 생각하거나 붐빔)', () => {
+  const silent = () => new Response(new ReadableStream({ start() {} }), { status: 200 }); // 아무것도 안 보내고 닫지도 않는다
+  const saved = { ...STREAM_TIMING };
+  afterEach(() => Object.assign(STREAM_TIMING, saved));
+
+  it('첫 글자를 기다리다 시간이 다 되면 같은 모델로 또 기다리지 않고 다음 모델로 넘어가 이야기를 받는다', async () => {
+    Object.assign(STREAM_TIMING, { firstMs: 50, idleMs: 1000, totalMs: 5000 });
+    const f = vi.fn().mockResolvedValueOnce(silent()).mockResolvedValueOnce(sseStream([formatStoryText(story([]))], true));
+    vi.stubGlobal('fetch', f);
+    const steps: string[] = [];
+    const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {}, onStep: (x) => steps.push(x.stage) });
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(String(f.mock.calls[0]![0])).toContain('gemini-flash-latest:');
+    expect(String(f.mock.calls[1]![0])).toContain('gemini-flash-lite-latest:');
+    expect(steps).toContain('waiting');
+    expect(s.title).toBe('Pagi');
+  });
+
+  it('모든 모델이 답을 시작하지 않으면 그 이유를 알려 준다', async () => {
+    Object.assign(STREAM_TIMING, { firstMs: 50, idleMs: 1000, totalMs: 5000 });
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => silent()));
+    await expect(createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {} })).rejects.toThrow(/답을 시작하지 않았어요/);
+  });
+
+  it('글이 오기 시작한 뒤에 멈추면 받은 글자 수를 알려 준다 (예전처럼)', async () => {
+    Object.assign(STREAM_TIMING, { firstMs: 1000, idleMs: 50, totalMs: 5000 });
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => sseStream(['TITLE: Pagi\n'], false)));
+    await expect(createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {} })).rejects.toThrow(/받은 글 \d+자에서 멈춤/);
   });
 });

@@ -43,6 +43,12 @@ interface Turn {
   parts: { text: string }[];
 }
 
+/**
+ * 조금씩 받을 때의 시간 제한. Gemini는 쓰기 전에 생각하는 동안 아무것도 보내지 않아서 첫 글자는 길게(2분) 기다리고,
+ * 글이 오기 시작한 뒤에는 60초 넘게 멈추면 포기한다. (테스트에서 줄일 수 있게 바꿀 수 있는 값)
+ */
+export const STREAM_TIMING = { firstMs: 120_000, idleMs: 60_000, totalMs: 300_000 };
+
 /** 서버가 붐빌 때 같은 모델에 다시 시도하는 기다림 (밀리초). 그래도 안 되면 다음 모델로 */
 export const BUSY_WAITS = [2_000, 6_000];
 
@@ -70,7 +76,7 @@ async function ask(
           },
         };
         let out: StreamResult;
-        if (hooks.stream) out = await generateStream(model, key, body, hooks.onProgress ?? (() => {}), { isComplete: isCompleteStory, maxChars: MAX_CHARS, isRunaway: looksLooping });
+        if (hooks.stream) out = await generateStream(model, key, body, hooks.onProgress ?? (() => {}), { ...STREAM_TIMING, isComplete: isCompleteStory, maxChars: MAX_CHARS, isRunaway: looksLooping });
         else {
           const r = await generate(model, key, body, 180_000);
           const c = r.candidates?.[0];
@@ -80,6 +86,11 @@ async function ask(
         return { ...out, model };
       } catch (e) {
         last = e;
+        // 오래 기다려도 답을 시작하지 않으면 같은 모델로 또 기다리지 않고 다음(더 빠른) 모델로
+        if (e instanceof GeminiError && e.noStart) {
+          hooks.onBusy?.();
+          break;
+        }
         // 400(잘못된 요청)이면 생각하는 시간 설정 때문일 수 있다: 다음 방식으로 바꿔 같은 모델로 다시 (기다림 횟수는 쓰지 않는다)
         if (e instanceof GeminiError && e.kind === 'other' && /\(400/.test(e.message) && variant < THINKING.length - 1) {
           thinkingIndex.set(model, variant + 1);
