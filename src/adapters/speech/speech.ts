@@ -4,7 +4,7 @@ import type { Card, Deck, Note, Settings } from '../../core/model/types';
 import { GeminiError } from '../gemini/api';
 import { withTimeout } from '../net';
 import { synthesize } from '../gemini/tts';
-import { canSwitchTtsModel, storyTtsModels } from './modelFallback';
+import { allModelsMessage, canSwitchTtsModel, storyTtsModels, type TtsModelState } from './modelFallback';
 import { db } from '../storage/db';
 import { missingVoiceLangs, speak as deviceSpeak, speakAndWait, stopSpeaking, voicesReady } from '../tts/webSpeech';
 
@@ -46,6 +46,8 @@ const inFlight = new Map<string, Promise<Blob>>();
 
 /** Avoid repeatedly hitting Google's quota API after an exhausted response. Session-only; cached clips remain playable. */
 const quotaPauses = new Map<string, { until: number; reason: GeminiError }>();
+/** 이 키로는 쓸 수 없는 음성 모델 (404). 앱을 다시 열면 다시 시도한다 */
+const unavailableTts = new Set<string>();
 function quotaCooldown(error: GeminiError): number {
   // Daily limits won't be resolved by an immediate retry. An unknown 429 is treated cautiously.
   const defaultMs = error.limit === 'daily' ? 15 * 60_000 : 75_000;
@@ -119,6 +121,7 @@ export function setStoryWait(f: (ms: number) => Promise<void>): void {
 export function resetStoryQuota(): void {
   recentStoryRequests.clear();
   quotaPauses.clear();
+  unavailableTts.clear();
 }
 
 /** First reuse any cached line from any eligible engine, then try available free engines.
@@ -142,32 +145,48 @@ export async function storyClipFor(
 
   let lastLimit: GeminiError | undefined;
   let delayed = false;
+  /** 모델마다 왜 못 썼는지 (모두 안 되면 화면에 그대로 보여 준다) */
+  const states = new Map<string, TtsModelState>();
   for (const model of models) {
     const selected = { ...s, gemini: { ...s.gemini, ttsModel: model } };
+    if (unavailableTts.has(model)) {
+      states.set(model, 'unavailable');
+      continue;
+    }
     const paused = quotaPauses.get(model);
     if (paused && Date.now() < paused.until) {
       lastLimit = paused.reason;
+      states.set(model, paused.reason.limit === 'daily' ? 'daily' : 'minute');
       continue;
     }
     if (!claimStoryRequest(model, Date.now())) {
       delayed = true;
+      states.set(model, 'minute');
       continue;
     }
     try {
       return { blob: await clipFor(item, selected), model, cached: false };
     } catch (e) {
       if (!switching || !canSwitchTtsModel(e)) throw e;
-      if (e.kind === 'quota') lastLimit = e;
-      // Google may not grant a fallback model to this API project (404). Skip it.
+      if (e.kind === 'quota') {
+        lastLimit = e;
+        states.set(model, e.limit === 'daily' ? 'daily' : 'minute');
+      } else {
+        // 이 키(프로젝트)에 열려 있지 않은 모델 (404): 이번에 앱을 쓰는 동안은 다시 부르지 않는다
+        unavailableTts.add(model);
+        states.set(model, 'unavailable');
+      }
     }
   }
-  // 모든 모델이 쉬는 중: 가장 먼저 풀리는 모델까지만 기다리면 된다 (오늘 한도가 다 된 모델은 오래 쉰다)
+  if (!delayed && !lastLimit) throw new GeminiError(models.length > 1 ? allModelsMessage(states, Date.now()) : '선택할 수 있는 Gemini 음성 모델이 없어요. 설정에서 모델을 확인해 주세요.', 'model');
+  // 기다리면 풀리는 모델(한도로 쉬는 중)만 보고, 가장 먼저 풀리는 때까지만 기다린다. 못 쓰는 모델은 빼고 센다
   const now = Date.now();
-  const waitMs = Math.max(1_000, Math.min(...models.map((m) => storyModelFreeAt(m, now))) - now);
-  // 5분 넘게 기다려야 하면 (오늘 한도 등) 기다리지 않고 Google의 이유를 그대로 알려 준다
-  if (lastLimit && waitMs > 5 * 60_000) throw lastLimit;
-  if (delayed || lastLimit) throw new GeminiError('Gemini 음성 모델들이 모두 분당 한도에 걸렸어요. 잠시 기기 음성으로 읽어요.', 'quota', 'minute', waitMs);
-  throw new GeminiError('선택할 수 있는 Gemini 음성 모델이 없어요. 설정에서 모델을 확인해 주세요.', 'model');
+  const limited = models.filter((m) => states.get(m) === 'daily' || states.get(m) === 'minute');
+  const waitMs = Math.max(1_000, Math.min(...limited.map((m) => storyModelFreeAt(m, now))) - now);
+  const message = models.length > 1 ? allModelsMessage(states, now) : lastLimit?.message ?? 'Gemini 음성 요청이 빠르게 이어졌어요.';
+  // 5분 넘게 기다려야 하면 (오늘 한도 등) 기다리지 않는다
+  if (waitMs > 5 * 60_000) throw new GeminiError(message, 'quota', 'daily');
+  throw new GeminiError(message, 'quota', 'minute', waitMs);
 }
 
 /** Prepare saved story lines without playing them. Reuses model/voice-specific cached clips.

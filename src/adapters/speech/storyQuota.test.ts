@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from '../storage/db';
 import { DEFAULT_SETTINGS } from '../../core/model/types';
 import type { Story } from '../../core/stories/types';
+import { allModelsMessage, nextQuotaReset, shortTtsName } from './modelFallback';
 import { prepareStoryAudio, resetStoryQuota, setStoryWait, storyWait } from './speech';
 
 const fakeWav = () => {
@@ -78,5 +79,41 @@ describe('이야기 음성 준비: 모델을 돌려 써서 분당 한도 기다�
     expect(waits[0]).toBeGreaterThan(0);
     expect(waits[0]).toBeLessThanOrEqual(90_000);
     expect(progress.some((p) => /분당 무료 한도를 기다리는 중… \(\d+초\)/.test(p ?? ''))).toBe(true);
+  });
+});
+
+describe('모든 음성 모델이 안 될 때: 모델마다 상태를 알려 준다', () => {
+  const dailyLimit = () => new Response(JSON.stringify({ error: { message: 'Quota exceeded for metric: generate_requests_per_model_per_day', details: [{ quotaId: 'GenerateRequestsPerDayPerProjectPerModel-FreeTier' }] } }), { status: 429 });
+  const notFound = () => new Response(JSON.stringify({ error: { message: 'models/x is not found' } }), { status: 404 });
+
+  it('오늘 한도가 끝난 모델과 이 키로 못 쓰는 모델을 나눠 보여 주고, 기다리지 않는다', async () => {
+    const calls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      const body = JSON.parse(init!.body as string) as { model?: string };
+      const model = body.model ?? /models\/([^:]+):/.exec(String(url))?.[1] ?? '?';
+      calls.push(model);
+      return model.startsWith('gemini-2.5') ? notFound() : dailyLimit();
+    }));
+    const wait = vi.fn(async () => {});
+    setStoryWait(wait);
+    let stopped: string | undefined;
+    await prepareStoryAudio(story(3), settings(), (_d, _t, why) => (stopped = why ?? stopped));
+    expect(wait).not.toHaveBeenCalled();
+    expect(stopped).toMatch(/Gemini 음성 모델 4개를 모두 시도했어요/);
+    expect(stopped).toMatch(/오늘 한도 끝: 3\.8 Flash, 3\.8 Flash-Lite, 3\.1 Flash/);
+    expect(stopped).toMatch(/이 키로 못 씀: 2\.5 Flash/);
+    expect(stopped).toMatch(/다시 채워져요/);
+    // 첫 문장에서 4개 모델을 한 번씩만 써 보고 멈춘다 (한도 끝난 모델을 계속 부르지 않는다)
+    expect(calls).toHaveLength(4);
+  });
+
+  it('모델 이름 줄이기, 하루 한도가 채워지는 때(미국 태평양 자정)', () => {
+    expect(shortTtsName('gemini-3.8-flash-lite-tts')).toBe('3.8 Flash-Lite');
+    expect(shortTtsName('gemini-2.5-flash-preview-tts')).toBe('2.5 Flash');
+    // 시드니 10월 16일 16:35 = 태평양 10월 15일 22:35 → 다음 자정은 UTC 07:00 (시드니 18:00)
+    expect(new Date(nextQuotaReset(Date.UTC(2026, 9, 16, 5, 35))).toISOString()).toBe('2026-10-16T07:00:00.000Z');
+    const m = allModelsMessage(new Map([['gemini-3.8-flash-tts', 'minute']]), Date.UTC(2026, 9, 16, 5, 35));
+    expect(m).toMatch(/잠깐 쉬는 중\(분당 한도\): 3\.8 Flash/);
+    expect(m).toMatch(/잠시 뒤에 다시 시도해요/);
   });
 });
