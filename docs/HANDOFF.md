@@ -121,3 +121,9 @@ npm run dev        # 개발 서버
 - `generateStream`의 `firstMs`(첫 데이터까지, 이야기는 2분) / `idleMs`(그 뒤 멈춤, 60초) / `totalMs`(5분)를 나눴다. 값은 `story.ts`의 `STREAM_TIMING`.
 - 첫 데이터 전에 시간이 다 되면 `GeminiError(kind 'busy', noStart=true)` → 같은 모델로 기다리지 않고 바로 다음 모델(flash-lite)로.
 - 읽기는 `Promise.race([reader.read(), aborted])`라서 끊기 신호를 무시하는 연결에서도 시간이 되면 끝난다.
+
+## 이야기 음성 준비: 분당 한도 기다림 줄이기
+- 예전: 모델마다 1분에 2문장으로 스스로 막아서(`STORY_RPM_SAFETY=2`) 모델 4개를 돌려도 8문장마다 65초를 기다렸다.
+- 지금: 스스로 막는 값은 넉넉하게 10. Google이 실제 429를 주면 그 모델만 쉬게 하고(`quotaPauses`) 바로 다음 모델로. 모든 모델이 쉬는 중일 때만 가장 먼저 풀리는 모델까지(`storyModelFreeAt`, 최대 90초) 기다리고, 5분 넘게 쉬어야 하면(오늘 한도) 기다리지 않고 Google의 이유를 보여 준다.
+- 한 이야기 안에서 문장마다 다른 모델 음성이 섞일 수 있다 (목소리 이름은 같아도 음색이 조금 다를 수 있음).
+- 테스트: `src/adapters/speech/storyQuota.test.ts`.

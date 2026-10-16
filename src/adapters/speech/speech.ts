@@ -81,12 +81,13 @@ async function clipFor(item: Speech, s: Settings & { gemini: NonNullable<Setting
   }
 }
 
-/** Respect the user's very small free TTS RPM: at most two new story requests / model / minute.
- * Existing cached audio bypasses this entirely. This is a local conservative limit;
- * Google may enforce lower quotas for a given project.
+/**
+ * 이야기 음성의 분당 요청 수. 예전에는 모델마다 1분에 2번으로 스스로 막아서, 모델을 돌려 써도 8문장마다 65초씩 기다렸다.
+ * 이제는 Google이 실제로 한도(429)를 알려 줄 때 그 모델만 쉬게 하고 다음 모델로 넘어간다 (quotaPauses).
+ * 이 값은 같은 모델로 한꺼번에 몰리는 것만 막는 넉넉한 안전장치다.
  */
 const recentStoryRequests = new Map<string, number[]>();
-const STORY_RPM_SAFETY = 2;
+const STORY_RPM_SAFETY = 10;
 
 function claimStoryRequest(model: string, now: number): boolean {
   const previous = (recentStoryRequests.get(model) ?? []).filter((at) => now - at < 60_000);
@@ -97,6 +98,27 @@ function claimStoryRequest(model: string, now: number): boolean {
   previous.push(now);
   recentStoryRequests.set(model, previous);
   return true;
+}
+
+/** 이 모델로 다시 요청할 수 있게 되는 시각 (지금 바로 되면 now) */
+function storyModelFreeAt(model: string, now: number): number {
+  const paused = quotaPauses.get(model);
+  const pauseEnd = paused && paused.until > now ? paused.until : now;
+  const recent = (recentStoryRequests.get(model) ?? []).filter((at) => now - at < 60_000);
+  const slotEnd = recent.length >= STORY_RPM_SAFETY ? recent[0]! + 60_000 : now;
+  return Math.max(pauseEnd, slotEnd);
+}
+
+/** 기다림 (테스트에서 바꿀 수 있게) */
+export let storyWait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+export function setStoryWait(f: (ms: number) => Promise<void>): void {
+  storyWait = f;
+}
+
+/** 테스트용 */
+export function resetStoryQuota(): void {
+  recentStoryRequests.clear();
+  quotaPauses.clear();
 }
 
 /** First reuse any cached line from any eligible engine, then try available free engines.
@@ -139,8 +161,12 @@ export async function storyClipFor(
       // Google may not grant a fallback model to this API project (404). Skip it.
     }
   }
-  if (delayed) throw new GeminiError('Gemini 음성 요청이 빠르게 이어졌어요. 잠시 기기 음성으로 읽고, 나중에 다시 시도해 주세요.', 'quota', 'minute');
-  if (lastLimit) throw lastLimit;
+  // 모든 모델이 쉬는 중: 가장 먼저 풀리는 모델까지만 기다리면 된다 (오늘 한도가 다 된 모델은 오래 쉰다)
+  const now = Date.now();
+  const waitMs = Math.max(1_000, Math.min(...models.map((m) => storyModelFreeAt(m, now))) - now);
+  // 5분 넘게 기다려야 하면 (오늘 한도 등) 기다리지 않고 Google의 이유를 그대로 알려 준다
+  if (lastLimit && waitMs > 5 * 60_000) throw lastLimit;
+  if (delayed || lastLimit) throw new GeminiError('Gemini 음성 모델들이 모두 분당 한도에 걸렸어요. 잠시 기기 음성으로 읽어요.', 'quota', 'minute', waitMs);
   throw new GeminiError('선택할 수 있는 Gemini 음성 모델이 없어요. 설정에서 모델을 확인해 주세요.', 'model');
 }
 
@@ -169,17 +195,18 @@ export async function prepareStoryAudio(
     const voice = storyVoice(story, roleOf(story, line), overrides);
     const selected = { ...settings, gemini: { ...settings.gemini, voice } };
     let prepared = false;
-    for (let attempt = 0; attempt < 3 && !prepared; attempt++) {
+    for (let attempt = 0; attempt < 4 && !prepared; attempt++) {
       if (cancelled()) return;
       try {
         await storyClipFor({ text: line.text, lang: story.lang, style: 'story' }, selected, settings.storyAutoModelSwitch !== false);
         prepared = true;
         onProgress(i + 1, total);
       } catch (error) {
-        if (error instanceof GeminiError && error.kind === 'quota' && error.limit === 'minute' && attempt < 2) {
-          // The model's free RPM is tiny; wait rather than flooding the API.
-          onProgress(i, total, '분당 무료 한도를 기다리는 중…');
-          await new Promise((resolve) => setTimeout(resolve, Math.max(65_000, error.retryAfterMs ?? 0)));
+        if (error instanceof GeminiError && error.kind === 'quota' && error.limit === 'minute' && attempt < 3) {
+          // 모델을 돌려 써도 모두 분당 한도에 걸렸을 때만, 가장 먼저 풀리는 모델까지 기다린다
+          const waitMs = Math.min(Math.max(1_000, error.retryAfterMs ?? 65_000), 90_000);
+          onProgress(i, total, `분당 무료 한도를 기다리는 중… (${Math.ceil(waitMs / 1000)}초)`);
+          await storyWait(waitMs);
           continue;
         }
         const reason = error instanceof Error ? error.message : '음성을 준비하지 못했어요';
