@@ -5,7 +5,6 @@ import { GEMINI_VOICES } from '../../adapters/gemini/tts';
 import { db } from '../../adapters/storage/db';
 import { addNote, saveSettings } from '../../adapters/storage/repo';
 import { getProgress, saveProgress } from '../../adapters/storage/stories';
-import { chunkSegments } from '../../core/stories/chunks';
 import { nameSet } from '../../core/stories/plan';
 import { NARRATOR, roleOf, storyVoice } from '../../core/stories/voices';
 import type { StoryBlock, StoryLine, StoryProgress, StoryQuestion, Story } from '../../core/stories/types';
@@ -442,53 +441,33 @@ interface Tip {
   line: StoryLine;
 }
 
-const WORSE: Record<string, number> = { known: 0, learning: 1, deckNew: 2, outside: 3, name: -1 };
-
 /**
- * 한 줄의 글. 듀오링고처럼 의미 단위(없으면 단어)를 누르면 뜻이 말풍선으로 짧게 나온다.
- * 모르는 단어(덱의 새 단어·덱 밖 단어)가 든 묶음은 색 밑줄.
+ * 한 줄의 글. 듀오링고처럼 단어를 누르면 뜻이 말풍선으로 짧게 나온다. 모르는 단어(덱의 새 단어·덱 밖 단어)는 색 밑줄.
+ * 의미 단위로 묶어 누르던 방식은 원하는 단어 하나만 보기 어려워서 없앴다 (사용자 요청).
+ * 예전 이야기에 남은 한 단어짜리 의미 단위 뜻은, 덱·glossary에 뜻이 없을 때만 쓴다.
  */
 function Tokens({ line, story, lex, names, tipKey, onTip }: { line: StoryLine; story: Story; lex: Lexicon; names: Set<string>; tipKey?: string; onTip: (t: Omit<Tip, 'line'>) => void }) {
   const text = line.text;
   const spans = useMemo(() => analyzeText(text, lex, names), [text, lex, names]);
-  const segs = useMemo(() => (line.chunks?.length ? chunkSegments(text, line.chunks) : []), [text, line.chunks]);
   const out: React.ReactNode[] = [];
-  const press = (key: string, label: string, ko: string | undefined, span: Span | undefined) => (e: React.MouseEvent<HTMLButtonElement>) =>
-    onTip({ key, text: label, ko, rect: e.currentTarget.getBoundingClientRect(), span });
-  const wordButton = (sp: Span, i: number) =>
-    sp.cls === 'name' ? (
-      <span key={`w${i}`}>{sp.text}</span>
-    ) : (
-      <button key={`w${i}`} type="button" className={`w w-${sp.cls}${tipKey === `w${sp.start}` ? ' w-on' : ''}`} onClick={press(`w${sp.start}`, sp.text, glossFor(sp, story.glossary).ko, sp)}>
-        {sp.text}
-      </button>
-    );
-  // 의미 단위가 덮지 않는 곳은 단어 단위로
-  const words = (from: number, to: number) => {
-    let at = from;
-    spans.forEach((sp, i) => {
-      if (sp.start < from || sp.end > to) return;
-      if (sp.start > at) out.push(text.slice(at, sp.start));
-      out.push(wordButton(sp, i));
-      at = sp.end;
-    });
-    if (at < to) out.push(text.slice(at, to));
-  };
+  const oldChunkKo = (word: string) => line.chunks?.find((c) => c.text.trim().toLowerCase() === word.toLowerCase())?.ko;
   let at = 0;
-  for (const seg of segs) {
-    words(at, seg.start);
-    const inside = spans.filter((sp) => sp.start >= seg.start && sp.end <= seg.end);
-    const worst = inside.reduce<Span | undefined>((w, sp) => (!w || WORSE[sp.cls]! > WORSE[w.cls]! ? sp : w), undefined);
-    const label = text.slice(seg.start, seg.end);
-    const key = `c${seg.start}`;
+  spans.forEach((sp, i) => {
+    if (sp.start > at) out.push(text.slice(at, sp.start));
+    at = sp.end;
+    if (sp.cls === 'name') {
+      out.push(<span key={`w${i}`}>{sp.text}</span>);
+      return;
+    }
+    const key = `w${sp.start}`;
+    const ko = glossFor(sp, story.glossary).ko ?? oldChunkKo(sp.text);
     out.push(
-      <button key={key} type="button" className={`w w-${worst && worst.cls !== 'name' ? worst.cls : 'known'}${tipKey === key ? ' w-on' : ''}`} onClick={press(key, label, seg.ko, worst?.cls === 'name' ? undefined : worst)}>
-        {label}
+      <button key={key} type="button" className={`w w-${sp.cls}${tipKey === key ? ' w-on' : ''}`} onClick={(e) => onTip({ key, text: sp.text, ko, rect: e.currentTarget.getBoundingClientRect(), span: sp })}>
+        {sp.text}
       </button>,
     );
-    at = seg.end;
-  }
-  words(at, text.length);
+  });
+  if (at < text.length) out.push(text.slice(at));
   return <>{out}</>;
 }
 
