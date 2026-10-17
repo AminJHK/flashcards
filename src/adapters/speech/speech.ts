@@ -341,10 +341,10 @@ export async function play(items: readonly Speech[], s: Settings | undefined, op
         // Report the source before speaking and wait for playback to finish.
         opts.onSource?.(result);
         const ok = await speakAndWait(list[0]!, selected.voices, opts.rate ?? 0.9);
-        return { ...result, via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list) };
+        return { ...result, via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list, selected.voices) };
       }
       const ok = deviceSpeak(list, selected.voices, opts?.rate ?? 0.9);
-      const out: PlayResult = { ...result, via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list) };
+      const out: PlayResult = { ...result, via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list, selected.voices) };
       opts?.onSource?.(out);
       return out;
     }
@@ -354,10 +354,10 @@ export async function play(items: readonly Speech[], s: Settings | undefined, op
   if (opts?.awaitDevice && list.length === 1) {
     opts.onSource?.({ via: 'device' });
     const ok = await speakAndWait(list[0]!, s?.voices, opts.rate ?? 0.9);
-    return { via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list) };
+    return { via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list, s?.voices) };
   }
   const ok = deviceSpeak(list, s?.voices, opts?.rate ?? 0.9);
-  const result: PlayResult = { via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list) };
+  const result: PlayResult = { via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list, s?.voices) };
   opts?.onSource?.(result);
   return result;
 }

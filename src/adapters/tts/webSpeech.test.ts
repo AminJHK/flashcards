@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Speech } from '../../core/cardTypes/types';
 
 interface FakeVoice {
   name: string;
@@ -7,12 +8,13 @@ interface FakeVoice {
 }
 
 /** 기기 음성을 흉내 낸다. 읽도록 넘긴 것들을 spoken에 모은다. */
-function fakeDevice(voices: FakeVoice[]) {
+function fakeDevice(voices: FakeVoice[], autoEnd = false) {
   const spoken: { text: string; lang: string; voice?: string }[] = [];
   class Utterance {
     lang = '';
     rate = 1;
     voice: FakeVoice | null = null;
+    onend?: () => void;
     constructor(public text: string) {}
   }
   const g = globalThis as Record<string, unknown>;
@@ -21,7 +23,7 @@ function fakeDevice(voices: FakeVoice[]) {
     speechSynthesis: {
       getVoices: () => voices,
       cancel: () => {},
-      speak: (u: Utterance) => spoken.push({ text: u.text, lang: u.lang, voice: u.voice?.name }),
+      speak: (u: Utterance) => { spoken.push({ text: u.text, lang: u.lang, voice: u.voice?.name }); if (autoEnd) queueMicrotask(() => u.onend?.()); },
       addEventListener: () => {},
       removeEventListener: () => {},
     },
@@ -100,6 +102,34 @@ describe('기기 음성', () => {
     await ready;
     speak([{ text: 'la casa', lang: 'es-ES' }]);
     expect(spoken).toEqual([{ text: 'la casa', lang: 'es_ES', voice: 'Spanish Spain' }]);
+  });
+
+  it('시스템 기본 음성을 선택하면 노출된 음성이 있어도 voice를 지정하지 않고 언어만 보낸다', async () => {
+    const spoken = fakeDevice([{ name: 'Indonesian (Indonesia)', lang: 'id-ID', localService: true }]);
+    await load();
+    const { SYSTEM_DEFAULT_VOICE } = await import('./webSpeech');
+    expect(speak([{ text: 'Apa kabar?', lang: 'id-ID' }], { 'id-ID': SYSTEM_DEFAULT_VOICE })).toBe(true);
+    expect(spoken).toEqual([{ text: 'Apa kabar?', lang: 'id-ID', voice: undefined }]);
+  });
+
+  it('브라우저에 언어 음성이 없어도 시스템 기본 모드는 기본 엔진에 재생을 요청한다', async () => {
+    const spoken = fakeDevice([EN]);
+    await load();
+    const { SYSTEM_DEFAULT_VOICE } = await import('./webSpeech');
+    const sample: Speech = { text: 'Apa kabar?', lang: 'id-ID' };
+    expect(speak([sample], { 'id-ID': SYSTEM_DEFAULT_VOICE })).toBe(true);
+    expect(spoken).toEqual([{ text: 'Apa kabar?', lang: 'id-ID', voice: undefined }]);
+    expect(missingVoiceLangs([sample], { 'id-ID': SYSTEM_DEFAULT_VOICE })).toEqual([]);
+    expect(missingVoiceLangs([sample])).toEqual(['id-ID']);
+  });
+
+  it('전체 이야기 다시 듣기에서도 시스템 기본 음성을 강제 지정하지 않는다', async () => {
+    const spoken = fakeDevice([{ name: 'Indonesian (Indonesia)', lang: 'id-ID', localService: true }], true);
+    await load();
+    const { speakAndWait, SYSTEM_DEFAULT_VOICE } = await import('./webSpeech');
+    const ok = await speakAndWait({ text: 'Aku di sini.', lang: 'id-ID' }, { 'id-ID': SYSTEM_DEFAULT_VOICE });
+    expect(ok).toBe(true);
+    expect(spoken).toEqual([{ text: 'Aku di sini.', lang: 'id-ID', voice: undefined }]);
   });
 
   it('음성 목록이 아직 도착하지 않았으면 언어 태그를 믿고 기기에 맡긴다', async () => {

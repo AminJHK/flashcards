@@ -11,6 +11,11 @@ export interface VoiceInfo {
   local: boolean;
 }
 
+/** Per-language preference: let the browser choose a voice for the requested locale.
+ * This does NOT guarantee that Samsung Internet will use Android's Google TTS engine.
+ */
+export const SYSTEM_DEFAULT_VOICE = '__system_default__';
+
 const synth = (): SpeechSynthesis | undefined => (typeof window !== 'undefined' ? window.speechSynthesis : undefined);
 
 export function ttsSupported(): boolean {
@@ -76,9 +81,10 @@ function pickVoice(lang: string, preferred?: string): SpeechSynthesisVoice | und
 }
 
 /** 이 기기에 음성이 없는 언어들. 음성 목록이 아직 안 왔으면 알 수 없으니 비워 둔다. */
-export function missingVoiceLangs(items: readonly Speech[]): string[] {
+export function missingVoiceLangs(items: readonly Speech[], preferred: Record<string, string> = {}): string[] {
   if (!ttsSupported() || !loadVoices().length) return [];
-  return [...new Set(items.filter((i) => i.text && !pickVoice(i.lang)).map((i) => i.lang))];
+  // System-default mode intentionally lets the browser choose, even when it lists no voice for a locale.
+  return [...new Set(items.filter((i) => i.text && preferred[i.lang] !== SYSTEM_DEFAULT_VOICE && !pickVoice(i.lang)).map((i) => i.lang))];
 }
 
 /**
@@ -94,14 +100,16 @@ export function speak(items: readonly Speech[], preferred: Record<string, string
   let found = true;
   for (const it of items) {
     if (!it.text) continue;
-    const v = pickVoice(it.lang, preferred[it.lang]);
-    if (!v && known) {
+    const systemDefault = preferred[it.lang] === SYSTEM_DEFAULT_VOICE;
+    const v = systemDefault ? undefined : pickVoice(it.lang, preferred[it.lang]);
+    if (!systemDefault && !v && known) {
       found = false;
       continue;
     }
     const u = new SpeechSynthesisUtterance(it.text);
-    u.lang = v?.lang ?? it.lang; // 고른 음성의 언어 태그를 같이 써야 안드로이드가 그 음성으로 읽는다
+    u.lang = systemDefault ? it.lang : (v?.lang ?? it.lang);
     u.rate = rate;
+    // Do not assign u.voice in system mode: the browser/OS decides which voice to use.
     if (v) u.voice = v;
     s.speak(u);
   }
@@ -116,28 +124,30 @@ let cancelWaiter: (() => void) | undefined;
 export async function speakAndWait(item: Speech, preferred: Record<string, string> = {}, rate = 0.9): Promise<boolean> {
   const s = synth();
   if (!s || !ttsSupported() || !item.text.trim()) return false;
-  const v = pickVoice(item.lang, preferred[item.lang]);
-  if (!v && loadVoices().length) return false;
+  const systemDefault = preferred[item.lang] === SYSTEM_DEFAULT_VOICE;
+  const v = systemDefault ? undefined : pickVoice(item.lang, preferred[item.lang]);
+  if (!systemDefault && !v && loadVoices().length) return false;
   stopSpeaking();
   return new Promise<boolean>((resolve) => {
     let finished = false;
-    const done = () => {
+    const done = (ok: boolean) => {
       if (finished) return;
       finished = true;
       clearTimeout(timeout);
-      if (cancelWaiter === done) cancelWaiter = undefined;
-      resolve(true);
+      if (cancelWaiter === cancel) cancelWaiter = undefined;
+      resolve(ok);
     };
-    cancelWaiter = done;
+    const cancel = () => done(false);
+    cancelWaiter = cancel;
     const u = new SpeechSynthesisUtterance(item.text);
-    u.lang = v?.lang ?? item.lang;
+    u.lang = systemDefault ? item.lang : (v?.lang ?? item.lang);
     u.rate = rate;
     if (v) u.voice = v;
-    u.onend = done;
-    u.onerror = done;
+    u.onend = () => done(true);
+    u.onerror = () => done(false);
     const timeout = setTimeout(() => {
       s.cancel();
-      done();
+      done(false);
     }, Math.min(90_000, Math.max(15_000, item.text.length * 400)));
     s.speak(u);
   });
