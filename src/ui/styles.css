@@ -771,11 +771,11 @@ svg.icon {
 }
 
 .b-word.front {
-  font-size: calc(48px * var(--scale));
+  font-size: calc(56px * var(--scale));
 }
 
 .b-word.back {
-  font-size: calc(40px * var(--scale));
+  font-size: calc(54px * var(--scale));
 }
 
 .b-meaning {
@@ -790,7 +790,7 @@ svg.icon {
 }
 
 .b-meaning.back {
-  font-size: calc(26px * var(--scale));
+  font-size: calc(30px * var(--scale));
 }
 
 .b-sentence {
@@ -854,8 +854,8 @@ svg.icon {
   align-self: stretch;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding-top: 20px;
+  gap: 20px;
+  padding-top: 26px;
   border-top: 1px solid var(--line);
   text-align: left;
 }
@@ -864,7 +864,7 @@ svg.icon {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 12px 14px;
+  padding: 18px 20px;
   border-left: 3px solid var(--accent);
   border-radius: 0 12px 12px 0;
   background: var(--accent-soft);
@@ -872,7 +872,7 @@ svg.icon {
 
 .cf-ex-main {
   font-family: var(--font-latin);
-  font-size: calc(19px * var(--scale));
+  font-size: calc(23px * var(--scale));
   font-weight: 500;
   line-height: 1.5;
   color: var(--text);
@@ -885,7 +885,7 @@ svg.icon {
 }
 
 .cf-ex-sub {
-  font-size: calc(16px * var(--scale));
+  font-size: calc(18px * var(--scale));
   line-height: 1.5;
   color: var(--text2);
 }
@@ -899,14 +899,14 @@ svg.icon {
 }
 
 .cf-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--text3);
 }
 
 .cf-note .b-memo {
-  font-size: calc(15px * var(--scale));
+  font-size: calc(17px * var(--scale));
 }
 
 .cf-quote {
