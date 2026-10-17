@@ -835,27 +835,6 @@ svg.icon {
   overflow-y: auto;
 }
 
-/*
- * 빈 공간 균형: 카드는 내용 크기만큼(너무 작아지지 않게 최소 높이)만 커지고, 화면 안에서 시각적 중심(조금 위)에 놓인다.
- * 그래서 남는 여백은 카드 안이 아니라 카드 바깥 위아래에 2:3으로 나뉜다. 내용이 길면 카드가 화면을 채우고 스크롤된다.
- */
-.card-area::before,
-.card-area::after {
-  content: '';
-  flex: 2 1 0;
-  min-height: 0;
-}
-
-.card-area::after {
-  flex-grow: 3;
-}
-
-.card-sheet {
-  flex: 0 1 auto;
-  min-height: min(100%, 440px);
-  max-height: 100%;
-}
-
 .card-sheet.zoned {
   gap: 0;
 }
