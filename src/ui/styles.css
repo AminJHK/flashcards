@@ -771,11 +771,11 @@ svg.icon {
 }
 
 .b-word.front {
-  font-size: calc(42px * var(--scale));
+  font-size: calc(48px * var(--scale));
 }
 
 .b-word.back {
-  font-size: calc(32px * var(--scale));
+  font-size: calc(40px * var(--scale));
 }
 
 .b-meaning {
@@ -790,7 +790,7 @@ svg.icon {
 }
 
 .b-meaning.back {
-  font-size: calc(22px * var(--scale));
+  font-size: calc(26px * var(--scale));
 }
 
 .b-sentence {
@@ -844,8 +844,8 @@ svg.icon {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding-bottom: 22px;
+  gap: 12px;
+  padding-bottom: 24px;
   text-align: center;
 }
 
@@ -872,7 +872,7 @@ svg.icon {
 
 .cf-ex-main {
   font-family: var(--font-latin);
-  font-size: calc(18px * var(--scale));
+  font-size: calc(19px * var(--scale));
   font-weight: 500;
   line-height: 1.5;
   color: var(--text);
@@ -885,9 +885,34 @@ svg.icon {
 }
 
 .cf-ex-sub {
-  font-size: calc(15px * var(--scale));
+  font-size: calc(16px * var(--scale));
   line-height: 1.5;
   color: var(--text2);
+}
+
+/* 메모: "참고" 이름표 + 설명. 따옴표 친 외국어 표현은 예문 글꼴로 진하게 */
+.cf-note {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 2px;
+}
+
+.cf-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text3);
+}
+
+.cf-note .b-memo {
+  font-size: calc(15px * var(--scale));
+}
+
+.cf-quote {
+  font-family: var(--font-latin);
+  font-weight: 600;
+  color: var(--text);
 }
 
 /* 문장 안의 배우는 말 */
@@ -905,11 +930,11 @@ svg.icon {
 }
 
 .cf-tag {
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: 999px;
   background: var(--surface2);
   color: var(--text2);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.4;
 }
 
@@ -1779,11 +1804,11 @@ textarea.input-sentence {
   }
 
   .b-word.front {
-    font-size: calc(64px * var(--scale));
+    font-size: calc(68px * var(--scale));
   }
 
   .b-word.back {
-    font-size: calc(44px * var(--scale));
+    font-size: calc(54px * var(--scale));
   }
 
   .b-meaning.front {
@@ -1791,7 +1816,7 @@ textarea.input-sentence {
   }
 
   .b-meaning.back {
-    font-size: calc(30px * var(--scale));
+    font-size: calc(34px * var(--scale));
   }
 
   .b-sentence.main {

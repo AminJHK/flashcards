@@ -154,3 +154,4 @@ npm run dev        # 개발 서버
 - 블록 추가: `sentence.highlight`(문장 안에서 강조할 말), `tags`(표준형·어근·사용역 꼬리표). 예전처럼 메모에 섞지 않는다. divider는 화면에서 그리지 않는다(칸 나눔으로 대신).
 - id-spoken / id-particle 뒷면 순서: 단어 → 뜻 → (꼬리표) → 예문 → 번역 → 메모.
 - `CardFace`는 `<span>`만 쓴다(카드 전체가 `<button>`이라 div를 넣으면 안 됨). 테스트: `src/ui/components/CardFace.test.tsx` (vitest에 *.test.tsx 포함).
+- 메모는 뒷면 아래 칸에서 "참고" 이름표 + 설명. 메모 안의 따옴표 친 라틴 문자 표현('Tahan dulu')은 예문 글꼴로 진하게(`withQuotes`), 한국어 따옴표는 그대로. 크기: 앞면 단어 48, 뒷면 단어 40·뜻 26, 예문 19·번역 16.

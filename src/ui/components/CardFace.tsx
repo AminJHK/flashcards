@@ -24,7 +24,20 @@ export function CardFace({ blocks, side = 'front', onSpeak }: { blocks: readonly
   return (
     <span className="card-sheet back zoned">
       <span className="cf-head">{head.map((b, i) => renderBlock(b, i, onSpeak))}</span>
-      <span className="cf-details">{groupExamples(details).map((x, i) => (Array.isArray(x) ? <Example key={`ex${i}`} parts={x} /> : renderBlock(x, i, onSpeak)))}</span>
+      <span className="cf-details">
+        {groupExamples(details).map((x, i) =>
+          Array.isArray(x) ? (
+            <Example key={`ex${i}`} parts={x} />
+          ) : x.kind === 'memo' ? (
+            <span key={i} className="cf-note">
+              <span className="cf-label">참고</span>
+              <span className="b-memo">{withQuotes(x.text)}</span>
+            </span>
+          ) : (
+            renderBlock(x, i, onSpeak)
+          ),
+        )}
+      </span>
     </span>
   );
 }
@@ -54,6 +67,28 @@ function Example({ parts }: { parts: SentenceBlock[] }) {
       ))}
     </span>
   );
+}
+
+/**
+ * 메모 안의 따옴표 친 외국어 표현('Tahan dulu' 잠깐 참아)을 예문처럼 보이게 한다.
+ * 라틴 문자가 든 따옴표만 바꾸고, 한국어 따옴표('그러니까!')는 그대로 둔다.
+ */
+export function withQuotes(text: string): ReactNode {
+  const out: ReactNode[] = [];
+  let at = 0;
+  for (const m of text.matchAll(/'([^'\n]+)'/g)) {
+    if (!/[A-Za-z]/.test(m[1]!)) continue;
+    if (m.index! > at) out.push(text.slice(at, m.index));
+    out.push(
+      <span key={m.index} className="cf-quote" lang="und-Latn">
+        {m[1]}
+      </span>,
+    );
+    at = m.index! + m[0].length;
+  }
+  if (!out.length) return text;
+  if (at < text.length) out.push(text.slice(at));
+  return out;
 }
 
 /** 문장 안의 배우는 말을 강조한다 (대소문자 무시, 낱말 첫머리에서만 맞춘다: kamu ≠ kamus의 중간) */
@@ -133,7 +168,7 @@ function renderBlock(b: Block, i: number, onSpeak?: () => void): ReactNode {
     case 'memo':
       return (
         <span key={i} className="b-memo">
-          {b.text}
+          {withQuotes(b.text)}
         </span>
       );
   }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { CardFace, withHighlight } from './CardFace';
+import { CardFace, withHighlight, withQuotes } from './CardFace';
 
 const html = (n: React.ReactNode) => renderToStaticMarkup(<>{n}</>);
 
@@ -35,5 +35,18 @@ describe('카드 화면', () => {
     const out = renderToStaticMarkup(<CardFace side="back" blocks={[{ kind: 'sentence', text: '你好', lang: 'zh-CN', emphasis: 'main' }]} />);
     expect(out).toContain('class="card-sheet back"');
     expect(out).toContain('b-sentence main zh');
+  });
+
+  it('메모 안의 따옴표 친 외국어 표현은 예문처럼, 한국어 따옴표는 그대로', () => {
+    expect(html(withQuotes("'Tahan dulu' 잠깐 참아."))).toBe('<span class="cf-quote" lang="und-Latn">Tahan dulu</span> 잠깐 참아.');
+    expect(html(withQuotes("'Emang!'은 '그러니까!'."))).toBe('<span class="cf-quote" lang="und-Latn">Emang!</span>은 &#x27;그러니까!&#x27;.');
+    expect(html(withQuotes('따옴표 없음'))).toBe('따옴표 없음');
+  });
+
+  it('뒷면 메모에는 "참고" 이름표가 붙는다', () => {
+    const out = renderToStaticMarkup(
+      <CardFace side="back" blocks={[{ kind: 'word', text: 'tahan', size: 'back', lang: 'id-ID' }, { kind: 'memo', text: "'Tahan dulu' 잠깐 참아." }]} />,
+    );
+    expect(out).toContain('<span class="cf-note"><span class="cf-label">참고</span><span class="b-memo"><span class="cf-quote" lang="und-Latn">Tahan dulu</span> 잠깐 참아.</span></span>');
   });
 });
