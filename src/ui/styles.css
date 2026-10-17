@@ -2381,3 +2381,105 @@ textarea.input-sentence {
     padding-inline: max(48px, calc((100% - 1000px) / 2));
   }
 }
+
+/* ---------- 읽기 탭 (이야기 목록) ---------- */
+.story-make {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px;
+}
+
+.story-make-title {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.story-make-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.story-make-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text3);
+}
+
+/* 한 줄로 옆으로 밀어 보는 선택 칩 */
+.chip-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -20px;
+  padding: 0 20px;
+}
+
+.chip-row::-webkit-scrollbar {
+  display: none;
+}
+
+.chip-btn {
+  flex-shrink: 0;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 19px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text2);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.chip-btn[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: transparent;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.story-error {
+  color: var(--again);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.story-fresh {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 14px 18px;
+  border-radius: 20px;
+  background: var(--accent-soft);
+}
+
+.story-fresh > svg {
+  color: var(--accent);
+}
+
+.story-fresh .job-track {
+  display: block;
+  margin-top: 6px;
+}
+
+.story-fresh-eyebrow {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.story-item {
+  gap: 8px;
+}
+
+.chip-new {
+  color: var(--accent);
+}

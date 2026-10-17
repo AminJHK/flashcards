@@ -102,8 +102,8 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await expect(page.getByRole('dialog', { name: '이야기 음성 설정' }).getByLabel('Sari 목소리', { exact: true })).toHaveValue('Orus');
   await expect(page.getByRole('dialog', { name: '이야기 음성 설정' }).getByRole('slider', { name: '이야기 읽기 속도' })).toHaveValue('0.8');
   await page.getByRole('button', { name: '음성 설정 닫기' }).click();
-  // Reading always reports which speech provider was actually used or why it fell back.
-  await expect(page.locator('.story-playback-status')).toBeVisible();
+  // 잘 읽힐 때는 모델 이름 같은 기술 정보를 띄우지 않는다 (기기 음성으로 바뀌었을 때만 이유를 보여 준다)
+  await expect(page.getByText(/Gemini AI ·/)).toHaveCount(0);
   // Auto-read is enabled on new installs, but can be switched off by the reader.
   await expect(page.getByRole('button', { name: '줄이 나올 때 자동으로 읽기' })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: '줄이 나올 때 자동으로 읽기' }).click();
@@ -183,7 +183,7 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   // 중간에 닫았다 다시 열면 이어서 (AI를 다시 부르지 않는다)
   await page.getByRole('button', { name: '다음 문장 읽기' }).click();
   await page.getByRole('button', { name: '이야기 닫기' }).click();
-  await expect(page.getByText('5/16')).toBeVisible();
+  await expect(page.locator('.story-item .chip', { hasText: '31%' })).toBeVisible(); // 5/16 블록
   await page.locator('.story-row', { hasText: 'Bakso Malam' }).click();
   await expect(page.locator('.story-line')).toHaveCount(3);
   expect(calls.story).toBe(1);
@@ -224,9 +224,14 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   expect(logs).toBe(0);
 
   // 지우기
-  await page.getByRole('button', { name: 'Bakso Malam 지우기' }).click();
+  // 줄마다 버튼을 늘어놓지 않고 ⋯ 메뉴 하나에 모은다
+  await page.getByRole('button', { name: 'Bakso Malam 메뉴' }).click();
+  const menu = page.getByRole('dialog', { name: 'Bakso Malam 메뉴' });
+  await expect(menu.getByRole('button', { name: '처음부터 다시 읽기' })).toBeVisible();
+  await page.screenshot({ path: 'test-results/shots/52-read-menu.png' });
+  await menu.getByRole('button', { name: '지우기' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: '지우기' }).click();
-  await expect(page.getByText('만든 이야기')).toHaveCount(0);
+  await expect(page.getByText(/^만든 이야기/)).toHaveCount(0);
 });
 
 test('읽기: Gemini 키가 없으면 연결하라고 안내한다', async ({ page }) => {

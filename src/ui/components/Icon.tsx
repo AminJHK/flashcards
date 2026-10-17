@@ -46,6 +46,13 @@ const PATHS = {
     </>
   ),
   check: <path d="m5 12 5 5 9-10" />,
+  more: (
+    <>
+      <circle cx="5.5" cy="12" r="1.3" />
+      <circle cx="12" cy="12" r="1.3" />
+      <circle cx="18.5" cy="12" r="1.3" />
+    </>
+  ),
   sun: (
     <>
       <circle cx="12" cy="12" r="4" />

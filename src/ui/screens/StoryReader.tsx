@@ -51,6 +51,8 @@ export function StoryReader({ id }: { id: string }) {
   /** 재생 버튼이 가리키는 줄 (블록 번호). 없으면 지금 보이는 마지막 줄 */
   const [cursor, setCursor] = useState<number>();
   const [audioStatus, setAudioStatus] = useState('');
+  const statusTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(statusTimer.current), []);
   const [audioOpen, setAudioOpen] = useState(false);
   const [rateDraft, setRateDraft] = useState<number>();
   const [voiceDraft, setVoiceDraft] = useState<Record<string, Record<string, string>>>({});
@@ -112,7 +114,10 @@ export function StoryReader({ id }: { id: string }) {
   };
   const speakLine = (line: StoryLine, requestedVoice?: string, cachedOnly = false) => {
     const voice = requestedVoice ?? storyVoice(story, roleOf(story, line), voiceAssignments);
-    setAudioStatus(settings?.gemini?.useTts && settings.gemini.apiKey ? 'Gemini 음성 준비 중…' : '기기 음성 준비 중…');
+    // 평소엔 아무것도 띄우지 않는다: 새 음성을 만드느라 늦을 때만 "준비 중", 기기 음성으로 바뀌었을 때만 그 이유
+    clearTimeout(statusTimer.current);
+    setAudioStatus('');
+    statusTimer.current = setTimeout(() => setAudioStatus('음성 준비 중…'), 1200);
     return play([{ text: line.text, lang: 'id-ID', style: 'story' }], settings, {
       timeoutMs: 30_000,
       voice,
@@ -121,11 +126,9 @@ export function StoryReader({ id }: { id: string }) {
       cachedOnly,
       awaitDevice: cachedOnly,
       onSource: (source: PlayResult) => {
-        if (source.via === 'gemini') {
-          const switched = source.model !== settings?.gemini?.ttsModel;
-          setAudioStatus(`Gemini AI · ${source.model}${switched ? ' (자동 전환)' : ''} · ${voice} · ${source.cached ? '저장된 음성' : '새 음성'} · ${playbackRate.toFixed(2)}배속`);
-        }
-        else if (source.via === 'device') setAudioStatus(source.error ? `기기 음성으로 대체됨 · Gemini 오류: ${source.error}` : '기기 음성으로 읽는 중 · 역할별 목소리는 Gemini에서 지원');
+        clearTimeout(statusTimer.current);
+        if (source.via === 'gemini') setAudioStatus('');
+        else if (source.via === 'device') setAudioStatus(source.error && settings?.gemini?.useTts ? `기기 음성으로 읽어요 · ${source.error}` : '');
         else setAudioStatus(source.error ? `음성 오류: ${source.error}` : '사용할 수 있는 음성이 없어요');
       },
     });
