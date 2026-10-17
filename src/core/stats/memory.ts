@@ -86,3 +86,33 @@ export function memoryByDeck(cards: readonly Card[], scheduler: Scheduler, now: 
   for (const c of cards) byDeck.set(c.deckId, [...(byDeck.get(c.deckId) ?? []), c]);
   return new Map([...byDeck].map(([id, cs]) => [id, memoryBreakdown(cs, scheduler, now)]));
 }
+
+/**
+ * 어려운 단어(leech, docs/DESIGN.md §4.6): 배운 뒤에 이만큼 이상 잊어버린 단어.
+ * 단어의 카드(정방향·역방향)가 잊은 횟수를 합친다. 설계의 8번은 카드 한 장 기준이고,
+ * 배우기 시작한 지 얼마 안 된 덱에서도 보이도록 단어 기준 4번으로 잡았다.
+ */
+export const HARD_LAPSES = 4;
+
+/** 어려운 단어인지. 기억이 탄탄해지면(가장 약한 카드도 21일 이상) 표시가 사라진다. */
+export function isHard(m: Pick<WordMemory, 'level' | 'lapses'> | undefined): boolean {
+  return !!m && m.lapses >= HARD_LAPSES && m.level !== 'solid' && m.level !== 'fresh';
+}
+
+/** 카드들 중 어려운 단어의 noteId → 잊은 횟수. 기억 확률이 필요 없어서 scheduler 없이 센다. */
+export function hardWords(cards: readonly Card[]): Map<string, number> {
+  const byNote = new Map<string, Card[]>();
+  for (const c of cards) {
+    if (c.hidden || c.suspended) continue;
+    byNote.set(c.noteId, [...(byNote.get(c.noteId) ?? []), c]);
+  }
+  const out = new Map<string, number>();
+  for (const [id, cs] of byNote) {
+    const seen = cs.filter((c) => c.phase !== 'new');
+    if (!seen.length) continue;
+    const level = LEVELS[Math.min(...seen.map((c) => LEVELS.indexOf(cardLevel(c))))]!;
+    const lapses = cs.reduce((s, c) => s + c.lapses, 0);
+    if (isHard({ level, lapses })) out.set(id, lapses);
+  }
+  return out;
+}

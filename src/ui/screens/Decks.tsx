@@ -6,7 +6,7 @@ import type { CardType } from '../../core/cardTypes/types';
 import type { AutoplaySide, DeckSettings } from '../../core/model/types';
 import { db } from '../../adapters/storage/db';
 import { loadPinyin } from '../../adapters/pinyin/pinyin';
-import { addPackNotes, applyPackChanges, createDeck, deleteDeck, installPack, moveConnectors, updateDeck } from '../../adapters/storage/repo';
+import { addPackNotes, applyPackChanges, createDeck, deleteDeck, installPack, moveConnectors, updateDeck, updateNote } from '../../adapters/storage/repo';
 import { CONNECTOR_DECK_NAME, isConnector } from '../../core/decks/connectors';
 import { packAdditions, packChanges, packMissing } from '../../core/packs/update';
 import { PARTICLE_WORDS } from '../../core/packs/indonesianParticles';
@@ -15,8 +15,8 @@ import type { Pack } from '../../core/packs/types';
 import { Row, Segmented, Stepper, Switch } from '../components/Controls';
 import { Icon } from '../components/Icon';
 import { MemoryMini, MemoryPanel, useMemoryByDeck, WordMeter } from '../components/MemoryBar';
-import { EMPTY_MEMORY, LEVELS, wordMemory, type WordMemory } from '../../core/stats/memory';
-import type { Card } from '../../core/model/types';
+import { EMPTY_MEMORY, HARD_LAPSES, hardWords, isHard, LEVELS, wordMemory, type WordMemory } from '../../core/stats/memory';
+import type { Card, Note } from '../../core/model/types';
 import { useDecks, useNow, useScheduler, useSettings } from '../hooks';
 import { speak as deviceSpeak, voicesFor, voicesReady } from '../../adapters/tts/webSpeech';
 import { LANGS, langName, noVoiceMessage } from '../langs';
@@ -309,6 +309,8 @@ export function DeckDetail({ id }: { id: string }) {
     return PACKS.map((pack) => ({ pack, notes: packAdditions(pack, notes, all) })).filter((x) => x.notes.length > 0);
   }, [id]);
   // 인도네시아어 단어 중 연결어·표현(아무튼, ~하도록, ~인 것 같다 …)이 이 덱에 몇 개 있는지
+  // 여러 번 잊어버린 단어 (docs/DESIGN.md §4.6)
+  const hardCount = useLiveQuery(async () => hardWords(await db.cards.where('deckId').equals(id).toArray()).size, [id]);
   const connectorCount = useLiveQuery(async () => (await db.notes.where('deckId').equals(id).toArray()).filter(isConnector).length, [id]);
   // 지운 단어: 이 덱의 준비된 덱 원본에는 있는데 지금 어느 덱에도 없는 단어 (중복·어조 말 덱이 맡은 말은 뺀다)
   const missing = useLiveQuery(async () => {
@@ -378,6 +380,16 @@ export function DeckDetail({ id }: { id: string }) {
           단어 {noteCount}개 보기
         </button>
       </div>
+
+      {hardCount !== undefined && noteCount > 0 && (
+        <button type="button" className="list-row with-meter" onClick={() => go(`decks/${deck.id}/hard`)}>
+          <span className="row-text">
+            <span className="row-title">어려운 단어 {hardCount}개</span>
+            <span className="faint small">{hardCount ? '여러 번 틀린 단어예요. 기억 고리를 달아 보세요' : `${HARD_LAPSES}번 이상 틀린 단어가 여기 모여요`}</span>
+          </span>
+          <Icon name="chevronRight" size={20} />
+        </button>
+      )}
 
       {!!connectorCount && deck.name !== CONNECTOR_DECK_NAME && (
         <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 20 }}>
@@ -611,7 +623,8 @@ function LangSelect({ value, onChange, label }: { value: string; onChange: (v: s
   );
 }
 
-export function NoteList({ deckId }: { deckId: string }) {
+/** 단어 목록. hard면 어려운 단어(여러 번 틀린 단어)만 많이 틀린 순으로 보여주고, 그 자리에서 참고 메모를 쓸 수 있다. */
+export function NoteList({ deckId, hard = false }: { deckId: string; hard?: boolean }) {
   const decks = useDecks();
   const notes = useLiveQuery(() => db.notes.where('deckId').equals(deckId).toArray(), [deckId]);
   const cards = useLiveQuery(() => db.cards.where('deckId').equals(deckId).toArray(), [deckId]);
@@ -633,8 +646,12 @@ export function NoteList({ deckId }: { deckId: string }) {
     // 약한 순: 본 단어 중 단계가 낮고, 기억할 확률이 낮고, 다음 복습이 가까운 것부터. 새 카드는 맨 뒤
     const strength = (m: WordMemory | undefined) =>
       !m || m.recall === undefined ? Infinity : LEVELS.indexOf(m.level) * 10 + Math.round(m.recall * 100) / 100 + Math.min(m.due ?? 0, now + 3650 * 86_400_000) / 1e15;
-    return notes
-      .filter((n) => !qy || Object.values(n.fields).some((v) => v.toLowerCase().includes(qy)))
+    const found = notes.filter((n) => !qy || Object.values(n.fields).some((v) => v.toLowerCase().includes(qy)));
+    if (hard) {
+      // 많이 틀린 순, 같으면 기억이 약한 순
+      return found.filter((n) => isHard(memory.get(n.id))).sort((a, b) => memory.get(b.id)!.lapses - memory.get(a.id)!.lapses || strength(memory.get(a.id)) - strength(memory.get(b.id)));
+    }
+    return found
       .sort((a, b) => {
         if (order === 'recent') return b.createdAt - a.createdAt;
         const sa = strength(memory.get(a.id));
@@ -644,7 +661,7 @@ export function NoteList({ deckId }: { deckId: string }) {
         if (sb === Infinity) return -1;
         return order === 'weak' ? sa - sb : sb - sa;
       });
-  }, [notes, query, order, memory, now]);
+  }, [notes, query, order, memory, now, hard]);
 
   if (!decks || !notes || !cards) return <div className="screen" />;
 
@@ -655,35 +672,106 @@ export function NoteList({ deckId }: { deckId: string }) {
         {deck?.name ?? '덱'}
       </button>
       <div className="screen-head">
-        <h1 className="title">단어 {notes.length}개</h1>
+        <h1 className="title">{hard ? `어려운 단어 ${shown.length}개` : `단어 ${notes.length}개`}</h1>
       </div>
-      <input className="input search" type="search" placeholder="찾기" aria-label="단어 찾기" value={query} onChange={(e) => setQuery(e.target.value)} />
-      <Segmented
-        label="정렬"
-        options={[
-          ['recent', '최근 추가'],
-          ['weak', '기억 약한 순'],
-          ['strong', '기억 강한 순'],
-        ]}
-        value={order}
-        onChange={setOrder}
-      />
+      {hard ? (
+        <div className="panel hard-tip">
+          <span>
+            {HARD_LAPSES}번 이상 틀린 단어예요. 같은 카드를 더 보는 것보다 <b>떠올릴 고리</b>를 하나 달아 두면 훨씬 잘 외워져요.
+          </span>
+          <span className="muted small">
+            · 소리가 비슷한 한국어로 장면 만들기 (tahan → "참았다")
+            <br />· 헷갈리는 단어 적어 두기 ("sedang이랑 헷갈림")
+            <br />· 내가 실제로 쓸 문장 하나
+          </span>
+          <span className="faint small">단어를 누르고 참고에 적으면 복습 정답 화면 아래에 보여요. 기억이 탄탄해지면 이 목록에서 저절로 빠져요.</span>
+        </div>
+      ) : (
+        <>
+          <input className="input search" type="search" placeholder="찾기" aria-label="단어 찾기" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <Segmented
+            label="정렬"
+            options={[
+              ['recent', '최근 추가'],
+              ['weak', '기억 약한 순'],
+              ['strong', '기억 강한 순'],
+            ]}
+            value={order}
+            onChange={setOrder}
+          />
+        </>
+      )}
       <div>
         {shown.map((n) => {
+          if (hard) return <HardRow key={n.id} note={n} lapses={memory.get(n.id)!.lapses} deckId={deckId} />;
           const t = getCardType(n.typeId);
           const { title, sub } = t.summary(n.fields);
           return (
             <button key={n.id} type="button" className="list-row with-meter" onClick={() => go(`notes/${n.id}/edit/decks/${deckId}/notes`)}>
               <span className="row-text">
-                <span className={`list-title${t.id === 'zh-word' ? ' zh' : ''}`}>{title}</span>
+                <span className="list-title-line">
+                  <span className={`list-title${t.id === 'zh-word' ? ' zh' : ''}`}>{title}</span>
+                  {isHard(memory.get(n.id)) && <span className="chip chip-hard">어려움</span>}
+                </span>
                 <span className="faint small">{sub}</span>
               </span>
               {memory.get(n.id) && <WordMeter m={memory.get(n.id)!} now={now} />}
             </button>
           );
         })}
-        {shown.length === 0 && <div className="faint" style={{ textAlign: 'center', padding: 24 }}>{notes.length ? '찾는 단어가 없어요' : '아직 단어가 없어요'}</div>}
+        {shown.length === 0 && <div className="faint" style={{ textAlign: 'center', padding: 24 }}>{hard ? '아직 어려운 단어가 없어요' : notes.length ? '찾는 단어가 없어요' : '아직 단어가 없어요'}</div>}
       </div>
+    </div>
+  );
+}
+
+/** 어려운 단어 한 줄. 누르면 펼쳐져서 참고(메모) 칸을 그 자리에서 고친다. */
+function HardRow({ note, lapses, deckId }: { note: Note; lapses: number; deckId: string }) {
+  const toast = useToast();
+  const t = getCardType(note.typeId);
+  const { title, sub } = t.summary(note.fields);
+  const memoKey = t.fields.find((f) => f.input === 'memo')?.key;
+  const saved = memoKey ? (note.fields[memoKey] ?? '') : '';
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState<string>();
+  const value = text ?? saved;
+
+  const save = async () => {
+    if (!memoKey) return;
+    await updateNote(note.id, { fields: { ...note.fields, [memoKey]: value } });
+    setText(undefined);
+    toast('참고를 저장했어요 · 다음 복습 때 보여요');
+  };
+
+  return (
+    <div className="list-row hard-row">
+      <button type="button" className="hard-head" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <span className="row-text">
+          <span className={`list-title${t.id === 'zh-word' ? ' zh' : ''}`}>{title}</span>
+          <span className="faint small">{sub}</span>
+        </span>
+        <span className="chip chip-hard">{lapses}번 틀림</span>
+      </button>
+      {open && memoKey && (
+        <div className="hard-edit">
+          <textarea
+            className="input"
+            rows={3}
+            aria-label={`${title} 참고`}
+            placeholder="떠올릴 고리를 적어 보세요 (소리가 비슷한 말, 헷갈리는 단어, 나만의 문장)"
+            value={value}
+            onChange={(e) => setText(e.target.value)}
+          />
+          <div className="hard-actions">
+            <button type="button" className="link-btn" onClick={() => go(`notes/${note.id}/edit/decks/${deckId}/hard`)}>
+              단어 전체 고치기
+            </button>
+            <button type="button" className="btn btn-primary hard-save" disabled={value.trim() === saved.trim()} onClick={() => void save()}>
+              저장
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

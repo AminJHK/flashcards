@@ -4,7 +4,7 @@ import type { Card } from '../model/types';
 import { createFsrs6 } from '../scheduler/fsrs6';
 import { applyReview } from '../scheduler/queue';
 import { DAY, MIN, T0, deck } from '../testUtil';
-import { memoryBreakdown, memoryByDeck, wordMemory } from './memory';
+import { HARD_LAPSES, hardWords, isHard, memoryBreakdown, memoryByDeck, wordMemory } from './memory';
 
 const sched = createFsrs6({ desiredRetention: 0.9 });
 const d = deck('d');
@@ -64,5 +64,39 @@ describe('기억 상태', () => {
     const r = memoryByDeck([word(1), word(2), word(3, e)], sched, T0);
     expect(r.get('d')!.total).toBe(2);
     expect(r.get('e')!.total).toBe(1);
+  });
+});
+
+describe('어려운 단어', () => {
+  /** 배운 뒤 n번 잊었다 (복습 단계에서 "다시") */
+  function forgot(c: Card, n: number): Card {
+    let { card, at } = reviewed(c, 2);
+    for (let i = 0; i < n; i++) {
+      card = applyReview(card, 1, at, sched);
+      at += 10 * MIN;
+      card = applyReview(card, 3, at, sched);
+      at = Math.max(at + MIN, card.due);
+    }
+    return card;
+  }
+
+  it('잊은 횟수가 기준 이상이면 어려운 단어, 정방향·역방향을 합쳐 센다', () => {
+    const hard = forgot(word(1), HARD_LAPSES);
+    expect(hard.lapses).toBe(HARD_LAPSES);
+    const easy = forgot(word(2), HARD_LAPSES - 1);
+    const half = forgot(word(3), 2);
+    const halfReverse = { ...forgot(word(4), 2), id: 'rev', noteId: half.noteId };
+    const m = hardWords([hard, easy, half, halfReverse]);
+    expect([...m.keys()].sort()).toEqual([hard.noteId, half.noteId].sort());
+    expect(m.get(half.noteId)).toBe(4);
+    expect(isHard(wordMemory([hard], sched, T0))).toBe(true);
+  });
+
+  it('기억이 탄탄해지거나 숨긴 카드는 어려운 단어가 아니다', () => {
+    expect(isHard({ level: 'solid', lapses: 9 })).toBe(false);
+    expect(isHard({ level: 'growing', lapses: HARD_LAPSES })).toBe(true);
+    expect(isHard(undefined)).toBe(false);
+    const hard = forgot(word(1), HARD_LAPSES);
+    expect(hardWords([{ ...hard, hidden: true }]).size).toBe(0);
   });
 });

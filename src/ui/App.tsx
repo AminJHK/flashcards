@@ -120,6 +120,7 @@ export function App() {
   else if (a === 'add') screen = <NoteEditor mode="add" />;
   else if (a === 'decks' && b === 'new') screen = <DeckNew />;
   else if (a === 'decks' && b && c === 'notes') screen = <NoteList deckId={b} />;
+  else if (a === 'decks' && b && c === 'hard') screen = <NoteList key="hard" deckId={b} hard />;
   else if (a === 'decks' && b) screen = <DeckDetail key={b} id={b} />;
   else if (a === 'decks') screen = <DeckList />;
   else if (a === 'settings') screen = <Settings section={b} />;
