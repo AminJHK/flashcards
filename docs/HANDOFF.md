@@ -155,3 +155,4 @@ npm run dev        # 개발 서버
 - id-spoken / id-particle 뒷면 순서: 단어 → 뜻 → (꼬리표) → 예문 → 번역 → 메모.
 - `CardFace`는 `<span>`만 쓴다(카드 전체가 `<button>`이라 div를 넣으면 안 됨). 테스트: `src/ui/components/CardFace.test.tsx` (vitest에 *.test.tsx 포함).
 - 메모는 뒷면 아래 칸에서 "참고" 이름표 + 설명. 메모 안의 따옴표 친 라틴 문자 표현('Tahan dulu')은 예문 글꼴로 진하게(`withQuotes`), 한국어 따옴표는 그대로. 크기: 앞면 단어 48, 뒷면 단어 40·뜻 26, 예문 19·번역 16.
+- 빈 공간 균형: 카드(`.card-sheet`)는 내용 크기만큼만(최소 높이 min(100%, 440px), 최대 100% 후 스크롤) 커지고, `.card-area`의 ::before/::after 여백을 2:3으로 나눠 시각적 중심(조금 위)에 놓는다. 카드 안에서도 같은 2:3(앞면), 1:2(뒷면).
