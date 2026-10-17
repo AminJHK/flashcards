@@ -77,7 +77,7 @@ export function Home() {
                     (r) => toast(r?.hadRemote ? `불러왔어요 · 단어 ${r.notes}개` : 'Drive에 불러올 데이터가 없어요'),
                     (e) => toast(driveErrorMessage(e)),
                   )
-                : go('settings')
+                : go('settings/backup')
             }
           >
             Google로 불러오기

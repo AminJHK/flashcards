@@ -32,7 +32,7 @@ export function SyncBadge({ inline = false }: { inline?: boolean }) {
   if (!st) {
     const label = 'Drive와 아직 안 이어짐 · 누르면 설정으로';
     return (
-      <button type="button" className={`sync-icon sync-off${inline ? ' sync-inline' : ''}`} onClick={() => go('settings')} aria-label={label} title={label}>
+      <button type="button" className={`sync-icon sync-off${inline ? ' sync-inline' : ''}`} onClick={() => go('settings/backup')} aria-label={label} title={label}>
         <Icon name="cloud" size={inline ? 20 : 18} strokeWidth={2} />
         {inline && <span>{label}</span>}
       </button>

@@ -84,7 +84,7 @@ export function Stories() {
             <span className="muted small" style={{ lineHeight: 1.6 }}>
               이야기는 Gemini가 만들어요. 설정에서 무료 Gemini 키를 먼저 연결해 주세요.
             </span>
-            <button type="button" className="btn btn-plain" style={{ height: 48 }} onClick={() => go('settings')}>
+            <button type="button" className="btn btn-plain" style={{ height: 48 }} onClick={() => go('settings/voice')}>
               설정에서 연결하기
             </button>
           </>

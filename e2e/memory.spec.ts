@@ -26,7 +26,7 @@ test('덱별 기억 상태: 덱 목록·덱 화면·복습 기록에 막대와 �
 
   await page.goto('/#/stats');
   await expect(page.getByText('덱별 기억 상태')).toBeVisible();
-  await page.goto('/#/settings');
+  await page.goto('/#/settings/display');
   await page.getByRole('group', { name: '테마' }).getByRole('button', { name: '다크' }).click();
   await page.goto('/#/stats');
   await page.locator('.mem-panel').scrollIntoViewIfNeeded();

@@ -51,7 +51,7 @@ test('복습 기록 히트맵: 홈 카드와 전체 보기', async ({ page }) =>
   await page.screenshot({ path: 'test-results/shots/16-heatmap-stats.png' });
 
   // 다크 테마에서도
-  await page.goto('/#/settings');
+  await page.goto('/#/settings/display');
   await page.getByRole('group', { name: '테마' }).getByRole('button', { name: '다크' }).click();
   await page.goto('/#/');
   await page.screenshot({ path: 'test-results/shots/17-heatmap-dark.png' });

@@ -29,7 +29,7 @@ function Setup() {
   const connect = async () => {
     const id = clientId.trim();
     if (!id) {
-      toast('먼저 클라이언트 ID를 칸에 붙여넣어 주세요. 처음이라면 위의 1~5단계로 만들어요');
+      toast('먼저 클라이언트 ID를 칸에 붙여넣어 주세요. 처음이라면 「처음 연결하는 방법」을 펼쳐 보세요');
       return;
     }
     if (!/\.apps\.googleusercontent\.com$/.test(id)) {
@@ -49,11 +49,11 @@ function Setup() {
 
   return (
     <div className="group">
-      <Row col title="Google Drive에 백업하기 (무료)" desc="내 Google Drive의 「플래시카드 백업」 폴더에 저장돼요. 폰을 바꾸거나 브라우저 데이터가 지워져도 되살릴 수 있어요.">
-        <span className="row-desc">
-          <strong>다른 기기(폰·PC)에서 이미 연결했다면</strong> 아래 1~4단계는 건너뛰세요. 그 기기의 설정 › Google Drive에서 클라이언트 ID를 복사해 맨 아래 칸에 붙여넣고 로그인하면, 그 기기의 덱과 기록을 불러와요.
-        </span>
-        <span className="row-desc">처음이라면 한 번만 Google에 이 앱을 등록해야 해요 (약 5분, PC에서 하면 편해요).</span>
+      <Row col title="Google Drive 연결 (무료)" desc="내 Drive에 백업하고, 폰과 PC에서 같은 덱과 기록을 써요.">
+        <span className="row-desc">다른 기기에서 이미 연결했다면, 그 기기의 설정 › 백업·동기화에서 클라이언트 ID를 복사해 아래에 붙여넣으세요.</span>
+        <details className="disclosure">
+          <summary>처음 연결하는 방법 (한 번만, 약 5분 · PC 추천)</summary>
+          <div>
         <ol style={{ margin: 0, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 14, lineHeight: 1.55 }} className="muted">
           <li>
             <a href={CONSOLE} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 600 }}>
@@ -75,6 +75,8 @@ function Setup() {
             만들어진 <strong>클라이언트 ID</strong>(….apps.googleusercontent.com)를 복사해서 아래에 붙여넣고 <strong>Google로 로그인</strong>을 눌러요. 「확인되지 않은 앱」 화면이 나오면 <strong>계속</strong>을 누르면 돼요 (내가 만든 앱이라서 나오는 안내예요).
           </li>
         </ol>
+          </div>
+        </details>
         <input
           className="input"
           aria-label="Google 클라이언트 ID"

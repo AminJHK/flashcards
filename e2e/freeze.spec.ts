@@ -6,7 +6,7 @@ test('Google 서버가 응답하지 않아도 연결 버튼이 멈춰 있지 않
   test.setTimeout(45_000);
   // 요청을 받기만 하고 영원히 답하지 않는다
   await page.route('https://generativelanguage.googleapis.com/**', () => new Promise(() => {}));
-  await page.goto('/#/settings');
+  await page.goto('/#/settings/voice');
   await page.getByLabel('Gemini API 키').fill('FAKE-KEY');
   await page.getByRole('button', { name: '연결' }).click();
   await expect(page.getByRole('button', { name: '키 확인 중…' })).toBeVisible();

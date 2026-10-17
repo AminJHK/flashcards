@@ -122,7 +122,7 @@ export function App() {
   else if (a === 'decks' && b && c === 'notes') screen = <NoteList deckId={b} />;
   else if (a === 'decks' && b) screen = <DeckDetail key={b} id={b} />;
   else if (a === 'decks') screen = <DeckList />;
-  else if (a === 'settings') screen = <Settings />;
+  else if (a === 'settings') screen = <Settings section={b} />;
   else if (a === 'stats') screen = <Stats />;
   else screen = <Home />;
 

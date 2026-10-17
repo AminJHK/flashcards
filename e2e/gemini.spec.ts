@@ -38,7 +38,7 @@ test('Gemini 키를 연결하면 단어 음성을 만들어 저장하고, 말한
   const calls = { tts: [] as string[], stt: 0 };
   await mockGemini(page, calls);
 
-  await page.goto('/#/settings');
+  await page.goto('/#/settings/voice');
   await page.getByLabel('Gemini API 키').fill('FAKE-KEY');
   await page.getByRole('button', { name: '연결' }).click();
   await expect(page.getByText(/연결했어요|연결 완료/)).toBeVisible();
@@ -86,7 +86,7 @@ test('Gemini가 실패하면 기기 음성으로 대신 읽고 이유를 알려�
         ? route.fulfill({ json: { steps: [{ type: 'model_output', content: [{ type: 'audio', data: silence, mime_type: 'audio/L16;codec=pcm;rate=24000' }] }] } })
         : route.fulfill({ status: 429, json: { error: { message: 'quota' } } }),
   );
-  await page.goto('/#/settings');
+  await page.goto('/#/settings/voice');
   await page.getByLabel('Gemini API 키').fill('FAKE-KEY');
   await page.getByRole('button', { name: '연결' }).click();
   await expect(page.getByText(/연결됨 · gemini-3.8-flash-tts/)).toBeVisible();
@@ -103,7 +103,7 @@ test('Gemini가 실패하면 기기 음성으로 대신 읽고 이유를 알려�
 test('기본값: 단어 카드는 Gemini를 부르지 않고 기기 음성, 이야기 읽기용 설정은 그대로', async ({ page }) => {
   const calls = { tts: [] as string[], stt: 0 };
   await mockGemini(page, calls);
-  await page.goto('/#/settings');
+  await page.goto('/#/settings/voice');
   await page.getByLabel('Gemini API 키').fill('FAKE-KEY');
   await page.getByRole('button', { name: '연결' }).click();
   await expect(page.getByText(/연결됨 · gemini-3.8-flash-tts/)).toBeVisible();

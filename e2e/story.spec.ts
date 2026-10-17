@@ -54,7 +54,7 @@ async function mockGemini(page: Page, calls: { story: number; prompts: string[] 
 test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 질문에 답하고, 단어를 눌러 뜻을 보고 덱에 넣는다', async ({ page }) => {
   const calls = { story: 0, prompts: [] as string[] };
   await mockGemini(page, calls);
-  await page.goto('/#/settings');
+  await page.goto('/#/settings/voice');
   await page.getByLabel('Gemini API 키').fill('FAKE-KEY');
   await page.getByRole('button', { name: '연결' }).click();
   await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();
@@ -238,7 +238,7 @@ test('읽기: Gemini 키가 없으면 연결하라고 안내한다', async ({ pa
 test('읽기: 이야기를 만드는 동안 다른 화면(복습)으로 가도 멈추지 않고, 끝나면 알림만 뜬다', async ({ page }) => {
   const calls = { story: 0, prompts: [] as string[] };
   await mockGemini(page, calls, 2500); // 2.5초 걸리는 Gemini
-  await page.goto('/#/settings');
+  await page.goto('/#/settings/voice');
   await page.getByLabel('Gemini API 키').fill('FAKE-KEY');
   await page.getByRole('button', { name: '연결' }).click();
   await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();

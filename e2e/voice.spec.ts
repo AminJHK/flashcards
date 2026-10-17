@@ -89,7 +89,7 @@ test('Gemini: 이 기기에서 WAV 변환이 안 되면 녹음 원본 형식으�
     mimes.push(route.request().postDataJSON().contents[0].parts[0].inlineData.mimeType);
     return route.fulfill({ json: { candidates: [{ content: { parts: [{ text: '你好，我是护士' }] } }] } });
   });
-  await page.goto('/#/settings');
+  await page.goto('/#/settings/voice');
   await page.getByLabel('Gemini API 키').fill('FAKE-KEY');
   await page.getByRole('button', { name: '연결' }).click();
   await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();

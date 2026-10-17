@@ -63,7 +63,7 @@ test('Google로 로그인해서 Drive에 백업하고, 데이터를 지운 뒤 D
   await page.getByLabel('뜻').fill('친구');
   await page.getByRole('button', { name: '저장하고 다음 단어' }).click();
 
-  await page.goto('/#/settings');
+  await page.goto('/#/settings/backup');
   await page.getByLabel('Google 클라이언트 ID').fill('123-abc.apps.googleusercontent.com');
   await page.getByRole('button', { name: 'Google로 로그인' }).click();
   await expect(page.getByText(/연결했어요 · nurse@example.com/)).toBeVisible();
@@ -80,7 +80,7 @@ test('Google로 로그인해서 Drive에 백업하고, 데이터를 지운 뒤 D
   await page.evaluate(() => new Promise((r) => { const q = indexedDB.deleteDatabase('flashcards'); q.onsuccess = q.onerror = q.onblocked = () => r(null); }));
   await page.reload();
   // 연결도 지워졌으니 다시 로그인 → 동기화 파일에서 데이터를 바로 불러온다
-  await page.goto('/#/settings');
+  await page.goto('/#/settings/backup');
   await page.getByLabel('Google 클라이언트 ID').fill('123-abc.apps.googleusercontent.com');
   await page.getByRole('button', { name: 'Google로 로그인' }).click();
   await expect(page.getByText(/다른 기기의 데이터를 불러왔어요 \(단어 1개\)/)).toBeVisible();
@@ -106,7 +106,7 @@ test('폰에서 공부한 덱과 기록을 PC에서 Google로 로그인해 그�
   await phone.getByRole('button', { name: /알았음/ }).click();
   await expect(phone.getByText('kamu', { exact: true })).toBeVisible();
   await phone.getByRole('button', { name: '복습 닫기' }).click();
-  await phone.goto('/#/settings');
+  await phone.goto('/#/settings/backup');
   await phone.getByLabel('Google 클라이언트 ID').fill('123-abc.apps.googleusercontent.com');
   await phone.getByRole('button', { name: 'Google로 로그인' }).click();
   await expect(phone.getByText(/연결했어요 · nurse@example.com/)).toBeVisible();
@@ -120,7 +120,7 @@ test('폰에서 공부한 덱과 기록을 PC에서 Google로 로그인해 그�
   await phone.getByRole('button', { name: '이 단어 지우기' }).click();
   await phone.getByRole('alertdialog').getByRole('button', { name: '지우기' }).click();
   await expect(phone.getByRole('heading', { name: '단어 999개' })).toBeVisible();
-  await phone.goto('/#/settings');
+  await phone.goto('/#/settings/backup');
   await phone.getByRole('button', { name: '지금 동기화' }).click();
   await expect(phone.getByText(/동기화했어요 · 단어 999개/)).toBeVisible();
 
@@ -143,15 +143,15 @@ test('폰에서 공부한 덱과 기록을 PC에서 Google로 로그인해 그�
   await pc.getByRole('button', { name: '정답 보기', exact: true }).last().click();
   await pc.getByRole('button', { name: /알았음/ }).click();
   await pc.getByRole('button', { name: '복습 닫기' }).click();
-  await pc.goto('/#/settings');
+  await pc.goto('/#/settings/backup');
   await pc.getByRole('button', { name: '지금 동기화' }).click();
   await expect(pc.getByText(/동기화했어요/)).toBeVisible();
 
   // 폰을 다시 열면: 로그인 화면도, 마음대로 뜨는 로그인 창도 없다. 눌러서 동기화하면 PC 기록까지 합쳐진다
   await phone.reload();
   await expect(phone.getByRole('button', { name: 'Google로 로그인하고 시작' })).toHaveCount(0);
-  await expect(phone.getByRole('heading', { name: '설정' })).toBeVisible();
-  await phone.getByRole('heading', { name: '설정' }).click();
+  await expect(phone.getByRole('heading', { name: '백업·동기화' })).toBeVisible();
+  await phone.getByRole('heading', { name: '백업·동기화' }).click();
   await phone.waitForTimeout(800);
   await expect(phone.getByText('다른 기기와 맞췄어요')).toHaveCount(0); // 자동으로 동기화하지 않는다
   await phone.getByRole('button', { name: '지금 동기화' }).click();
@@ -162,7 +162,7 @@ test('폰에서 공부한 덱과 기록을 PC에서 Google로 로그인해 그�
 
 test('설정에서 「시작 화면에서 로그인」을 켜면 앱을 열 때 로그인 화면이 먼저 나온다', async ({ page }) => {
   await fakeGoogle(page);
-  await page.goto('/#/settings');
+  await page.goto('/#/settings/backup');
   await page.getByLabel('Google 클라이언트 ID').fill('123-abc.apps.googleusercontent.com');
   await page.getByRole('button', { name: 'Google로 로그인' }).click();
   await expect(page.getByText(/연결했어요 · nurse@example.com/)).toBeVisible();
@@ -172,7 +172,7 @@ test('설정에서 「시작 화면에서 로그인」을 켜면 앱을 열 때 
   await expect(page.getByRole('button', { name: 'Google로 로그인하고 시작' })).toBeVisible();
   await page.screenshot({ path: 'test-results/shots/23-start-sync.png' });
   await page.getByRole('button', { name: 'Google로 로그인하고 시작' }).click();
-  await expect(page.getByRole('heading', { name: '설정' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '백업·동기화' })).toBeVisible();
 });
 
 
@@ -183,7 +183,7 @@ test('동기화 상태: 왼쪽 위 구름 아이콘에 올리지 않은 기록 �
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
   await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
-  await page.goto('/#/settings');
+  await page.goto('/#/settings/backup');
   await page.getByLabel('Google 클라이언트 ID').fill('123-abc.apps.googleusercontent.com');
   await page.getByRole('button', { name: 'Google로 로그인' }).click();
   await expect(page.getByText(/연결했어요 · nurse@example.com/)).toBeVisible();
@@ -217,15 +217,15 @@ test('동기화 상태: 왼쪽 위 구름 아이콘에 올리지 않은 기록 �
 
 test('「처음 누를 때 자동 로그인」을 켜면 앱을 연 뒤 처음 누를 때 알아서 동기화한다', async ({ page }) => {
   await fakeGoogle(page);
-  await page.goto('/#/settings');
+  await page.goto('/#/settings/backup');
   await page.getByLabel('Google 클라이언트 ID').fill('123-abc.apps.googleusercontent.com');
   await page.getByRole('button', { name: 'Google로 로그인' }).click();
   await expect(page.getByText(/연결했어요 · nurse@example.com/)).toBeVisible();
   await page.getByRole('switch', { name: '처음 누를 때 자동 로그인' }).click();
   await expect(page.getByRole('switch', { name: '처음 누를 때 자동 로그인' })).toHaveAttribute('aria-checked', 'true');
   await page.reload();
-  await expect(page.getByRole('heading', { name: '설정' })).toBeVisible();
-  await page.getByRole('heading', { name: '설정' }).click();
+  await expect(page.getByRole('heading', { name: '백업·동기화' })).toBeVisible();
+  await page.getByRole('heading', { name: '백업·동기화' }).click();
   await expect(page.getByText(/맞췄어요|Drive에 올렸어요/)).toBeVisible();
 });
 

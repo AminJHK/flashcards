@@ -89,11 +89,12 @@ test('작문 카드: 직접 쓴 답을 정답과 비교한다', async ({ page })
 });
 
 test('설정: 다크 테마와 4버튼이 바로 반영된다', async ({ page }) => {
-  await page.goto('/#/settings');
+  await page.goto('/#/settings/display');
   await page.getByRole('group', { name: '테마' }).getByRole('button', { name: '다크' }).click();
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
   await page.getByRole('button', { name: '청록' }).click();
   await shot(page, '08-settings-dark');
+  await page.goto('/#/settings/study');
   await page.getByRole('group', { name: '답 버튼' }).getByRole('button', { name: '4개' }).click();
   // 기본 덱 + 단어
   await page.goto('/#/decks/new');
@@ -117,7 +118,7 @@ test('백업 내보내기 → 복원', async ({ page }) => {
   await page.getByLabel('한자').fill('朋友');
   await page.getByLabel('뜻').fill('친구');
   await page.getByRole('button', { name: '저장하고 다음 단어' }).click();
-  await page.goto('/#/settings');
+  await page.goto('/#/settings/backup');
   const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: '지금 백업' }).click()]);
   const path = await download.path();
   expect(download.suggestedFilename()).toMatch(/^flashcards-backup-\d{8}-\d{4}\.json$/);
@@ -125,7 +126,7 @@ test('백업 내보내기 → 복원', async ({ page }) => {
   // 데이터를 지우고 복원
   await page.evaluate(() => new Promise((r) => { const q = indexedDB.deleteDatabase('flashcards'); q.onsuccess = q.onerror = q.onblocked = () => r(null); }));
   await page.reload();
-  await page.goto('/#/settings');
+  await page.goto('/#/settings/backup');
   const chooser = page.waitForEvent('filechooser');
   await page.getByRole('button', { name: '파일 고르기' }).click();
   await (await chooser).setFiles(path!);
@@ -224,7 +225,7 @@ test('새 버전이 있어도 복습 중에는 아무 알림이 없고, 설정�
   await expect(page.getByText(/새 버전/)).toHaveCount(0);
   await expect(page.getByText('aku', { exact: true })).toBeVisible();
   // 설정에서 알려 주고, 눌러야 업데이트한다
-  await page.goto('/#/settings');
+  await page.goto('/#/settings/about');
   await expect(page.getByText('새 버전 zzz9999이 있어요')).toBeVisible();
   const reloaded = page.waitForEvent('framenavigated', (f) => f === page.mainFrame() && f.url().includes('v=zzz9999'));
   await page.getByRole('button', { name: '지금 업데이트' }).click();
