@@ -143,3 +143,8 @@ npm run dev        # 개발 서버
 - `packAdditions(pack, notes, everywhere)`: 다른 덱으로 옮긴 단어도 "이미 받은 단어"로 세어서, 옮긴 연결어가 새 단어로 다시 들어오지 않는다.
 - **읽기 연동**: `buildLexicon`이 id-particle 노트를 말(word)별로 묶어 `kind:'particle'` 항목 하나로 넣는다(안 본 말=deckNew, 본 예문 2개 이상이 모두 단단하면 known). 같은 말이 구어체 덱에도 있으면 같은 상태일 때 어조 말 쪽을 쓰고, 단어 목록에서는 뺀다. `planStory`: `particles`(본 말, 기억 약한 순) + `newParticle`(덱의 다음 안 본 말 하나) → 프롬프트에 "PARTICLE WORDS / NEW PARTICLE, 대화에서만 1~3개, 새 말은 2번 이상". 비율 계산에서 어조 말은 안 배운 말이어도 아는 말로 센다. 이야기에서 어조 말을 누르면 말풍선에 느낌.
 - 테스트: `e2e/particles.spec.ts`, `core/stories/stories.test.ts`(어조 말), `core/decks/connectors.test.ts`, `repo.test.ts`(연결어 옮기기).
+
+## 카드 글자 위계
+- 폰 기준: 앞면 단어 42 > 앞면 뜻 32 > 앞면 예문 24 / 뒷면 단어 32 > 뜻 22 > 예문 상자(본문 18 · 번역 15) > 메모 14. PC는 비례해서 크게. 같은 쪽에 비슷한 크기의 굵은 줄이 둘 이상 오지 않게 한다.
+- `CardFace`에 `side`가 생겼다: 뒷면에서는 예문(main)과 번역(sub)을 `.b-example` 상자 하나로 묶어 왼쪽 정렬. 메모는 상자 없이 작은 글씨. 앞면 예문(예문 먼저 카드)은 그대로 크게.
+- 라틴 문자 문장은 모두 `--font-latin`(Noto Sans). Noto Sans 600을 같이 넣었다(없으면 가짜 굵게로 뭉개짐).

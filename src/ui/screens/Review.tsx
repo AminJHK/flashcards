@@ -373,7 +373,7 @@ export function Review({ deckId }: { deckId?: string }) {
 
   const cardInner = (
     <>
-      <CardFace blocks={faceBlocks} onSpeak={() => say(flipped ? 'back' : 'front')} />
+      <CardFace blocks={faceBlocks} side={flipped ? 'back' : 'front'} onSpeak={() => say(flipped ? 'back' : 'front')} />
       {flipped && checked && <AnswerDiff c={checked} given={answer} />}
     </>
   );

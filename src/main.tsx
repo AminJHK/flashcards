@@ -6,6 +6,9 @@ import '@fontsource/noto-sans/latin-400.css';
 import '@fontsource/noto-sans/latin-ext-400.css';
 import '@fontsource/noto-sans/latin-500.css';
 import '@fontsource/noto-sans/latin-ext-500.css';
+// 600도 넣는다: 없으면 브라우저가 500을 억지로 두껍게 그려서(가짜 굵게) 글자가 뭉개진다
+import '@fontsource/noto-sans/latin-600.css';
+import '@fontsource/noto-sans/latin-ext-600.css';
 import './ui/styles.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

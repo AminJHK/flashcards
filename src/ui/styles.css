@@ -757,53 +757,97 @@ svg.icon {
   letter-spacing: 0.02em;
 }
 
+/*
+ * 카드 글자 위계 (폰): 앞면 단어 42 > 앞면 뜻 32 > 앞면 예문 24 / 뒷면 단어 32 > 뜻 22 > 예문 상자 18·15 > 메모 14.
+ * 같은 쪽에 비슷한 크기의 굵은 줄이 둘 이상 오지 않게 한다. 인도네시아어·스페인어 같은 라틴 문자는 모두 같은 글꼴.
+ */
 .b-word {
   font-family: var(--font-latin);
-  font-weight: 500;
-  line-height: 1.25;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
   overflow-wrap: anywhere;
 }
 
 .b-word.front {
-  font-size: calc(40px * var(--scale));
+  font-size: calc(42px * var(--scale));
 }
 
 .b-word.back {
-  font-size: calc(30px * var(--scale));
+  font-size: calc(32px * var(--scale));
 }
 
 .b-meaning {
   font-weight: 600;
-  line-height: 1.35;
+  line-height: 1.4;
+  max-width: 360px;
 }
 
 .b-meaning.front {
-  font-size: calc(36px * var(--scale));
+  font-size: calc(32px * var(--scale));
   line-height: 1.3;
 }
 
 .b-meaning.back {
-  font-size: calc(26px * var(--scale));
+  font-size: calc(22px * var(--scale));
 }
 
 .b-sentence {
-  line-height: 1.5;
-  max-width: 340px;
+  line-height: 1.45;
+  max-width: 360px;
 }
 
 .b-sentence.main {
-  font-size: calc(26px * var(--scale));
-  font-weight: 600;
+  font-size: calc(24px * var(--scale));
+  font-weight: 500;
+}
+
+.b-sentence.main:not(.zh),
+.b-ex-main:not(.zh) {
+  font-family: var(--font-latin);
 }
 
 .b-sentence.sub {
-  font-size: calc(18px * var(--scale));
+  font-size: calc(16px * var(--scale));
   color: var(--text2);
 }
 
 .b-sentence.zh {
   font-family: var(--font-hanzi);
   font-weight: 500;
+}
+
+/* 뒷면의 예문 + 번역: 왼쪽 정렬 상자 하나로 */
+.b-example {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 360px;
+  margin-top: 6px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--surface);
+  text-align: left;
+}
+
+.b-ex-main {
+  font-size: calc(18px * var(--scale));
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.b-ex-main.zh {
+  font-family: var(--font-hanzi);
+  font-size: calc(20px * var(--scale));
+}
+
+.b-ex-sub {
+  font-size: calc(15px * var(--scale));
+  line-height: 1.5;
+  color: var(--text2);
 }
 
 .b-prompt {
@@ -822,13 +866,11 @@ svg.icon {
 }
 
 .b-memo {
-  max-width: 320px;
-  margin-top: 8px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: var(--surface);
+  width: 100%;
+  max-width: 360px;
+  padding: 0 4px;
   color: var(--text2);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.6;
   white-space: pre-line;
   text-align: left;
@@ -1673,7 +1715,7 @@ textarea.input-sentence {
   }
 
   .b-word.front {
-    font-size: calc(68px * var(--scale));
+    font-size: calc(64px * var(--scale));
   }
 
   .b-word.back {
@@ -1681,31 +1723,45 @@ textarea.input-sentence {
   }
 
   .b-meaning.front {
-    font-size: calc(54px * var(--scale));
+    font-size: calc(48px * var(--scale));
   }
 
   .b-meaning.back {
-    font-size: calc(36px * var(--scale));
+    font-size: calc(30px * var(--scale));
   }
 
   .b-sentence.main {
-    font-size: calc(36px * var(--scale));
+    font-size: calc(34px * var(--scale));
   }
 
   .b-sentence.sub {
-    font-size: calc(22px * var(--scale));
+    font-size: calc(20px * var(--scale));
   }
 
-  .b-memo {
-    font-size: 17px;
-  }
-
-  .b-sentence {
+  .b-sentence,
+  .b-meaning {
     max-width: 640px;
   }
 
+  .b-example,
   .b-memo {
-    max-width: 560px;
+    max-width: 600px;
+  }
+
+  .b-ex-main {
+    font-size: calc(24px * var(--scale));
+  }
+
+  .b-ex-main.zh {
+    font-size: calc(26px * var(--scale));
+  }
+
+  .b-ex-sub {
+    font-size: calc(18px * var(--scale));
+  }
+
+  .b-memo {
+    font-size: 16px;
   }
 
   .answer-bar {
