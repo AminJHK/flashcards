@@ -47,7 +47,10 @@ export type Block =
   | { kind: 'pinyin'; text: string }
   | { kind: 'word'; text: string; size: BlockSize; lang: Lang }
   | { kind: 'meaning'; text: string; size: BlockSize }
-  | { kind: 'sentence'; text: string; lang: Lang; emphasis: 'main' | 'sub' }
+  /** highlight: 문장 안에서 강조할 말 (배우는 단어). 화면이 찾아서 색으로 표시한다 */
+  | { kind: 'sentence'; text: string; lang: Lang; emphasis: 'main' | 'sub'; highlight?: string }
+  /** 작은 꼬리표 (표준형·어근·사용역 같은 정보) */
+  | { kind: 'tags'; items: string[] }
   | { kind: 'prompt'; text: string }
   | { kind: 'divider' }
   | { kind: 'memo'; text: string }

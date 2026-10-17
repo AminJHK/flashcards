@@ -38,15 +38,14 @@ export const idSpoken: CardType = {
       t('root') && t('root') !== t('word') ? `어근 ${t('root')}` : '',
       t('register'),
     ].filter(Boolean);
-    const memoText = [forms.join(' · '), t('note')].filter(Boolean).join('\n');
-    const back: Block[] = [
-      { kind: 'word', text: t('word'), size: 'back', lang: LANG },
-      { kind: 'divider' },
-      { kind: 'meaning', text: t('meaning'), size: 'back' },
-      ...(t('example') ? [{ kind: 'sentence' as const, text: t('example'), lang: LANG, emphasis: 'main' as const }] : []),
+    const tags: Block[] = forms.length ? [{ kind: 'tags', items: forms }] : [];
+    const memo: Block[] = t('note') ? [{ kind: 'memo', text: t('note') }] : [];
+    const example: Block[] = [
+      ...(t('example') ? [{ kind: 'sentence' as const, text: t('example'), lang: LANG, emphasis: 'main' as const, highlight: t('word') }] : []),
       ...(t('exampleKo') ? [{ kind: 'sentence' as const, text: t('exampleKo'), lang: 'ko-KR', emphasis: 'sub' as const }] : []),
-      ...(memoText ? [{ kind: 'memo' as const, text: memoText }] : []),
     ];
+    // 뒷면: 단어 · 뜻 · 꼬리표(위, 가운데) → 예문 · 메모(아래, 왼쪽)
+    const back: Block[] = [{ kind: 'word', text: t('word'), size: 'back', lang: LANG }, { kind: 'meaning', text: t('meaning'), size: 'back' }, ...tags, ...example, ...memo];
     if (templateId === 'reverse') {
       return {
         front: [{ kind: 'meaning', text: t('meaning'), size: 'front' }],
@@ -60,16 +59,9 @@ export const idSpoken: CardType = {
       return {
         front: [
           { kind: 'prompt', text: `「${t('word')}」는 여기서 무슨 뜻일까?` },
-          { kind: 'sentence', text: t('example'), lang: LANG, emphasis: 'main' },
+          { kind: 'sentence', text: t('example'), lang: LANG, emphasis: 'main', highlight: t('word') },
         ],
-        back: [
-          { kind: 'sentence', text: t('example'), lang: LANG, emphasis: 'main' },
-          ...(t('exampleKo') ? [{ kind: 'sentence' as const, text: t('exampleKo'), lang: 'ko-KR', emphasis: 'sub' as const }] : []),
-          { kind: 'divider' },
-          { kind: 'word', text: t('word'), size: 'back', lang: LANG },
-          { kind: 'meaning', text: t('meaning'), size: 'back' },
-          ...(memoText ? [{ kind: 'memo' as const, text: memoText }] : []),
-        ],
+        back,
         tts: { front: sayExample, back: [sayWord, ...sayExample] },
       };
     }

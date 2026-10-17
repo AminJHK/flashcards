@@ -651,12 +651,13 @@ svg.icon {
   border: none;
   background: transparent;
   color: inherit;
+  font: inherit;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 14px;
-  padding: 0 28px;
+  padding: 4px 16px 8px;
   text-align: center;
   overflow-y: auto;
   cursor: pointer;
@@ -802,8 +803,7 @@ svg.icon {
   font-weight: 500;
 }
 
-.b-sentence.main:not(.zh),
-.b-ex-main:not(.zh) {
+.b-sentence.main:not(.zh) {
   font-family: var(--font-latin);
 }
 
@@ -817,21 +817,61 @@ svg.icon {
   font-weight: 500;
 }
 
-/* 뒷면의 예문 + 번역: 왼쪽 정렬 상자 하나로 */
-.b-example {
+/* ---------- 카드 한 장 ---------- */
+.card-sheet {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 560px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  width: 100%;
-  max-width: 360px;
-  margin-top: 6px;
-  padding: 14px 16px;
-  border-radius: 16px;
+  align-items: center;
+  justify-content: safe center;
+  gap: 14px;
+  padding: 28px 22px;
+  border-radius: 28px;
   background: var(--surface);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 10px 30px rgb(0 0 0 / 0.05);
+  overflow-y: auto;
+}
+
+.card-sheet.zoned {
+  gap: 0;
+}
+
+/* 위 칸: 정답 (가운데) */
+.cf-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 22px;
+  text-align: center;
+}
+
+/* 아래 칸: 예문·메모 (왼쪽 정렬, 카드 폭 전체) */
+.cf-details {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
   text-align: left;
 }
 
-.b-ex-main {
+.cf-example {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 12px 12px 0;
+  background: var(--accent-soft);
+}
+
+.cf-ex-main {
+  font-family: var(--font-latin);
   font-size: calc(18px * var(--scale));
   font-weight: 500;
   line-height: 1.5;
@@ -839,15 +879,38 @@ svg.icon {
   overflow-wrap: anywhere;
 }
 
-.b-ex-main.zh {
+.cf-ex-main.zh {
   font-family: var(--font-hanzi);
   font-size: calc(20px * var(--scale));
 }
 
-.b-ex-sub {
+.cf-ex-sub {
   font-size: calc(15px * var(--scale));
   line-height: 1.5;
   color: var(--text2);
+}
+
+/* 문장 안의 배우는 말 */
+.cf-mark {
+  background: none;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.cf-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.cf-tag {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .b-prompt {
@@ -866,13 +929,14 @@ svg.icon {
 }
 
 .b-memo {
-  width: 100%;
-  max-width: 360px;
-  padding: 0 4px;
   color: var(--text2);
   font-size: 14px;
   line-height: 1.6;
   white-space: pre-line;
+}
+
+.card-sheet:not(.zoned) .b-memo {
+  max-width: 360px;
   text-align: left;
 }
 
@@ -1698,7 +1762,7 @@ textarea.input-sentence {
   }
 
   .card-area {
-    padding: 0 48px;
+    padding: 8px 48px 12px;
     gap: 18px;
   }
 
@@ -1743,21 +1807,26 @@ textarea.input-sentence {
     max-width: 640px;
   }
 
-  .b-example,
-  .b-memo {
-    max-width: 600px;
+  .card-sheet {
+    max-width: 760px;
+    padding: 44px 48px;
+    border-radius: 32px;
   }
 
-  .b-ex-main {
+  .cf-ex-main {
     font-size: calc(24px * var(--scale));
   }
 
-  .b-ex-main.zh {
+  .cf-ex-main.zh {
     font-size: calc(26px * var(--scale));
   }
 
-  .b-ex-sub {
+  .cf-ex-sub {
     font-size: calc(18px * var(--scale));
+  }
+
+  .cf-tag {
+    font-size: 14px;
   }
 
   .b-memo {

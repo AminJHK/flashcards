@@ -26,18 +26,18 @@ export const idParticle: CardType = {
     const f = ctx.fields;
     const t = (k: string) => (f[k] ?? '').trim();
     const sayExample = [{ text: t('example'), lang: LANG }];
+    // 뒷면: 말 · 느낌(위) → 예문 · 이 문장에서(아래)
     const back: Block[] = [
-      { kind: 'sentence', text: t('example'), lang: LANG, emphasis: 'main' },
-      { kind: 'sentence', text: t('exampleKo'), lang: 'ko-KR', emphasis: 'sub' },
-      { kind: 'divider' },
       { kind: 'word', text: t('word'), size: 'back', lang: LANG },
       { kind: 'meaning', text: t('meaning'), size: 'back' },
+      { kind: 'sentence', text: t('example'), lang: LANG, emphasis: 'main', highlight: t('word') },
+      { kind: 'sentence', text: t('exampleKo'), lang: 'ko-KR', emphasis: 'sub' },
       ...(t('note') ? [{ kind: 'memo' as const, text: t('note') }] : []),
     ];
     return {
       front: [
         { kind: 'prompt', text: `「${t('word')}」는 여기서 어떤 느낌일까?` },
-        { kind: 'sentence', text: t('example'), lang: LANG, emphasis: 'main' },
+        { kind: 'sentence', text: t('example'), lang: LANG, emphasis: 'main', highlight: t('word') },
       ],
       back,
       tts: { front: sayExample, back: sayExample },

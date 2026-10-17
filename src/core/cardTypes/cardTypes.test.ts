@@ -70,9 +70,10 @@ describe('카드 종류', () => {
     const v = t.view('forward', { fields: { word: 'sih', meaning: '투덜대는 궁금함', example: 'Kenapa sih?', exampleKo: '도대체 왜?', note: '답답함' }, deck: d });
     expect(v.front).toEqual([
       { kind: 'prompt', text: '「sih」는 여기서 어떤 느낌일까?' },
-      { kind: 'sentence', text: 'Kenapa sih?', lang: 'id-ID', emphasis: 'main' },
+      { kind: 'sentence', text: 'Kenapa sih?', lang: 'id-ID', emphasis: 'main', highlight: 'sih' },
     ]);
-    expect(v.back.map((b) => b.kind)).toEqual(['sentence', 'sentence', 'divider', 'word', 'meaning', 'memo']);
+    // 뒷면: 말 · 느낌(위) → 예문 · 번역 · 이 문장에서(아래)
+    expect(v.back.map((b) => b.kind)).toEqual(['word', 'meaning', 'sentence', 'sentence', 'memo']);
     expect(v.tts.front).toEqual([{ text: 'Kenapa sih?', lang: 'id-ID' }]);
     expect(t.duplicateKey({ word: 'sih', example: 'A' })).not.toBe(t.duplicateKey({ word: 'sih', example: 'B' }));
   });
@@ -84,5 +85,10 @@ describe('카드 종류', () => {
     expect(t.view('forward', { fields: f, deck: on }).front.map((b) => b.kind)).toEqual(['prompt', 'sentence']);
     expect(t.view('forward', { fields: f, deck: d }).front.map((b) => b.kind)).toEqual(['word']);
     expect(t.view('forward', { fields: { ...f, example: '' }, deck: on }).front.map((b) => b.kind)).toEqual(['word']);
+    // 뒷면: 단어 · 뜻 · 꼬리표(표준형·어근·사용역) → 예문(배우는 말 강조) · 번역 · 메모
+    const back = t.view('forward', { fields: { ...f, root: 'pokok', register: '구어', note: '말 앞에 온다' }, deck: d }).back;
+    expect(back.map((b) => b.kind)).toEqual(['word', 'meaning', 'tags', 'sentence', 'sentence', 'memo']);
+    expect(back[2]).toEqual({ kind: 'tags', items: ['어근 pokok', '구어'] });
+    expect(back[3]).toMatchObject({ highlight: 'pokoknya' });
   });
 });
