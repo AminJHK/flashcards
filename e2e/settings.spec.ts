@@ -25,3 +25,14 @@ test('설정: 첫 화면은 항목 5개와 지금 상태만, 누르면 상세 �
   await expect(page.getByText('Google Cloud 콘솔')).toBeVisible();
   await page.screenshot({ path: 'test-results/shots/51-settings-backup.png' });
 });
+
+test('기기 음성: 인도네시아어에서 시스템 기본 재생 모드를 선택하고 보존한다', async ({ page }) => {
+  await page.goto('/#/settings/voice');
+  const voice = page.getByLabel('인도네시아어 음성');
+  await expect(voice).toBeVisible();
+  await voice.selectOption('__system_default__');
+  await expect(voice).toHaveValue('__system_default__');
+  await page.locator('.back-btn').click();
+  await page.locator('.nav-row', { hasText: '음성' }).click();
+  await expect(page.getByLabel('인도네시아어 음성')).toHaveValue('__system_default__');
+});

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import type { AccentKey, FontScale, Settings as SettingsT, ThemePref } from '../../core/model/types';
 import { requestPersistence } from '../../adapters/files/share';
 import { saveSettings } from '../../adapters/storage/repo';
-import { onVoicesChanged, speak, ttsSupported, voicesFor } from '../../adapters/tts/webSpeech';
+import { onVoicesChanged, speak, SYSTEM_DEFAULT_VOICE, ttsSupported, voicesFor } from '../../adapters/tts/webSpeech';
 import { daysSince, runBackup, runRestore } from '../backup';
 import { Row, Segmented, Stepper, Switch } from '../components/Controls';
 import { useDecks, useScheduler, useSettings } from '../hooks';
@@ -224,26 +224,29 @@ function VoiceSettings({ s }: { s: SettingsT }) {
         {ttsSupported() &&
           langs.map((lang) => {
             const voices = voicesFor(lang);
+            const saved = s.voices[lang];
+            // 목록에 음성이 있으면 고른 목소리가 없을 때 "휴대폰 기본 목소리". 목록에 없으면 기본은 "읽지 않음"(영어 음성이 억지로 읽지 않게)이고,
+            // "휴대폰 기본 목소리"를 고르면 그래도 엔진에 맡겨 읽어 본다 (목록을 덜 보여 주는 브라우저용)
+            const value = voices.some((v) => v.name === saved) ? saved! : voices.length || saved === SYSTEM_DEFAULT_VOICE ? SYSTEM_DEFAULT_VOICE : '';
             return (
-              <Row key={lang} title={langName(lang)} desc={voices.length ? undefined : '음성이 없어요. 안드로이드 설정 › 텍스트 음성 변환에서 설치해 주세요.'}>
-                {voices.length > 0 && (
-                  <select
-                    className="select"
-                    aria-label={`${langName(lang)} 음성`}
-                    value={voices.some((v) => v.name === s.voices[lang]) ? s.voices[lang] : ''}
-                    onChange={(e) => {
-                      const { [lang]: _old, ...rest } = s.voices;
-                      set({ voices: e.target.value ? { ...rest, [lang]: e.target.value } : rest });
-                    }}
-                  >
-                    <option value="">휴대폰 기본 목소리</option>
-                    {voices.map((v) => (
-                      <option key={v.name} value={v.name}>
-                        {v.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
+              <Row key={lang} title={langName(lang)} desc={voices.length ? undefined : '이 언어 음성이 안 보여요. 휴대폰 설정 › 텍스트 음성 변환에서 설치하거나, "휴대폰 기본 목소리"로 읽어 보세요.'}>
+                <select
+                  className="select"
+                  aria-label={`${langName(lang)} 음성`}
+                  value={value}
+                  onChange={(e) => {
+                    const { [lang]: _old, ...rest } = s.voices;
+                    set({ voices: e.target.value ? { ...rest, [lang]: e.target.value } : rest });
+                  }}
+                >
+                  {!voices.length && <option value="">읽지 않기</option>}
+                  <option value={SYSTEM_DEFAULT_VOICE}>휴대폰 기본 목소리</option>
+                  {voices.map((v) => (
+                    <option key={v.name} value={v.name}>
+                      {v.name}
+                    </option>
+                  ))}
+                </select>
                 <button
                   type="button"
                   className="btn-plain"

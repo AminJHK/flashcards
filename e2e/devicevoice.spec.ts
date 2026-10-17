@@ -24,7 +24,7 @@ test('기기 음성: 기본은 휴대폰 기본 목소리, 목소리를 고르�
 
   await page.goto('/#/settings/voice');
   const select = page.getByLabel('인도네시아어 음성');
-  await expect(select).toHaveValue('');
+  await expect(select).toHaveValue('__system_default__');
   await expect(select.locator('option').first()).toHaveText('휴대폰 기본 목소리');
   const row = page.locator('.row', { has: select });
   await row.getByRole('button', { name: '듣기' }).click();
@@ -42,7 +42,7 @@ test('기기 음성: 기본은 휴대폰 기본 목소리, 목소리를 고르�
   await page.screenshot({ path: 'test-results/shots/65-device-voice.png', fullPage: true });
 
   // 다시 기본 목소리로
-  await select.selectOption('');
+  await select.selectOption('__system_default__');
   await row.getByRole('button', { name: '듣기' }).click();
   expect(await last()).toMatchObject({ voice: undefined, pitch: 0.9 });
 

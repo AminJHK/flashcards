@@ -11,6 +11,12 @@ export interface VoiceInfo {
   local: boolean;
 }
 
+/**
+ * 언어별 선택값: "휴대폰 기본 목소리". 목소리를 정하지 않고 언어만 보내 휴대폰 TTS 엔진이 고르게 한다.
+ * 아무것도 고르지 않은 것과 같지만, 브라우저 목록에 그 언어 음성이 없어도 읽어 보게 한다 (목록이 덜 보이는 브라우저용).
+ */
+export const SYSTEM_DEFAULT_VOICE = '__system_default__';
+
 const synth = (): SpeechSynthesis | undefined => (typeof window !== 'undefined' ? window.speechSynthesis : undefined);
 
 export function ttsSupported(): boolean {
@@ -82,7 +88,7 @@ function pickVoice(lang: string, preferred?: string): SpeechSynthesisVoice | und
  * 속도·높낮이는 브라우저가 항상 직접 보내므로 휴대폰 설정 값은 쓰이지 않는다 → 앱 설정(deviceRate, devicePitch)으로 맞춘다.
  */
 function utterance(item: Speech, preferred: string | undefined, rate: number, pitch: number): SpeechSynthesisUtterance {
-  const list = matching(item.lang);
+  const list = preferred === SYSTEM_DEFAULT_VOICE ? [] : matching(item.lang);
   const chosen = preferred ? list.find((v) => v.name === preferred) : undefined;
   const u = new SpeechSynthesisUtterance(item.text);
   // 고른 음성의 언어 태그를 같이 써야 안드로이드가 그 음성으로 읽는다. 기본 목소리는 그 언어의 첫 목소리 언어(es-US 등)로
@@ -94,9 +100,14 @@ function utterance(item: Speech, preferred: string | undefined, rate: number, pi
 }
 
 /** 이 기기에 음성이 없는 언어들. 음성 목록이 아직 안 왔으면 알 수 없으니 비워 둔다. */
-export function missingVoiceLangs(items: readonly Speech[]): string[] {
+export function missingVoiceLangs(items: readonly Speech[], preferred: Record<string, string> = {}): string[] {
   if (!ttsSupported() || !loadVoices().length) return [];
-  return [...new Set(items.filter((i) => i.text && !pickVoice(i.lang)).map((i) => i.lang))];
+  return [...new Set(items.filter((i) => i.text && !canSpeak(i.lang, preferred[i.lang])).map((i) => i.lang))];
+}
+
+/** 읽을 수 있는지. "휴대폰 기본 목소리"를 직접 골랐으면 목록에 없어도 엔진에 맡긴다 */
+function canSpeak(lang: string, preferred?: string): boolean {
+  return preferred === SYSTEM_DEFAULT_VOICE || !!pickVoice(lang, preferred);
 }
 
 /**
@@ -112,8 +123,7 @@ export function speak(items: readonly Speech[], preferred: Record<string, string
   let found = true;
   for (const it of items) {
     if (!it.text) continue;
-    const v = pickVoice(it.lang, preferred[it.lang]);
-    if (!v && known) {
+    if (!canSpeak(it.lang, preferred[it.lang]) && known) {
       found = false;
       continue;
     }
@@ -130,25 +140,25 @@ let cancelWaiter: (() => void) | undefined;
 export async function speakAndWait(item: Speech, preferred: Record<string, string> = {}, rate = 0.9, pitch = 1): Promise<boolean> {
   const s = synth();
   if (!s || !ttsSupported() || !item.text.trim()) return false;
-  const v = pickVoice(item.lang, preferred[item.lang]);
-  if (!v && loadVoices().length) return false;
+  if (!canSpeak(item.lang, preferred[item.lang]) && loadVoices().length) return false;
   stopSpeaking();
   return new Promise<boolean>((resolve) => {
     let finished = false;
-    const done = () => {
+    const done = (ok: boolean) => {
       if (finished) return;
       finished = true;
       clearTimeout(timeout);
-      if (cancelWaiter === done) cancelWaiter = undefined;
-      resolve(true);
+      if (cancelWaiter === cancel) cancelWaiter = undefined;
+      resolve(ok);
     };
-    cancelWaiter = done;
+    const cancel = () => done(false);
+    cancelWaiter = cancel;
     const u = utterance(item, preferred[item.lang], rate, pitch);
-    u.onend = done;
-    u.onerror = done;
+    u.onend = () => done(true);
+    u.onerror = () => done(false);
     const timeout = setTimeout(() => {
       s.cancel();
-      done();
+      done(false);
     }, Math.min(90_000, Math.max(15_000, item.text.length * 400)));
     s.speak(u);
   });
