@@ -7,9 +7,18 @@ import { ttsText } from './types';
  */
 const LANG = 'id-ID';
 
+/** "자주 쓰는 표현" 칸: 한 줄에 하나씩 "표현 = 뜻" (→ 도 받는다) */
+export function parsePhrases(text: string): { text: string; ko: string }[] {
+  return text
+    .split('\n')
+    .map((l) => /^(.+?)\s*(?:=|→)\s*(.+)$/.exec(l.trim()))
+    .filter((m): m is RegExpExecArray => !!m)
+    .map((m) => ({ text: m[1]!.trim(), ko: m[2]!.trim() }));
+}
+
 export const idSpoken: CardType = {
   id: 'id-spoken',
-  version: 1,
+  version: 2,
   name: '인도네시아어 구어',
   shortName: '구어',
   description: '현지인이 말하는 형태를 보고 뜻을 떠올려요. 표준형·어근·예문을 함께 봐요.',
@@ -17,13 +26,17 @@ export const idSpoken: CardType = {
   fields: [
     { key: 'word', label: '말하는 형태', required: true, lang: LANG, input: 'latin', placeholder: '예: nyari' },
     { key: 'meaning', label: '뜻', required: true, lang: 'ko-KR', input: 'text', placeholder: '예: 찾다' },
+    { key: 'en', label: '영어 뜻', lang: 'en-US', input: 'text', placeholder: '예: to look for' },
     { key: 'standard', label: '표준형', lang: LANG, input: 'latin', placeholder: '예: mencari' },
     { key: 'root', label: '어근', lang: LANG, input: 'latin', placeholder: '예: cari' },
     { key: 'example', label: '예문', lang: LANG, input: 'sentence', placeholder: '예: Lagi nyari apa?' },
     { key: 'exampleKo', label: '예문 뜻', lang: 'ko-KR', input: 'sentence', placeholder: '예: 뭐 찾고 있어?' },
+    { key: 'phrases', label: '자주 쓰는 표현', input: 'sentence', placeholder: '한 줄에 하나씩. 예: nyari kerja = 일자리를 찾다' },
     { key: 'register', label: '사용역', input: 'text', placeholder: '일반 / 구어 / 자카르타식 / 격식 / 속어' },
     { key: 'note', label: '주의', input: 'memo', placeholder: '쓰임새, 비슷한 말' },
   ],
+  // version 2: 영어 뜻(en)·자주 쓰는 표현(phrases) 칸 추가. 예전 단어는 빈 칸으로 둔다
+  migrate: (from, f) => (from < 2 ? { ...f, en: f.en ?? '', phrases: f.phrases ?? '' } : f),
   templates: [
     { id: 'forward', label: '구어 보고 뜻 떠올리기', answer: 'reveal' },
     { id: 'reverse', label: '뜻 보고 구어 떠올리기', optional: true, answer: 'reveal' },
@@ -40,12 +53,15 @@ export const idSpoken: CardType = {
     ].filter(Boolean);
     const tags: Block[] = forms.length ? [{ kind: 'tags', items: forms }] : [];
     const memo: Block[] = t('note') ? [{ kind: 'memo', text: t('note') }] : [];
+    const en: Block[] = t('en') ? [{ kind: 'gloss', text: t('en'), lang: 'en-US' }] : [];
+    const items = parsePhrases(t('phrases'));
+    const phrases: Block[] = items.length ? [{ kind: 'phrases', items, lang: LANG, highlight: t('word') }] : [];
     const example: Block[] = [
       ...(t('example') ? [{ kind: 'sentence' as const, text: t('example'), lang: LANG, emphasis: 'main' as const, highlight: t('word') }] : []),
       ...(t('exampleKo') ? [{ kind: 'sentence' as const, text: t('exampleKo'), lang: 'ko-KR', emphasis: 'sub' as const }] : []),
     ];
-    // 뒷면: 단어 · 뜻 · 꼬리표(위, 가운데) → 예문 · 메모(아래, 왼쪽)
-    const back: Block[] = [{ kind: 'word', text: t('word'), size: 'back', lang: LANG }, { kind: 'meaning', text: t('meaning'), size: 'back' }, ...tags, ...example, ...memo];
+    // 뒷면: 단어 · 뜻 · 영어 뜻 · 꼬리표(위, 가운데) → 예문 · 자주 쓰는 표현 · 메모(아래, 왼쪽)
+    const back: Block[] = [{ kind: 'word', text: t('word'), size: 'back', lang: LANG }, { kind: 'meaning', text: t('meaning'), size: 'back' }, ...en, ...tags, ...example, ...phrases, ...memo];
     if (templateId === 'reverse') {
       return {
         front: [{ kind: 'meaning', text: t('meaning'), size: 'front' }],

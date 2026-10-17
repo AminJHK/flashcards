@@ -308,9 +308,9 @@ export function DeckDetail({ id }: { id: string }) {
     const all = await db.notes.toArray();
     return PACKS.map((pack) => ({ pack, notes: packAdditions(pack, notes, all) })).filter((x) => x.notes.length > 0);
   }, [id]);
-  // 인도네시아어 단어 중 연결어·표현(아무튼, ~하도록, ~인 것 같다 …)이 이 덱에 몇 개 있는지
   // 여러 번 잊어버린 단어 (docs/DESIGN.md §4.6)
   const hardCount = useLiveQuery(async () => hardWords(await db.cards.where('deckId').equals(id).toArray()).size, [id]);
+  // 인도네시아어 단어 중 연결어·표현(아무튼, ~하도록, ~인 것 같다 …)이 이 덱에 몇 개 있는지
   const connectorCount = useLiveQuery(async () => (await db.notes.where('deckId').equals(id).toArray()).filter(isConnector).length, [id]);
   // 지운 단어: 이 덱의 준비된 덱 원본에는 있는데 지금 어느 덱에도 없는 단어 (중복·어조 말 덱이 맡은 말은 뺀다)
   const missing = useLiveQuery(async () => {
@@ -503,7 +503,7 @@ export function DeckDetail({ id }: { id: string }) {
         <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 20 }}>
           <span style={{ fontWeight: 600 }}>준비된 덱이 고쳐졌어요</span>
           <span className="muted small" style={{ lineHeight: 1.6 }}>
-            단어 {packFixes.length}개의 뜻이나 예문이 더 정확하게 바뀌었어요. 내가 직접 고친 단어와 복습 기록은 그대로예요.
+            단어 {packFixes.length}개에 새 내용(영어 뜻, 자주 쓰는 표현 등)이 생기거나 더 정확해졌어요. 내가 직접 쓴 내용과 복습 기록은 그대로예요.
           </span>
           <button
             type="button"

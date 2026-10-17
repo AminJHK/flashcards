@@ -91,4 +91,23 @@ describe('카드 종류', () => {
     expect(back[2]).toEqual({ kind: 'tags', items: ['어근 pokok', '구어'] });
     expect(back[3]).toMatchObject({ highlight: 'pokoknya' });
   });
+
+  it('인도네시아어 구어: 영어 뜻은 뜻 바로 아래, 자주 쓰는 표현은 예문 다음에 나온다', async () => {
+    const { parsePhrases } = await import('./idSpoken');
+    expect(parsePhrases('kurang tidur = 잠이 부족하다\nkurang suka → 별로 안 좋아하다\n\n뜻 없는 줄')).toEqual([
+      { text: 'kurang tidur', ko: '잠이 부족하다' },
+      { text: 'kurang suka', ko: '별로 안 좋아하다' },
+    ]);
+    const t = getCardType('id-spoken');
+    expect(t.version).toBe(2);
+    expect(t.migrate!(1, { word: 'kurang' })).toEqual({ word: 'kurang', en: '', phrases: '' });
+    const f = { word: 'kurang', meaning: '부족한', en: 'less / not enough', example: 'Bisa kurang?', exampleKo: '깎아 줄 수 있어요?', phrases: 'kurang tidur = 잠이 부족하다', note: '메모' };
+    const back = t.view('forward', { fields: f, deck: d }).back;
+    expect(back.map((b) => b.kind)).toEqual(['word', 'meaning', 'gloss', 'sentence', 'sentence', 'phrases', 'memo']);
+    expect(back[2]).toEqual({ kind: 'gloss', text: 'less / not enough', lang: 'en-US' });
+    expect(back[5]).toEqual({ kind: 'phrases', items: [{ text: 'kurang tidur', ko: '잠이 부족하다' }], lang: 'id-ID', highlight: 'kurang' });
+    // 예전 단어(빈 칸)는 그대로
+    expect(t.view('forward', { fields: { ...f, en: '', phrases: '' }, deck: d }).back.map((b) => b.kind)).toEqual(['word', 'meaning', 'sentence', 'sentence', 'memo']);
+  });
 });
+

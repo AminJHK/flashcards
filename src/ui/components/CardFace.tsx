@@ -8,13 +8,13 @@ type SentenceBlock = Extract<Block, { kind: 'sentence' }>;
  * 카드 종류가 만든 블록을 카드 한 장 위에 그린다. 새 카드 종류도 이 블록들만 쓰면 화면 코드를 고칠 필요가 없다.
  *
  * 뒷면은 두 칸이다.
- * - 위(가운데): 첫 예문·메모가 나오기 전까지의 블록 = 정답 (단어 · 뜻 · 꼬리표)
- * - 아래(왼쪽 정렬, 위와 선으로 나눔): 예문(+번역)과 메모 = 정답을 이해하는 데 쓰는 정보
+ * - 위(가운데): 첫 예문·표현·메모가 나오기 전까지의 블록 = 정답 (단어 · 뜻 · 영어 뜻 · 꼬리표)
+ * - 아래(왼쪽 정렬, 위와 선으로 나눔): 예문(+번역)·자주 쓰는 표현·메모 = 정답을 이해하는 데 쓰는 정보
  * 위 칸이 비면(문장 카드처럼 문장이 곧 정답이면) 앞면처럼 가운데에 크게 그린다.
  */
 export function CardFace({ blocks, side = 'front', onSpeak }: { blocks: readonly Block[]; side?: 'front' | 'back'; onSpeak?: () => void }) {
   const content = blocks.filter((b) => b.kind !== 'divider');
-  const split = content.findIndex((b) => b.kind === 'sentence' || b.kind === 'memo');
+  const split = content.findIndex((b) => b.kind === 'sentence' || b.kind === 'memo' || b.kind === 'phrases');
   const zoned = side === 'back' && split > 0;
   if (!zoned) {
     return <span className={`card-sheet ${side}`}>{content.map((b, i) => renderBlock(b, i, onSpeak))}</span>;
@@ -143,6 +143,26 @@ function renderBlock(b: Block, i: number, onSpeak?: () => void): ReactNode {
       return (
         <span key={i} lang={b.lang} className={`b-sentence ${b.emphasis}${b.lang.startsWith('zh') ? ' zh' : ''}`}>
           {withHighlight(b.text, b.highlight)}
+        </span>
+      );
+    case 'gloss':
+      return (
+        <span key={i} lang={b.lang} className="b-gloss">
+          {b.text}
+        </span>
+      );
+    case 'phrases':
+      return (
+        <span key={i} className="cf-phrases">
+          <span className="cf-label">자주 쓰는 표현</span>
+          {b.items.map((p, j) => (
+            <span key={j} className="cf-phrase">
+              <span lang={b.lang} className="cf-phrase-text">
+                {withHighlight(p.text, b.highlight)}
+              </span>
+              <span className="cf-phrase-ko">{p.ko}</span>
+            </span>
+          ))}
         </span>
       );
     case 'tags':

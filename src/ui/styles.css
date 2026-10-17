@@ -922,6 +922,43 @@ svg.icon {
   font-weight: 700;
 }
 
+.b-gloss {
+  font-family: var(--font-latin);
+  font-size: calc(17px * var(--scale));
+  line-height: 1.4;
+  color: var(--text3);
+  margin-top: -6px;
+  max-width: 360px;
+}
+
+/* 자주 쓰는 표현: 한 줄에 표현 → 뜻 */
+.cf-phrases {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 2px;
+}
+
+.cf-phrase {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 10px;
+  row-gap: 2px;
+}
+
+.cf-phrase-text {
+  font-family: var(--font-latin);
+  font-size: calc(17px * var(--scale));
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cf-phrase-ko {
+  font-size: calc(15px * var(--scale));
+  color: var(--text2);
+}
+
 .cf-tags {
   display: flex;
   flex-wrap: wrap;
@@ -1920,6 +1957,18 @@ textarea.input-sentence {
 
   .cf-ex-sub {
     font-size: calc(18px * var(--scale));
+  }
+
+  .b-gloss {
+    font-size: calc(20px * var(--scale));
+  }
+
+  .cf-phrase-text {
+    font-size: calc(20px * var(--scale));
+  }
+
+  .cf-phrase-ko {
+    font-size: calc(17px * var(--scale));
   }
 
   .cf-tag {

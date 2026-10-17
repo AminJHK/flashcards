@@ -1,3 +1,4 @@
+import { EXTRA } from './indonesianColloquialExtra';
 import type { Pack, PackNote } from './types';
 
 /**
@@ -11,14 +12,18 @@ import type { Pack, PackNote } from './types';
  * 현지인 검증은 하지 않았다. 같은 내용을 Anki용 CSV로도 만들었다 (docs/decks/).
  */
 function w(word: string, meaning: string, standard: string, root: string, example: string, exampleKo: string, register: string, note: string, tags: string[]): PackNote {
-  return { typeId: 'id-spoken', fields: { word, meaning, standard, root, example, exampleKo, register, note }, tags };
+  // 영어 뜻 · 자주 쓰는 표현은 따로 적어 두고 여기서 붙인다 (indonesianColloquialExtra.ts)
+  const [en = '', ...phrases] = EXTRA[word] ?? [];
+  return { typeId: 'id-spoken', fields: { word, meaning, en, standard, root, example, exampleKo, phrases: phrases.join('\n'), register, note }, tags };
 }
 
 export const indonesianColloquial: Pack = {
   id: 'indonesian-colloquial',
   name: '인도네시아어 구어체 · 1000장',
-  description: '현지인이 실제로 말하는 형태(nggak, udah, gimana, nyari…)를 듣고 알아듣는 연습. 표준형·어근·짧은 예문·사용역(일반/구어/자카르타식)을 같이 봐요. 인사·생활 표현 100장 다음에 자주 쓰는 순서로 900장이 이어져요.',
+  description: '현지인이 실제로 말하는 형태(nggak, udah, gimana, nyari…)를 듣고 알아듣는 연습. 표준형·어근·영어 뜻·짧은 예문·자주 쓰는 표현·사용역(일반/구어/자카르타식)을 같이 봐요. 인사·생활 표현 100장 다음에 자주 쓰는 순서로 900장이 이어져요.',
   deckName: '인도네시아어 구어체',
+  // 나중에 생긴 칸: 직접 고친 단어에도 비어 있으면 채운다
+  fillEmpty: ['en', 'phrases'],
   deckSettings: {
     defaultTypeId: 'id-spoken',
     reverseEnabled: false,

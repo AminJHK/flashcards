@@ -14,6 +14,11 @@ export interface Pack {
   deckName: string;
   deckSettings: DeckSettings;
   notes: PackNote[];
+  /**
+   * 나중에 생긴 칸 (예: 영어 뜻). 사용자가 직접 고친 단어라도 이 칸이 비어 있으면 꾸러미 내용으로 채운다.
+   * 다른 칸은 사용자가 고친 그대로 둔다.
+   */
+  fillEmpty?: string[];
 }
 
 /** 장면(태그)별로 묶어서 쓰기 위한 도우미 */

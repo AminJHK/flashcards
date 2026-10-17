@@ -210,7 +210,15 @@ export async function applyPackChanges(changes: readonly PackChange[], d: Flashc
     let n = 0;
     for (const c of changes) {
       const note = await d.notes.get(c.noteId);
-      if (!note || note.updatedAt !== note.createdAt) continue;
+      if (!note) continue;
+      if (note.updatedAt !== note.createdAt) {
+        // 사용자가 고친 단어: 비어 있는 새 칸만 채운다 (직접 쓴 내용은 그대로)
+        const fill = Object.entries(c.fill ?? {}).filter(([k]) => !(note.fields[k] ?? '').trim());
+        if (!fill.length) continue;
+        await d.notes.put({ ...note, fields: { ...note.fields, ...Object.fromEntries(fill) } });
+        n++;
+        continue;
+      }
       await d.notes.put({ ...note, fields: c.fields });
       n++;
     }

@@ -41,6 +41,12 @@ describe('준비된 덱 업데이트', () => {
     ]);
     expect(r).toEqual([]);
   });
+
+  it('나중에 생긴 칸(fillEmpty)은 사용자가 고친 단어라도 비어 있으면 그 칸만 채운다', () => {
+    const p2: Pack = { ...pack, fillEmpty: ['memo'], notes: [{ ...pack.notes[0]!, fields: { ...pack.notes[0]!.fields, memo: 'tengo, tienes' } }] };
+    const r = packChanges(p2, [note('a', { front: 'tener', back: 'my own meaning', memo: '' }, { updatedAt: 5 }), note('b', { front: 'tener', back: 'mine', memo: '내 메모' }, { updatedAt: 5 })]);
+    expect(r).toEqual([{ noteId: 'a', fields: { front: 'tener', back: 'my own meaning', memo: 'tengo, tienes' }, fill: { memo: 'tengo, tienes' } }]);
+  });
 });
 
 describe('준비된 덱에 단어가 늘었을 때', () => {

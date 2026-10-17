@@ -124,7 +124,7 @@ test('준비된 덱이 고쳐지면 덱 화면에서 받을 수 있고, 내가 �
   );
   await page.reload();
   await expect(page.getByText('준비된 덱이 고쳐졌어요')).toBeVisible();
-  await expect(page.getByText(/단어 1개의 뜻/)).toBeVisible();
+  await expect(page.getByText(/단어 1개에 새 내용/)).toBeVisible();
   await page.getByRole('button', { name: '고친 내용 받기' }).click();
   await expect(page.getByText('단어 1개를 고쳤어요')).toBeVisible();
   await expect(page.getByText('준비된 덱이 고쳐졌어요')).toHaveCount(0);

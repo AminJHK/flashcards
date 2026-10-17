@@ -49,6 +49,10 @@ export type Block =
   | { kind: 'meaning'; text: string; size: BlockSize }
   /** highlight: 문장 안에서 강조할 말 (배우는 단어). 화면이 찾아서 색으로 표시한다 */
   | { kind: 'sentence'; text: string; lang: Lang; emphasis: 'main' | 'sub'; highlight?: string }
+  /** 뜻 바로 아래의 작은 보조 뜻 (영어 뜻 등) */
+  | { kind: 'gloss'; text: string; lang: Lang }
+  /** 자주 쓰는 표현 목록 (표현 → 뜻). highlight: 표현 안에서 강조할 말 */
+  | { kind: 'phrases'; items: { text: string; ko: string }[]; lang: Lang; highlight?: string }
   /** 작은 꼬리표 (표준형·어근·사용역 같은 정보) */
   | { kind: 'tags'; items: string[] }
   | { kind: 'prompt'; text: string }

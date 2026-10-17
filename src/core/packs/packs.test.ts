@@ -149,4 +149,20 @@ describe('인도네시아어 구어체', () => {
       expect(n.fields.example!.toLowerCase(), n.fields.word).toContain(word.replace(/-.*/, ''));
     }
   });
+
+  it('모든 단어에 영어 뜻과 자주 쓰는 표현이 있고, 표현에 그 단어가 들어 있다', async () => {
+    const { parsePhrases } = await import('../cardTypes/idSpoken');
+    for (const n of pack.notes) {
+      const f = n.fields;
+      expect(f.en, f.word).toMatch(/[a-z]/i);
+      expect(f.en, f.word).not.toMatch(HANGUL);
+      const items = parsePhrases(f.phrases ?? '');
+      expect(items.length, f.word).toBeGreaterThan(0);
+      for (const p of items) {
+        expect(p.text.toLowerCase(), f.word).toContain(f.word!.toLowerCase());
+        expect(p.ko, `${f.word}: ${p.text}`).toMatch(/[\p{Script=Hangul}0-9]/u);
+      }
+    }
+    expect(pack.fillEmpty).toEqual(['en', 'phrases']);
+  });
 });

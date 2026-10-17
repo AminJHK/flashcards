@@ -31,6 +31,24 @@ describe('카드 화면', () => {
     expect(out).toMatch(/class="card-sheet back zoned"><span class="cf-head">.*pokoknya.*아무튼.*cf-tag.*<\/span><span class="cf-details"><span class="cf-example">.*cf-mark.*아무튼 나도 갈 거야!.*<\/span><span class="b-memo">/);
   });
 
+  it('영어 뜻은 위 칸(뜻 아래), 자주 쓰는 표현은 아래 칸에 이름표와 함께, 단어를 강조한다', () => {
+    const out = renderToStaticMarkup(
+      <CardFace
+        side="back"
+        blocks={[
+          { kind: 'word', text: 'kurang', size: 'back', lang: 'id-ID' },
+          { kind: 'meaning', text: '부족한', size: 'back' },
+          { kind: 'gloss', text: 'less / not enough', lang: 'en-US' },
+          { kind: 'phrases', items: [{ text: 'kurang tidur', ko: '잠이 부족하다' }], lang: 'id-ID', highlight: 'kurang' },
+        ]}
+      />,
+    );
+    expect(out).toMatch(/<span class="cf-head">.*부족한.*<span lang="en-US" class="b-gloss">less \/ not enough<\/span><\/span><span class="cf-details"><span class="cf-phrases">/);
+    expect(out).toContain('<span class="cf-label">자주 쓰는 표현</span>');
+    expect(out).toContain('<mark class="cf-mark">kurang</mark> tidur');
+    expect(out).toContain('<span class="cf-phrase-ko">잠이 부족하다</span>');
+  });
+
   it('위 칸이 없으면(문장이 곧 정답인 카드) 가운데에 크게', () => {
     const out = renderToStaticMarkup(<CardFace side="back" blocks={[{ kind: 'sentence', text: '你好', lang: 'zh-CN', emphasis: 'main' }]} />);
     expect(out).toContain('class="card-sheet back"');
