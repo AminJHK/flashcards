@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import type { AccentKey, FontScale, Settings as SettingsT, ThemePref } from '../../core/model/types';
 import { requestPersistence } from '../../adapters/files/share';
 import { saveSettings } from '../../adapters/storage/repo';
-import { onVoicesChanged, speak, ttsSupported, voicesFor } from '../../adapters/tts/webSpeech';
+import { onVoicesChanged, speak, SYSTEM_DEFAULT_VOICE, ttsSupported, voicesFor } from '../../adapters/tts/webSpeech';
 import { daysSince, runBackup, runRestore } from '../backup';
 import { Row, Segmented, Stepper, Switch } from '../components/Controls';
 import { useDecks, useScheduler, useSettings } from '../hooks';
@@ -219,27 +219,35 @@ function VoiceSettings({ s }: { s: SettingsT }) {
       <span className="section-label" style={{ paddingTop: 8 }}>
         기기 음성 {s.gemini?.apiKey ? '· 단어 카드와 Gemini를 못 쓸 때' : ''}
       </span>
+      <span className="faint small" style={{ lineHeight: 1.6, padding: '0 4px 8px' }}>
+        Google TTS를 휴대폰 기본 엔진으로 고른 뒤, 인도네시아어에서 '시스템 기본 음성'을 선택하고 '듣기'로 비교해 보세요.
+        삼성 인터넷이 엔진 설정을 무시하면 목소리가 그대로일 수도 있어요. 기존 학습 기록이나 로그인에는 영향이 없어요.
+        이야기에서도 시험하려면 위 Gemini 음성으로 읽기를 꺼 주세요.
+      </span>
       <div className="group">
-        {!ttsSupported() && <Row title="이 브라우저에서는 발음을 쓸 수 없어요" desc="안드로이드 Chrome에서 열어 주세요." />}
+        {!ttsSupported() && <Row title="이 브라우저에서는 발음을 쓸 수 없어요" desc="이 브라우저에서는 기기 음성을 지원하지 않아요." />}
         {ttsSupported() &&
           langs.map((lang) => {
             const voices = voicesFor(lang);
+            const saved = s.voices[lang];
+            const choice = saved === SYSTEM_DEFAULT_VOICE || voices.some((v) => v.name === saved)
+              ? saved
+              : voices[0]?.name ?? SYSTEM_DEFAULT_VOICE;
             return (
-              <Row key={lang} title={langName(lang)} desc={voices.length ? undefined : '음성이 없어요. 안드로이드 설정 › 텍스트 음성 변환에서 설치해 주세요.'}>
-                {voices.length > 0 && (
-                  <select
-                    className="select"
-                    aria-label={`${langName(lang)} 음성`}
-                    value={s.voices[lang] ?? voices[0]!.name}
-                    onChange={(e) => set({ voices: { ...s.voices, [lang]: e.target.value } })}
-                  >
-                    {voices.map((v) => (
-                      <option key={v.name} value={v.name}>
-                        {v.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
+              <Row key={lang} title={langName(lang)} desc={voices.length ? '시스템 기본을 선택하면 앱이 특정 목소리를 지정하지 않아요.' : '브라우저에 이 언어의 음성이 안 보여요. 시스템 기본으로 재생을 시도할 수 있어요.'}>
+                <select
+                  className="select"
+                  aria-label={`${langName(lang)} 음성`}
+                  value={choice}
+                  onChange={(e) => set({ voices: { ...s.voices, [lang]: e.target.value } })}
+                >
+                  <option value={SYSTEM_DEFAULT_VOICE}>시스템 기본 음성 (Google 시도)</option>
+                  {voices.map((v) => (
+                    <option key={v.name} value={v.name}>
+                      {v.name}
+                    </option>
+                  ))}
+                </select>
                 <button
                   type="button"
                   className="btn-plain"
