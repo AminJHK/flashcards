@@ -8,7 +8,8 @@ import { db } from '../../adapters/storage/db';
 import { loadPinyin } from '../../adapters/pinyin/pinyin';
 import { addPackNotes, applyPackChanges, createDeck, deleteDeck, installPack, moveConnectors, updateDeck } from '../../adapters/storage/repo';
 import { CONNECTOR_DECK_NAME, isConnector } from '../../core/decks/connectors';
-import { packAdditions, packChanges } from '../../core/packs/update';
+import { packAdditions, packChanges, packMissing } from '../../core/packs/update';
+import { PARTICLE_WORDS } from '../../core/packs/indonesianParticles';
 import { PACKS } from '../../core/packs/registry';
 import type { Pack } from '../../core/packs/types';
 import { Row, Segmented, Stepper, Switch } from '../components/Controls';
@@ -309,6 +310,14 @@ export function DeckDetail({ id }: { id: string }) {
   }, [id]);
   // 인도네시아어 단어 중 연결어·표현(아무튼, ~하도록, ~인 것 같다 …)이 이 덱에 몇 개 있는지
   const connectorCount = useLiveQuery(async () => (await db.notes.where('deckId').equals(id).toArray()).filter(isConnector).length, [id]);
+  // 지운 단어: 이 덱의 준비된 덱 원본에는 있는데 지금 어느 덱에도 없는 단어 (중복·어조 말 덱이 맡은 말은 뺀다)
+  const missing = useLiveQuery(async () => {
+    const mine = await db.notes.where('deckId').equals(id).toArray();
+    const all = await db.notes.toArray();
+    return PACKS.map((pack) => ({ pack, notes: mine.some((n) => n.tags.includes(`pack:${pack.id}`)) ? packMissing(pack, all, pack.id === 'indonesian-colloquial' ? PARTICLE_WORDS : undefined) : [] })).filter((x) => x.notes.length > 0);
+  }, [id]);
+  const [skipTags, setSkipTags] = useState<string[]>([]);
+  const [restoring, setRestoring] = useState(false);
   const [adding, setAdding] = useState(false);
   const [moving, setMoving] = useState(false);
   const deck = decks?.find((d) => d.id === id);
@@ -398,6 +407,57 @@ export function DeckDetail({ id }: { id: string }) {
           </button>
         </div>
       )}
+
+      {missing?.map(({ pack, notes }) => {
+        const groups = [...notes.reduce((m, n) => m.set(n.tags[0]!, (m.get(n.tags[0]!) ?? 0) + 1), new Map<string, number>())];
+        const picked = notes.filter((n) => !skipTags.includes(n.tags[0]!));
+        return (
+          <div key={`missing-${pack.id}`} className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 20 }}>
+            <span style={{ fontWeight: 600 }}>지운 단어 {notes.length}개를 되살릴 수 있어요</span>
+            <span className="muted small" style={{ lineHeight: 1.6 }}>
+              「{pack.name}」 원래 목록에는 있는데 지금 덱에 없는 단어예요. 이미 있는 단어는 빼고, 어조 말(dong, sih …)은 「인도네시아어 어조 말」 덱이 맡아서 뺐어요. 되살린 단어는 새 카드로 나와요.
+            </span>
+            <div className="chip-row" role="group" aria-label="되살릴 종류" style={{ flexWrap: 'wrap', overflowX: 'visible', margin: 0, padding: 0 }}>
+              {groups.map(([tag, n]) => (
+                <button key={tag} type="button" className="chip-btn" aria-pressed={!skipTags.includes(tag)} onClick={() => setSkipTags((s) => (s.includes(tag) ? s.filter((x) => x !== tag) : [...s, tag]))}>
+                  {tag} {n}
+                </button>
+              ))}
+            </div>
+            <span className="faint small" style={{ lineHeight: 1.6 }}>
+              {picked
+                .slice(0, 14)
+                .map((n) => n.fields.word)
+                .join(', ')}
+              {picked.length > 14 ? ` 외 ${picked.length - 14}개` : ''}
+            </span>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ height: 48 }}
+              disabled={restoring || !picked.length}
+              onClick={async () => {
+                setRestoring(true);
+                try {
+                  const deps = { pinyin: await loadPinyin() };
+                  const connDeck = decks.find((d) => d.name === CONNECTOR_DECK_NAME && d.id !== deck.id);
+                  const toConn = connDeck ? picked.filter((n) => n.typeId === 'id-spoken' && isConnector({ typeId: n.typeId, fields: n.fields })) : [];
+                  const rest = picked.filter((n) => !toConn.includes(n));
+                  let count = rest.length ? await addPackNotes(deck.id, pack, rest, deps) : 0;
+                  if (connDeck && toConn.length) count += await addPackNotes(connDeck.id, pack, toConn, deps);
+                  toast(`단어 ${count}개를 되살렸어요${toConn.length ? ` (연결어 ${toConn.length}개는 「${CONNECTOR_DECK_NAME}」 덱으로)` : ''}`);
+                } catch {
+                  toast('되살리지 못했어요. 다시 시도해 주세요');
+                } finally {
+                  setRestoring(false);
+                }
+              }}
+            >
+              {restoring ? '되살리는 중…' : `${picked.length}개 되살리기`}
+            </button>
+          </div>
+        );
+      })}
 
       {packMore?.map(({ pack, notes }) => (
         <div key={pack.id} className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 20 }}>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Note } from '../model/types';
-import { packAdditions, packChanges } from './update';
+import { packAdditions, packChanges, packMissing } from './update';
 import type { Pack } from './types';
 
 const pack: Pack = {
@@ -69,5 +69,20 @@ describe('준비된 덱에 단어가 늘었을 때', () => {
     expect(packAdditions(pack, inThisDeck, [...inThisDeck, ...movedAway])).toEqual([]);
     // 이 덱에 꾸러미 단어가 하나도 없으면 다른 덱이므로 없음
     expect(packAdditions(pack, [], movedAway)).toEqual([]);
+  });
+
+  it('지운 단어: 꾸러미에는 있는데 어느 덱에도 없는 것만. 다른 덱에 있거나 skipWords에 든 말은 뺀다', () => {
+    const idPack: Pack = {
+      ...pack,
+      id: 'ip',
+      notes: ['aja', 'emang', 'doang', 'dong', 'banget'].map((w) => ({ typeId: 'id-spoken', fields: { word: w, meaning: '뜻' }, tags: ['담화표지'] })),
+    };
+    const have = (id: string, word: string, deckId = 'd'): Note => note(id, { word, meaning: '뜻' }, { typeId: 'id-spoken', deckId, tags: ['pack:ip'] });
+    const notes = [have('1', 'banget'), have('2', 'emang', 'other')]; // emang은 다른 덱(예: 연결어·표현)에 있다
+    expect(packMissing(idPack, notes).map((n) => n.fields.word)).toEqual(['aja', 'doang', 'dong']);
+    expect(packMissing(idPack, notes, new Set(['dong'])).map((n) => n.fields.word)).toEqual(['aja', 'doang']);
+    // 대소문자·철자만 같아도 있는 말
+    expect(packMissing(idPack, [...notes, have('3', 'AJA')]).map((n) => n.fields.word)).toEqual(['doang', 'dong']);
+    expect(packMissing(idPack, notes.concat([have('4', 'aja'), have('5', 'doang'), have('6', 'dong')]))).toEqual([]);
   });
 });

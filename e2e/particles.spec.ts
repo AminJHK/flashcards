@@ -96,3 +96,50 @@ test('읽기: 어조 말이 이야기 만들기 요청에 PARTICLE로 들어가�
   await page.locator('.story-line').first().getByRole('button', { name: 'sih', exact: true }).click();
   await expect(page.getByRole('tooltip')).toContainText('투덜대는 궁금함');
 });
+
+test('지운 단어 되살리기: 지운 단어만(중복·어조 말 덱이 맡은 말 제외) 골라서 되살린다', async ({ page }) => {
+  await page.goto('/#/decks/new');
+  await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
+  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+  // 처음에는 되살릴 것이 없다
+  await expect(page.getByText(/지운 단어 \d+개를 되살릴 수 있어요/)).toHaveCount(0);
+
+  // aja · doang · emang(연결어) · dong(어조 말) · bakso 같은 일반 단어 하나를 지운다
+  const url = page.url();
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open('flashcards');
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const db = open.result;
+          const tx = db.transaction(['notes', 'cards'], 'readwrite');
+          const notes = tx.objectStore('notes');
+          const cards = tx.objectStore('cards');
+          const gone = new Set(['aja', 'doang', 'emang', 'dong', 'sih']);
+          notes.getAll().onsuccess = (e) => {
+            for (const n of (e.target as IDBRequest).result as { id: string; fields: { word?: string } }[]) {
+              if (!gone.has(n.fields.word ?? '')) continue;
+              notes.delete(n.id);
+              cards.getAll().onsuccess = (ev) => {
+                for (const c of (ev.target as IDBRequest).result as { id: string; noteId: string }[]) if (c.noteId === n.id) cards.delete(c.id);
+              };
+            }
+          };
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        };
+      }),
+  );
+  await page.reload(); // DB를 직접 고쳤으니 화면을 새로 연다
+  await expect(page).toHaveURL(url);
+  // dong·sih는 어조 말 덱이 맡았으니 빼고 3개: aja, doang, emang
+  await expect(page.getByText('지운 단어 3개를 되살릴 수 있어요')).toBeVisible();
+  await expect(page.getByText(/aja, doang, emang|aja, emang, doang|doang, aja, emang|emang, aja, doang/)).toBeVisible();
+  await page.screenshot({ path: 'test-results/shots/57-restore-panel.png' });
+  await page.getByRole('button', { name: '3개 되살리기' }).click();
+  await expect(page.getByText('단어 3개를 되살렸어요')).toBeVisible();
+  await expect(page.getByText(/지운 단어 \d+개를 되살릴 수 있어요/)).toHaveCount(0);
+  // 한 번 더 지워지지 않는다: 단어 수 997 + 3
+  await expect(page.getByRole('button', { name: /단어 998개 보기/ })).toBeVisible();
+});

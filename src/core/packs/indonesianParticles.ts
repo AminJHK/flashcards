@@ -111,3 +111,6 @@ export const indonesianParticles: Pack = {
     ]),
   ],
 };
+
+/** 어조 말 덱이 맡은 말 (구어체 덱에서 지웠어도 단어로 되살리지 않는다: 중복을 피한다) */
+export const PARTICLE_WORDS: ReadonlySet<string> = new Set(indonesianParticles.notes.map((n) => (n.fields.word ?? '').toLowerCase()));
