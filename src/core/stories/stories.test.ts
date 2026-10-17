@@ -212,3 +212,58 @@ describe('의미 단위', () => {
     expect(first.chunks).toBeUndefined(); // 문장에 없는 묶음뿐이면 버린다
   });
 });
+
+describe('어조 말 (id-particle)', () => {
+  /** 어조 말 예문 노트 하나 */
+  const ex = (w: string, state: 'new' | 'learning' | 'review' = 'review', r = 0.95) => {
+    const x = word(w, { example: `Contoh ${w} ${n}` }, state, r);
+    x.note.typeId = 'id-particle';
+    return x;
+  };
+  const particleLex = (items: { note: Note; card: Card }[]) => lexOf([word('aku'), word('mau'), ...items]);
+
+  it('예문마다 노트가 있어도 말 하나로 묶고, 안 본 말은 deckNew, 예문 둘 이상이 모두 단단하면 known', () => {
+    const lex = particleLex([ex('sih'), ex('sih'), ex('sih'), ex('dong'), ex('dong', 'new'), ex('kok', 'new'), ex('kok', 'new')]);
+    const ps = lex.entries.filter((e) => e.kind === 'particle');
+    expect(ps.map((p) => [p.word, p.status])).toEqual([['sih', 'known'], ['dong', 'learning'], ['kok', 'deckNew']]);
+    expect(lex.entries.filter((e) => e.word === 'sih')).toHaveLength(1);
+  });
+
+  it('본 예문이 하나뿐이거나 하나라도 덜 외웠으면 learning', () => {
+    const lex = particleLex([ex('sih'), ex('sih', 'new'), ex('deh', 'review', 0.8), ex('deh', 'review', 0.99)]);
+    expect(Object.fromEntries(lex.entries.filter((e) => e.kind === 'particle').map((p) => [p.word, p.status]))).toEqual({ sih: 'learning', deh: 'learning' });
+  });
+
+  it('어조 말이 이야기에 나오면 알려진 말로 읽히고 뜻(느낌)이 나온다. 안 배운 말도 비율에서는 아는 말로 센다', () => {
+    const lex = particleLex([ex('sih'), ex('sih'), ex('kok', 'new')]);
+    const spans = analyzeText('Aku mau kok sih', lex, new Set());
+    expect(spans.map((x) => [x.text, x.cls])).toEqual([['Aku', 'known'], ['mau', 'known'], ['kok', 'deckNew'], ['sih', 'known']]);
+    const c = measureCoverage(['Aku mau kok sih'], lex, new Set());
+    expect(c).toMatchObject({ tokens: 4, known: 4, deckNew: 0 });
+    expect(spans[2]!.entry?.meaning).toBe('뜻:kok');
+  });
+
+  it('이야기 계획: 어조 말은 단어 목록과 따로, 기억이 약한 순으로 쓰게 하고 안 본 말 하나는 소개한다', () => {
+    const base = Array.from({ length: 45 }, (_, i) => word(`kata${i}`));
+    const strong = [ex('dong'), ex('dong')];
+    const weak = [ex('sih', 'review', 0.7), ex('sih', 'review', 0.75)];
+    const fresh = [ex('kok', 'new'), ex('kok', 'new'), ex('nah', 'new')];
+    const lex = lexOf([...base, ...strong, ...weak, ...fresh]);
+    const plan = planStory(lex, 'normal');
+    expect(plan.particles.map((p) => p.word)).toEqual(['sih', 'dong']);
+    expect(plan.newParticle?.word).toBe('kok');
+    expect(plan.familiar.some((e) => e.kind === 'particle')).toBe(false);
+    expect(plan.newWords.some((e) => e.kind === 'particle')).toBe(false);
+    const prompt = userPrompt(plan, 'daily life');
+    expect(prompt).toMatch(/PARTICLE WORDS \(known, weakest first\): sih, dong/);
+    expect(prompt).toMatch(/NEW PARTICLE: kok/);
+    expect(prompt).toMatch(/Use them naturally in the dialogue lines only/);
+    expect(prompt).not.toMatch(/KNOWN WORDS:.*\bsih\b/);
+  });
+
+  it('어조 말 카드가 없으면 프롬프트에 어조 말 줄이 없다', () => {
+    const lex = lexOf(Array.from({ length: 45 }, (_, i) => word(`kata${i}`)));
+    const prompt = userPrompt(planStory(lex, 'normal'), 'food');
+    expect(prompt).not.toMatch(/PARTICLE/);
+  });
+});

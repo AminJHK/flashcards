@@ -17,6 +17,8 @@ export interface DeckSettings {
   /** 기본(정방향) 카드를 보일지. 없으면 true. 끄면 역방향만 복습한다 (예: 영어 → 스페인어) */
   forwardEnabled?: boolean;
   newPerDay: number;
+  /** 인도네시아어 구어 카드를 "예문 먼저" 보여 줄지 (뜻이 문맥에 따라 달라지는 연결어·표현용). 없으면 false */
+  sentenceFirst?: boolean;
   autoplay: AutoplaySide;
   /** 기본(앞/뒤) 카드처럼 언어가 정해지지 않은 필드의 TTS 언어 */
   langs: { front: Lang; back: Lang };

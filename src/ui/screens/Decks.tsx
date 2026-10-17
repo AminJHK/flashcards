@@ -6,7 +6,8 @@ import type { CardType } from '../../core/cardTypes/types';
 import type { AutoplaySide, DeckSettings } from '../../core/model/types';
 import { db } from '../../adapters/storage/db';
 import { loadPinyin } from '../../adapters/pinyin/pinyin';
-import { addPackNotes, applyPackChanges, createDeck, deleteDeck, installPack, updateDeck } from '../../adapters/storage/repo';
+import { addPackNotes, applyPackChanges, createDeck, deleteDeck, installPack, moveConnectors, updateDeck } from '../../adapters/storage/repo';
+import { CONNECTOR_DECK_NAME, isConnector } from '../../core/decks/connectors';
 import { packAdditions, packChanges } from '../../core/packs/update';
 import { PACKS } from '../../core/packs/registry';
 import type { Pack } from '../../core/packs/types';
@@ -157,7 +158,7 @@ function useInstalledPacks(): Map<string, InstalledPack> | undefined {
       for (const n of notes) if (n.tags.includes(tag)) byDeck.set(n.deckId, [...(byDeck.get(n.deckId) ?? []), n]);
       const best = [...byDeck].sort((a, b) => b[1].length - a[1].length)[0];
       const deck = best && decks.find((d) => d.id === best[0]);
-      if (deck) out.set(pack.id, { deckId: deck.id, deckName: deck.name, more: packAdditions(pack, best[1]) });
+      if (deck) out.set(pack.id, { deckId: deck.id, deckName: deck.name, more: packAdditions(pack, best[1], notes) });
     }
     return out;
   }, [decks, notes]);
@@ -303,9 +304,13 @@ export function DeckDetail({ id }: { id: string }) {
   // 준비된 덱에 단어가 늘었으면, 이 덱에 더 넣을 수 있는 단어들
   const packMore = useLiveQuery(async () => {
     const notes = await db.notes.where('deckId').equals(id).toArray();
-    return PACKS.map((pack) => ({ pack, notes: packAdditions(pack, notes) })).filter((x) => x.notes.length > 0);
+    const all = await db.notes.toArray();
+    return PACKS.map((pack) => ({ pack, notes: packAdditions(pack, notes, all) })).filter((x) => x.notes.length > 0);
   }, [id]);
+  // 인도네시아어 단어 중 연결어·표현(아무튼, ~하도록, ~인 것 같다 …)이 이 덱에 몇 개 있는지
+  const connectorCount = useLiveQuery(async () => (await db.notes.where('deckId').equals(id).toArray()).filter(isConnector).length, [id]);
   const [adding, setAdding] = useState(false);
+  const [moving, setMoving] = useState(false);
   const deck = decks?.find((d) => d.id === id);
   const [name, setName] = useState<string>();
 
@@ -364,6 +369,35 @@ export function DeckDetail({ id }: { id: string }) {
           단어 {noteCount}개 보기
         </button>
       </div>
+
+      {!!connectorCount && deck.name !== CONNECTOR_DECK_NAME && (
+        <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 20 }}>
+          <span style={{ fontWeight: 600 }}>연결어·표현 {connectorCount}개를 따로 모을 수 있어요</span>
+          <span className="muted small" style={{ lineHeight: 1.6 }}>
+            pokoknya(아무튼), supaya(~하도록), kayaknya(~인 것 같아)처럼 뜻이 문장 속에서 정해지는 말이에요. 새 덱 「{CONNECTOR_DECK_NAME}」으로 옮겨서, 예문을 먼저 보며 하루 3개씩 천천히 익혀요. 복습 기록은 그대로 따라가고 읽기(이야기)에서도 똑같이 쓰여요.
+          </span>
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ height: 48 }}
+            disabled={moving}
+            onClick={async () => {
+              if (!(await ask(`연결어·표현 ${connectorCount}개를 「${CONNECTOR_DECK_NAME}」 덱으로 옮길까요?`, '옮기기'))) return;
+              setMoving(true);
+              try {
+                const r = await moveConnectors(deck.id);
+                toast(`${r.moved}개를 「${r.deck.name}」으로 옮겼어요`);
+                go(`decks/${r.deck.id}`);
+              } catch {
+                toast('옮기지 못했어요. 다시 시도해 주세요');
+                setMoving(false);
+              }
+            }}
+          >
+            {moving ? '옮기는 중…' : '연결어 따로 모으기'}
+          </button>
+        </div>
+      )}
 
       {packMore?.map(({ pack, notes }) => (
         <div key={pack.id} className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 20 }}>
@@ -446,8 +480,13 @@ export function DeckDetail({ id }: { id: string }) {
             }}
           />
         </Row>
+        {type.id === 'id-spoken' && (
+          <Row title="예문 먼저 보기" desc="앞면에 단어 대신 예문을 보여 줘요. 뜻이 문맥에 따라 달라지는 연결어·표현(pokoknya, supaya …)에 좋아요.">
+            <Switch label="예문 먼저 보기" checked={s.sentenceFirst === true} onChange={(v) => void set({ sentenceFirst: v })} />
+          </Row>
+        )}
         <Row title="하루 새 카드">
-          <Stepper label="하루 새 카드" value={s.newPerDay} min={0} max={200} step={5} onChange={(v) => set({ newPerDay: v })} />
+          <Stepper label="하루 새 카드" value={s.newPerDay} min={0} max={200} step={s.newPerDay <= 10 ? 1 : 5} onChange={(v) => set({ newPerDay: v })} />
         </Row>
         <Row col title="발음 자동 재생">
           <Segmented<AutoplaySide>

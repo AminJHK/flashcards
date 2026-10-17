@@ -134,3 +134,12 @@ npm run dev        # 개발 서버
 - 읽기 탭: 위 "새 이야기" 카드(난이도 + 주제 가로 칩 + 만들기), 만든 직후에는 완성 알림 카드(음성 준비 진행 포함, 그 이야기를 읽기 시작하면 사라짐), 아래가 이야기 목록. 줄마다 상태 칩(새 이야기 / N% / 다 읽음) + ⋯ 메뉴(읽기 · 처음부터 다시 읽기 · 지우기).
 - 읽기 화면: 모델 이름·목소리·배속 같은 음성 정보 줄은 평소 숨김. 새 음성을 만드느라 1.2초 넘게 걸릴 때 "음성 준비 중…", Gemini를 못 써서 기기 음성으로 바뀌었을 때만 이유를 보여 준다.
 - 다음 후보: 홈(오늘)·덱 화면 정리, 복습 화면 위쪽 정리.
+
+## 어조 말 덱 · 연결어·표현 덱 · 읽기 연동
+- **카드 종류 `id-particle`** (`core/cardTypes/idParticle.ts`): 노트 하나 = 예문 하나(같은 말이 여러 노트). 앞면: 「sih」는 여기서 어떤 느낌일까? + 예문, 뒷면: 예문 뜻·말·느낌·이 문장에서. 중복 기준은 말+예문.
+- **준비된 덱 `indonesian-particles`** (`core/packs/indonesianParticles.ts`): sih dong deh kok kan lho nih tuh yah nah × 예문 6개 = 60장, 하루 5개. 예문·설명은 AI가 써서 현지인 검증 안 함. 새 말·예문은 파일 끝에 이어서 추가할 것(packAdditions).
+- **연결어·표현 덱**: 구어체 덱 화면에 "연결어 따로 모으기" 패널 → `moveConnectors`(repo.ts)가 덱 「연결어·표현」(하루 3개, 예문 먼저)을 만들고 `CONNECTOR_WORDS`(core/decks/connectors.ts, 직접 고른 약 40개)에 든 id-spoken 노트를 옮긴다. 한 트랜잭션에서 bulkPut, 복습 기록·기억 상태는 그대로. yang/di/ke/dari/dan/tapi 같은 기본 단어는 일부러 뺐다.
+- **예문 먼저 보기**: `DeckSettings.sentenceFirst`(선택 필드, 마이그레이션 필요 없음). id-spoken 카드의 앞면이 예문(+「단어」는 여기서 무슨 뜻일까?). 덱 설정에 스위치.
+- `packAdditions(pack, notes, everywhere)`: 다른 덱으로 옮긴 단어도 "이미 받은 단어"로 세어서, 옮긴 연결어가 새 단어로 다시 들어오지 않는다.
+- **읽기 연동**: `buildLexicon`이 id-particle 노트를 말(word)별로 묶어 `kind:'particle'` 항목 하나로 넣는다(안 본 말=deckNew, 본 예문 2개 이상이 모두 단단하면 known). 같은 말이 구어체 덱에도 있으면 같은 상태일 때 어조 말 쪽을 쓰고, 단어 목록에서는 뺀다. `planStory`: `particles`(본 말, 기억 약한 순) + `newParticle`(덱의 다음 안 본 말 하나) → 프롬프트에 "PARTICLE WORDS / NEW PARTICLE, 대화에서만 1~3개, 새 말은 2번 이상". 비율 계산에서 어조 말은 안 배운 말이어도 아는 말로 센다. 이야기에서 어조 말을 누르면 말풍선에 느낌.
+- 테스트: `e2e/particles.spec.ts`, `core/stories/stories.test.ts`(어조 말), `core/decks/connectors.test.ts`, `repo.test.ts`(연결어 옮기기).

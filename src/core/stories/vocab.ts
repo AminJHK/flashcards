@@ -23,6 +23,8 @@ export interface VocabEntry {
   root: string;
   status: VocabStatus;
   recall?: number;
+  /** 'particle'이면 어조 말(sih, dong …). 예문마다 노트가 있어도 말 하나로 묶인 항목이다 */
+  kind?: 'particle';
   /** 덱 안의 순서 (작을수록 먼저 나오는 = 자주 쓰는 단어) */
   order: number;
 }
@@ -78,7 +80,7 @@ export function buildLexicon(notes: readonly Note[], cards: readonly Card[], sch
     const status: VocabStatus = m.level === 'fresh' ? 'deckNew' : m.level !== 'learning' && (m.recall ?? 0) >= KNOWN_RECALL ? 'known' : 'learning';
     entries.push({ noteId: n.id, word: n.fields.word!.trim(), meaning: n.fields.meaning ?? '', standard: n.fields.standard ?? '', root: n.fields.root ?? '', status, recall: m.recall, order: i });
   });
-
+  addParticles(entries, notes, byNote, scheduler, now, sorted.length);
   const forms = new Map<string, VocabEntry>();
   const phrases: Lexicon['phrases'] = [];
   const put = (form: string, e: VocabEntry) => {
@@ -89,7 +91,9 @@ export function buildLexicon(notes: readonly Note[], cards: readonly Card[], sch
       return;
     }
     const old = forms.get(f);
-    if (!old || STATUS_RANK[e.status] > STATUS_RANK[old.status]) forms.set(f, e);
+    // 같은 말이 어조 말 덱에도 있으면 (같은 상태일 때) 어조 말 쪽을 쓴다: 느낌 설명이 더 쓸모 있고, 이야기에서 따로 다룬다
+    const better = !old || STATUS_RANK[e.status] > STATUS_RANK[old.status] || (e.kind === 'particle' && old.kind !== 'particle' && STATUS_RANK[e.status] >= STATUS_RANK[old.status]);
+    if (better) forms.set(f, e);
   };
   for (const e of entries) {
     put(e.word, e);
@@ -103,6 +107,39 @@ export function buildLexicon(notes: readonly Note[], cards: readonly Card[], sch
   }
   phrases.sort((a, b) => b.tokens.length - a.tokens.length);
   return { entries, forms, phrases };
+}
+
+/**
+ * 어조 말(id-particle)은 예문마다 노트가 있으므로 말(word)별로 하나로 묶는다.
+ * - 한 번도 안 본 말이면 deckNew
+ * - 본 예문이 둘 이상(또는 전부)이고 모두 복습 단계에서 평균 떠올릴 확률이 KNOWN_RECALL 이상이면 known, 아니면 learning
+ * - 읽기에서는 이 말들을 "자연스럽게 섞어 쓸 말"로 따로 다룬다 (planStory)
+ */
+function addParticles(entries: VocabEntry[], notes: readonly Note[], byNote: Map<string, Card[]>, scheduler: Scheduler, now: Millis, base: number): void {
+  const groups = new Map<string, { notes: Note[]; mems: NonNullable<ReturnType<typeof wordMemory>>[] }>();
+  const sorted = notes.filter((n) => n.typeId === 'id-particle' && n.fields.word?.trim()).sort((a, b) => a.createdAt - b.createdAt);
+  for (const n of sorted) {
+    const m = wordMemory(byNote.get(n.id) ?? [], scheduler, now);
+    if (!m) continue;
+    const key = norm(n.fields.word!);
+    const g = groups.get(key) ?? { notes: [], mems: [] };
+    g.notes.push(n);
+    g.mems.push(m);
+    groups.set(key, g);
+  }
+  let i = 0;
+  for (const g of groups.values()) {
+    const seen = g.mems.filter((m) => m.level !== 'fresh');
+    let status: VocabStatus = 'deckNew';
+    let recall: number | undefined;
+    if (seen.length) {
+      recall = seen.reduce((sum, m) => sum + (m.recall ?? 0), 0) / seen.length;
+      const solid = seen.every((m) => m.level !== 'learning') && recall >= KNOWN_RECALL && (seen.length >= 2 || seen.length === g.mems.length);
+      status = solid ? 'known' : 'learning';
+    }
+    const first = g.notes[0]!;
+    entries.push({ noteId: first.id, word: first.fields.word!.trim(), meaning: first.fields.meaning ?? '', standard: '', root: '', status, recall, kind: 'particle', order: base + i++ });
+  }
 }
 
 /** 한 단어의 뜻을 찾는다: 그대로 → -nya 같은 붙는 말을 떼고 → 반복형(anak-anak)은 앞부분으로 */
@@ -182,8 +219,10 @@ export function measureCoverage(texts: readonly string[], lex: Lexicon, names: R
         continue;
       }
       c.tokens += s.words;
-      c[s.cls] += s.words;
-      if (s.cls === 'deckNew') dn.add(s.entry!.word);
+      // 어조 말은 내용어가 아니고 이야기에 꼭 섞어 쓰게 하는 말이라, 아직 안 배운 말이어도 비율에서는 아는 말로 센다
+      const cls = s.entry?.kind === 'particle' ? 'known' : s.cls;
+      c[cls] += s.words;
+      if (cls === 'deckNew') dn.add(s.entry!.word);
       if (s.cls === 'outside') out.add(norm(s.text));
     }
   }

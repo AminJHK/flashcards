@@ -30,14 +30,15 @@ export function packChanges(pack: Pack, notes: readonly Note[]): PackChange[] {
 
 /**
  * 준비된 덱에 단어가 늘었을 때, 이미 설치한 덱에 더 넣을 단어를 찾는다.
- * - 이 덱에 그 꾸러미 단어가 하나도 없으면 없음 (다른 덱).
+ * - 이 덱(notes)에 그 꾸러미 단어가 하나도 없으면 없음 (다른 덱). 받은 단어인지는 모든 덱(everywhere)에서 본다.
  * - 이미 받은 단어 중 꾸러미에서 가장 뒤에 있는 것 다음부터만 본다. 그래서 사용자가 지운 단어는 다시 넣지 않는다.
  */
-export function packAdditions(pack: Pack, notes: readonly Note[]): Pack['notes'] {
+export function packAdditions(pack: Pack, notes: readonly Note[], everywhere: readonly Note[] = notes): Pack['notes'] {
   const tag = `pack:${pack.id}`;
   const keyOf = (typeId: string, fields: Record<string, string>) => `${typeId}|${getCardType(typeId).duplicateKey(fields)}`;
-  const have = new Set(notes.filter((n) => n.tags.includes(tag)).map((n) => keyOf(n.typeId, n.fields)));
-  if (!have.size) return [];
+  if (!notes.some((n) => n.tags.includes(tag))) return [];
+  // 다른 덱으로 옮긴 단어(예: 연결어·표현 덱)도 "이미 받은 단어"로 센다. 안 그러면 옮긴 단어가 새 단어로 다시 들어온다
+  const have = new Set(everywhere.filter((n) => n.tags.includes(tag)).map((n) => keyOf(n.typeId, n.fields)));
   let last = -1;
   pack.notes.forEach((pn, i) => {
     if (have.has(keyOf(pn.typeId, pn.fields))) last = i;

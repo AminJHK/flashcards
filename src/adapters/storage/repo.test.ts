@@ -149,4 +149,33 @@ describe('repo', () => {
     expect(merged.tombstones.map((t) => t.id)).toContain(gone.id);
     other.close();
   });
+
+  it('연결어 옮기기: 연결어만 새 덱으로 가고, 복습 기록·기억 상태가 그대로 따라가며, 다시 눌러도 덱이 늘지 않는다', async () => {
+    const idSettings = { defaultTypeId: 'id-spoken', reverseEnabled: false, newPerDay: 10, autoplay: 'front' as const, langs: { front: 'id-ID', back: 'ko-KR' } };
+    const main = await repo.createDeck('인도네시아어 구어체', idSettings, d);
+    const f = (word: string, meaning: string) => ({ word, meaning, example: `Contoh ${word}.`, exampleKo: '예' });
+    const aku = await repo.addNote(main.id, 'id-spoken', f('aku', '나'), d);
+    const pok = await repo.addNote(main.id, 'id-spoken', f('pokoknya', '아무튼'), d); // 목록에 있는 말
+    await repo.addNote(main.id, 'id-spoken', f('supaya', '~하도록'), d);
+    const yang = await repo.addNote(main.id, 'id-spoken', f('yang', '~하는'), d); // 기본 단어는 옮기지 않는다
+    const card = (await d.cards.where('noteId').equals(pok.id).toArray())[0]!;
+    await repo.recordReview(card.id, 3, 900, d);
+    const before = (await d.cards.get(card.id))!;
+
+    const r = await repo.moveConnectors(main.id, d);
+    expect(r.moved).toBe(2);
+    expect(r.deck.name).toBe('연결어·표현');
+    expect(r.deck.settings).toMatchObject({ newPerDay: 3, sentenceFirst: true, defaultTypeId: 'id-spoken' });
+    expect((await d.notes.get(aku.id))!.deckId).toBe(main.id);
+    expect((await d.notes.get(yang.id))!.deckId).toBe(main.id);
+    expect((await d.notes.get(pok.id))!.deckId).toBe(r.deck.id);
+    const after = (await d.cards.get(card.id))!;
+    expect(after.deckId).toBe(r.deck.id);
+    expect([after.reps, after.phase, after.due, after.memory]).toEqual([before.reps, before.phase, before.due, before.memory]);
+    expect(await d.reviewLogs.where('cardId').equals(card.id).count()).toBe(1);
+
+    const again = await repo.moveConnectors(main.id, d);
+    expect(again.moved).toBe(0);
+    expect((await d.decks.toArray()).filter((x) => x.name === '연결어·표현')).toHaveLength(1);
+  });
 });

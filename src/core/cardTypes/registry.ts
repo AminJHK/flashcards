@@ -1,5 +1,6 @@
 import { basic } from './basic';
 import { esConj } from './esConj';
+import { idParticle } from './idParticle';
 import { idSpoken } from './idSpoken';
 import type { CardType } from './types';
 import { zhListen } from './zhListen';
@@ -7,7 +8,7 @@ import { zhSentence } from './zhSentence';
 import { zhWord } from './zhWord';
 
 /** 새 카드 종류는 모듈을 하나 만들고 여기에 한 줄 추가하면 된다. */
-export const CARD_TYPES: readonly CardType[] = [zhWord, basic, zhSentence, zhListen, esConj, idSpoken];
+export const CARD_TYPES: readonly CardType[] = [zhWord, basic, zhSentence, zhListen, esConj, idSpoken, idParticle];
 
 const byId = new Map(CARD_TYPES.map((t) => [t.id, t]));
 

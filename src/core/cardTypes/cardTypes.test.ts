@@ -64,4 +64,25 @@ describe('카드 종류', () => {
   it('필수 필드 검사', () => {
     expect(missingRequired(getCardType('zh-word'), { hanzi: '书', meaning: ' ' }).map((f) => f.key)).toEqual(['meaning']);
   });
+
+  it('어조 말: 앞면은 예문과 질문, 뒷면에서 예문 뜻·말·느낌·이 문장에서를 보여 주고, 같은 말의 다른 예문은 다른 카드', () => {
+    const t = getCardType('id-particle');
+    const v = t.view('forward', { fields: { word: 'sih', meaning: '투덜대는 궁금함', example: 'Kenapa sih?', exampleKo: '도대체 왜?', note: '답답함' }, deck: d });
+    expect(v.front).toEqual([
+      { kind: 'prompt', text: '「sih」는 여기서 어떤 느낌일까?' },
+      { kind: 'sentence', text: 'Kenapa sih?', lang: 'id-ID', emphasis: 'main' },
+    ]);
+    expect(v.back.map((b) => b.kind)).toEqual(['sentence', 'sentence', 'divider', 'word', 'meaning', 'memo']);
+    expect(v.tts.front).toEqual([{ text: 'Kenapa sih?', lang: 'id-ID' }]);
+    expect(t.duplicateKey({ word: 'sih', example: 'A' })).not.toBe(t.duplicateKey({ word: 'sih', example: 'B' }));
+  });
+
+  it('인도네시아어 구어: "예문 먼저 보기"를 켜면 앞면이 예문이고, 예문이 없으면 단어를 보여 준다', () => {
+    const t = getCardType('id-spoken');
+    const on = { ...d, settings: { ...d.settings, sentenceFirst: true } };
+    const f = { word: 'pokoknya', meaning: '아무튼', example: 'Pokoknya aku ikut!', exampleKo: '아무튼 나도 갈 거야!' };
+    expect(t.view('forward', { fields: f, deck: on }).front.map((b) => b.kind)).toEqual(['prompt', 'sentence']);
+    expect(t.view('forward', { fields: f, deck: d }).front.map((b) => b.kind)).toEqual(['word']);
+    expect(t.view('forward', { fields: { ...f, example: '' }, deck: on }).front.map((b) => b.kind)).toEqual(['word']);
+  });
 });

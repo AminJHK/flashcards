@@ -12,6 +12,10 @@ export interface StoryPlan {
   reinforce: VocabEntry[];
   /** 이번에 새로 소개할 단어 (덱의 다음 단어 = 빈도순) */
   newWords: VocabEntry[];
+  /** 어조 말 (sih, dong …) 중 이미 본 것. 기억이 약한 순. 대화에 자연스럽게 1~3개 섞는다 */
+  particles: VocabEntry[];
+  /** 아직 안 본 어조 말 하나 (덱의 다음 것). 이야기에서 두 번 이상 소개한다 */
+  newParticle?: VocabEntry;
   /** 아는 단어가 적을 때 어쩔 수 없으면 써도 되는 덱 단어 */
   deckPool: VocabEntry[];
   fallback: boolean;
@@ -22,8 +26,14 @@ export class StoryPlanError extends Error {}
 const NEW_WORDS: Record<StoryDifficulty, number> = { easy: 2, normal: 4, challenge: 6 };
 
 export function planStory(lex: Lexicon, difficulty: StoryDifficulty): StoryPlan {
-  const familiar = lex.entries.filter((e) => e.status !== 'deckNew').sort((a, b) => a.order - b.order);
-  const deckNew = lex.entries.filter((e) => e.status === 'deckNew').sort((a, b) => a.order - b.order);
+  const allParticles = lex.entries.filter((e) => e.kind === 'particle');
+  // 어조 말 덱에 있는 말은 단어 목록에서 뺀다 (구어체 덱에 같은 말이 있어도 어조 말로만 다룬다)
+  const particleWords = new Set(allParticles.map((e) => norm(e.word)));
+  const words = lex.entries.filter((e) => e.kind !== 'particle' && !particleWords.has(norm(e.word)));
+  const familiar = words.filter((e) => e.status !== 'deckNew').sort((a, b) => a.order - b.order);
+  const deckNew = words.filter((e) => e.status === 'deckNew').sort((a, b) => a.order - b.order);
+  const particles = allParticles.filter((e) => e.status !== 'deckNew').sort((a, b) => (a.recall ?? 0) - (b.recall ?? 0));
+  const newParticle = allParticles.filter((e) => e.status === 'deckNew').sort((a, b) => a.order - b.order)[0];
   if (familiar.length + deckNew.length < 40) throw new StoryPlanError('인도네시아어 단어가 너무 적어요. 먼저 인도네시아어 덱을 추가해 주세요');
   const fallback = familiar.length < FALLBACK_MIN_FAMILIAR;
   const newWords = deckNew.slice(0, NEW_WORDS[difficulty]);
@@ -36,6 +46,8 @@ export function planStory(lex: Lexicon, difficulty: StoryDifficulty): StoryPlan 
       .sort((a, b) => (a.recall ?? 0) - (b.recall ?? 0))
       .slice(0, 8),
     newWords,
+    particles,
+    newParticle,
     deckPool: fallback ? deckNew.slice(newWords.length, newWords.length + 300) : [],
     fallback,
   };
@@ -74,6 +86,11 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     '- You may use the forms in brackets, e.g. "nyari(=mencari)" means both nyari and mencari are known. Adding -nya, -lah, -kah, -ku or -mu to a known word is fine. Other affixes (me-, ber-, di-, -kan, -i) make a NEW word.',
     `- Introduce the NEW WORDS below (use each one at least twice so the reader can guess it). Apart from them, avoid any word that is not listed.`,
     plan.reinforce.length ? '- Also use 3 or more of the REVIEW WORDS (the learner is still learning them).' : '',
+    plan.particles.length || plan.newParticle
+      ? '- PARTICLES are short spoken particles (sih, dong, deh, kok, kan, lho …). Use them naturally in the dialogue lines only (never in narration), where a native speaker really would say them: ' +
+        [plan.particles.length ? 'use 1 to 3 of the PARTICLE WORDS, preferring the first ones' : '', plan.newParticle ? 'use the NEW PARTICLE at least twice in different lines so the reader can feel its meaning' : ''].filter(Boolean).join(', and ') +
+        '. They never count against the unknown-word limit.'
+      : '',
     plan.fallback
       ? `- The learner knows few words yet. If a sentence is impossible with KNOWN WORDS, you may use DECK WORDS. Words outside all lists must stay under ${unknownPct}% of word occurrences.`
       : `- Words that are not KNOWN WORDS (including the new words) must stay under ${unknownPct}% of word occurrences.`,
@@ -81,6 +98,8 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     '',
     `KNOWN WORDS: ${plan.familiar.map(form).join(', ')}`,
     plan.reinforce.length ? `REVIEW WORDS: ${plan.reinforce.map(form).join(', ')}` : '',
+    plan.particles.length ? `PARTICLE WORDS (known, weakest first): ${plan.particles.map(form).join(', ')}` : '',
+    plan.newParticle ? `NEW PARTICLE: ${plan.newParticle.word}` : '',
     `NEW WORDS: ${plan.newWords.map(form).join(', ') || '(none)'}`,
     plan.fallback && plan.deckPool.length ? `DECK WORDS (only when necessary): ${plan.deckPool.map(form).join(', ')}` : '',
     '',

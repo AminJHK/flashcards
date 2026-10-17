@@ -1,3 +1,4 @@
+import { CONNECTOR_DECK_NAME, CONNECTOR_DECK_SETTINGS, isConnector } from '../../core/decks/connectors';
 import { getCardType } from '../../core/cardTypes/registry';
 import type { DeriveDeps } from '../../core/cardTypes/types';
 import type { Pack } from '../../core/packs/types';
@@ -108,6 +109,36 @@ export async function updateNote(
       const changed = cardsForNote(next, cards, deck, Date.now(), schedulerFor(await getSettings(d)));
       await d.cards.bulkPut(changed);
     }
+  });
+}
+
+/**
+ * 연결어·표현 덱을 만들고(이미 있으면 그 덱) 이 덱의 연결어 단어를 옮긴다. 복습 기록과 기억 상태는 그대로 따라간다.
+ * 이미 연결어 덱에 있는 단어는 건드리지 않는다. 옮긴 개수와 덱을 돌려준다.
+ */
+export async function moveConnectors(fromDeckId: Id, d: FlashcardsDB = db): Promise<{ moved: number; deck: Deck }> {
+  return d.transaction('rw', [d.decks, d.notes, d.cards, d.settings], async () => {
+    const all = await d.decks.toArray();
+    let deck = all.find((x) => x.name === CONNECTOR_DECK_NAME && x.id !== fromDeckId);
+    const mine = (await d.notes.where('deckId').equals(fromDeckId).toArray()).filter(isConnector);
+    if (!mine.length) return { moved: 0, deck: deck ?? (await createDeck(CONNECTOR_DECK_NAME, { ...CONNECTOR_DECK_SETTINGS }, d)) };
+    if (!deck) deck = await createDeck(CONNECTOR_DECK_NAME, { ...CONNECTOR_DECK_SETTINGS }, d);
+    const now = Date.now();
+    const sched = schedulerFor(await getSettings(d));
+    const cards = await d.cards.where('deckId').equals(fromDeckId).toArray();
+    const byNote = new Map<Id, Card[]>();
+    for (const c of cards) byNote.set(c.noteId, [...(byNote.get(c.noteId) ?? []), c]);
+    const notes: Note[] = [];
+    const changed: Card[] = [];
+    for (const n of mine) {
+      const next: Note = { ...n, deckId: deck.id, updatedAt: now };
+      notes.push(next);
+      changed.push(...cardsForNote(next, byNote.get(n.id) ?? [], deck, now, sched));
+    }
+    // 한 번에 저장한다 (70개를 하나씩 저장하면 폰에서 몇 초 걸린다)
+    await d.notes.bulkPut(notes);
+    await d.cards.bulkPut(changed);
+    return { moved: mine.length, deck };
   });
 }
 

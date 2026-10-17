@@ -60,4 +60,14 @@ describe('준비된 덱에 단어가 늘었을 때', () => {
     const all = big.notes.map((pn, i) => note(`n${i}`, pn.fields));
     expect(packAdditions(big, all)).toEqual([]);
   });
+
+  it('다른 덱(예: 연결어·표현)으로 옮긴 단어는 이미 받은 단어로 세어서, 새 단어로 다시 들어오지 않는다', () => {
+    const inThisDeck = [note('1', { front: 'tener', back: 'to have (own, possess)', memo: 'tengo' })];
+    const movedAway = [note('2', { front: 'la casa', back: 'house, home', memo: '' }, { deckId: 'other' })];
+    // 이 덱에만 보면 뒤의 단어(la casa)가 새 단어처럼 보이지만, 모든 덱을 보면 이미 받은 단어다
+    expect(packAdditions(pack, inThisDeck).map((n) => n.fields.front)).toEqual(['la casa']);
+    expect(packAdditions(pack, inThisDeck, [...inThisDeck, ...movedAway])).toEqual([]);
+    // 이 덱에 꾸러미 단어가 하나도 없으면 다른 덱이므로 없음
+    expect(packAdditions(pack, [], movedAway)).toEqual([]);
+  });
 });

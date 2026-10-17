@@ -55,6 +55,24 @@ export const idSpoken: CardType = {
         autoplay: ctx.deck.settings.autoplay === 'off' ? 'off' : 'back',
       };
     }
+    // 예문 먼저: 뜻이 문맥에 따라 달라지는 연결어·표현은 단어만 보면 떠올리기 어려워서, 예문 속에서 본다 (덱 설정 "예문 먼저 보기")
+    if (ctx.deck.settings.sentenceFirst && t('example')) {
+      return {
+        front: [
+          { kind: 'prompt', text: `「${t('word')}」는 여기서 무슨 뜻일까?` },
+          { kind: 'sentence', text: t('example'), lang: LANG, emphasis: 'main' },
+        ],
+        back: [
+          { kind: 'sentence', text: t('example'), lang: LANG, emphasis: 'main' },
+          ...(t('exampleKo') ? [{ kind: 'sentence' as const, text: t('exampleKo'), lang: 'ko-KR', emphasis: 'sub' as const }] : []),
+          { kind: 'divider' },
+          { kind: 'word', text: t('word'), size: 'back', lang: LANG },
+          { kind: 'meaning', text: t('meaning'), size: 'back' },
+          ...(memoText ? [{ kind: 'memo' as const, text: memoText }] : []),
+        ],
+        tts: { front: sayExample, back: [sayWord, ...sayExample] },
+      };
+    }
     return {
       front: [{ kind: 'word', text: t('word'), size: 'front', lang: LANG }],
       back,
