@@ -230,9 +230,13 @@ function VoiceSettings({ s }: { s: SettingsT }) {
                   <select
                     className="select"
                     aria-label={`${langName(lang)} 음성`}
-                    value={s.voices[lang] ?? voices[0]!.name}
-                    onChange={(e) => set({ voices: { ...s.voices, [lang]: e.target.value } })}
+                    value={voices.some((v) => v.name === s.voices[lang]) ? s.voices[lang] : ''}
+                    onChange={(e) => {
+                      const { [lang]: _old, ...rest } = s.voices;
+                      set({ voices: e.target.value ? { ...rest, [lang]: e.target.value } : rest });
+                    }}
                   >
+                    <option value="">휴대폰 기본 목소리</option>
                     {voices.map((v) => (
                       <option key={v.name} value={v.name}>
                         {v.name}
@@ -245,7 +249,7 @@ function VoiceSettings({ s }: { s: SettingsT }) {
                   className="btn-plain"
                   style={{ border: 'none' }}
                   onClick={() => {
-                    if (!speak([{ text: SAMPLE[lang] ?? 'Hello', lang }], s.voices)) toast(noVoiceMessage([lang]));
+                    if (!speak([{ text: SAMPLE[lang] ?? 'Hello', lang }], s.voices, s.deviceRate ?? 0.9, s.devicePitch ?? 1)) toast(noVoiceMessage([lang]));
                   }}
                 >
                   듣기
@@ -254,6 +258,21 @@ function VoiceSettings({ s }: { s: SettingsT }) {
             );
           })}
       </div>
+      {ttsSupported() && (
+        <>
+          <div className="group">
+            <Row title="속도" desc="단어 카드를 읽는 빠르기예요. 이야기 읽기 속도는 읽기 화면의 톱니에서 따로 정해요.">
+              <Stepper label="기기 음성 속도" value={Math.round((s.deviceRate ?? 0.9) * 100)} min={50} max={150} step={5} format={(v) => `${(v / 100).toFixed(2)}배`} onChange={(v) => set({ deviceRate: v / 100 })} />
+            </Row>
+            <Row title="높낮이" desc="1.00이 보통이에요. 낮추면 차분하고 낮은 목소리가 돼요. 단어 카드와 이야기 모두에 적용돼요.">
+              <Stepper label="기기 음성 높낮이" value={Math.round((s.devicePitch ?? 1) * 100)} min={50} max={150} step={5} format={(v) => (v / 100).toFixed(2)} onChange={(v) => set({ devicePitch: v / 100 })} />
+            </Row>
+          </div>
+          <span className="faint small" style={{ padding: '0 4px', lineHeight: 1.6 }}>
+            휴대폰 설정(텍스트 음성 변환)의 속도·높낮이는 앱에서 쓰이지 않아요. 브라우저가 앱의 값을 직접 보내기 때문이에요. 어떤 엔진(삼성, 구글 등)으로 읽을지는 휴대폰 설정의 기본 엔진을 따라요.
+          </span>
+        </>
+      )}
     </>
   );
 }

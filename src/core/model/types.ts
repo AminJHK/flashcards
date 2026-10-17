@@ -121,8 +121,12 @@ export interface Settings {
   storyPlaybackRate?: number;
   /** 이야기 ID → 등장인물 ID(또는 '__narrator__') → Gemini 목소리. API 키와 무관하다. */
   storyVoices?: Record<string, Record<string, string>>;
-  /** 언어별로 고른 기기 음성 이름 */
+  /** 언어별로 고른 기기 음성 이름. 없으면 휴대폰 TTS 엔진의 기본 목소리 */
   voices: Record<Lang, string>;
+  /** 기기 음성 속도 (단어 카드 등, 이야기는 storyPlaybackRate). 휴대폰 설정 값은 브라우저가 덮어써서 앱에서 정한다 */
+  deviceRate?: number;
+  /** 기기 음성 높낮이 (1 = 보통) */
+  devicePitch?: number;
   lastBackupAt?: Millis;
   /** 자연스러운 음성 (Gemini API 무료 키). 키는 백업 파일에 넣지 않는다 */
   gemini?: GeminiSettings;

@@ -589,9 +589,9 @@ export function DeckDetail({ id }: { id: string }) {
                   const text = (n?.fields.front ?? n?.fields.verb ?? '').trim();
                   if (!text) return toast('읽어 볼 단어가 없어요');
                   await voicesReady();
-                  const ok = deviceSpeak([{ text, lang: s.langs.front }], settings?.voices);
-                  const voice = voicesFor(s.langs.front)[0];
-                  toast(ok ? `${langName(s.langs.front)} 음성으로 읽어요${voice ? ` · ${voice.name}` : ''} · "${text}"` : noVoiceMessage([s.langs.front]));
+                  const ok = deviceSpeak([{ text, lang: s.langs.front }], settings?.voices, settings?.deviceRate, settings?.devicePitch);
+                  const voice = voicesFor(s.langs.front).find((v) => v.name === settings?.voices[s.langs.front])?.name ?? '휴대폰 기본 목소리';
+                  toast(ok ? `${langName(s.langs.front)} 음성으로 읽어요 · ${voice} · "${text}"` : noVoiceMessage([s.langs.front]));
                 }}
               >
                 읽어 보기

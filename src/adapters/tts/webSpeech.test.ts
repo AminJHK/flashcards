@@ -8,10 +8,11 @@ interface FakeVoice {
 
 /** 기기 음성을 흉내 낸다. 읽도록 넘긴 것들을 spoken에 모은다. */
 function fakeDevice(voices: FakeVoice[]) {
-  const spoken: { text: string; lang: string; voice?: string }[] = [];
+  const spoken: { text: string; lang: string; voice?: string; rate?: number; pitch?: number }[] = [];
   class Utterance {
     lang = '';
     rate = 1;
+    pitch = 1;
     voice: FakeVoice | null = null;
     constructor(public text: string) {}
   }
@@ -21,7 +22,7 @@ function fakeDevice(voices: FakeVoice[]) {
     speechSynthesis: {
       getVoices: () => voices,
       cancel: () => {},
-      speak: (u: Utterance) => spoken.push({ text: u.text, lang: u.lang, voice: u.voice?.name }),
+      speak: (u: Utterance) => spoken.push({ text: u.text, lang: u.lang, voice: u.voice?.name, ...(u.rate !== 0.9 ? { rate: u.rate } : {}), ...(u.pitch !== 1 ? { pitch: u.pitch } : {}) }),
       addEventListener: () => {},
       removeEventListener: () => {},
     },
@@ -47,18 +48,36 @@ describe('기기 음성', () => {
     delete g.SpeechSynthesisUtterance;
   });
 
-  it('스페인어 음성이 있으면 그 음성으로 읽는다', async () => {
+  it('목소리를 고르지 않았으면 목소리를 정하지 않고 언어만 알려서 휴대폰 엔진의 기본 목소리로 읽는다', async () => {
     const spoken = fakeDevice([EN, ES]);
     await load();
     expect(speak([{ text: 'la casa', lang: 'es-ES' }])).toBe(true);
-    expect(spoken).toEqual([{ text: 'la casa', lang: 'es_ES', voice: 'Spanish Spain' }]);
+    expect(spoken).toEqual([{ text: 'la casa', lang: 'es_ES', voice: undefined }]);
   });
 
-  it('같은 스페인어면 지역이 달라도 가까운 음성을 쓴다 (es-ES가 먼저)', async () => {
+  it('고른 목소리가 있으면 그 목소리로, 엔진을 바꿔서 사라졌으면 기본 목소리로 읽는다', async () => {
+    const spoken = fakeDevice([EN, ES, { name: 'Spanish Spain 2', lang: 'es-ES', localService: true }]);
+    await load();
+    speak([{ text: 'la casa', lang: 'es-ES' }], { 'es-ES': 'Spanish Spain 2' });
+    speak([{ text: 'el gato', lang: 'es-ES' }], { 'es-ES': 'Google español' });
+    expect(spoken).toEqual([
+      { text: 'la casa', lang: 'es-ES', voice: 'Spanish Spain 2' },
+      { text: 'el gato', lang: 'es_ES', voice: undefined },
+    ]);
+  });
+
+  it('속도와 높낮이를 앱 설정 값으로 보낸다 (휴대폰 설정 값은 브라우저가 덮어쓴다)', async () => {
+    const spoken = fakeDevice([ES]);
+    await load();
+    speak([{ text: 'la casa', lang: 'es-ES' }], {}, 0.7, 0.8);
+    expect(spoken).toEqual([{ text: 'la casa', lang: 'es_ES', voice: undefined, rate: 0.7, pitch: 0.8 }]);
+  });
+
+  it('같은 스페인어면 지역이 달라도 가까운 음성의 언어로 읽는다 (es-ES가 먼저)', async () => {
     const spoken = fakeDevice([ES_MX, EN]);
     await load();
     expect(speak([{ text: 'la casa', lang: 'es-ES' }])).toBe(true);
-    expect(spoken[0]!.voice).toBe('Spanish Mexico');
+    expect(spoken[0]!.lang).toBe('es-MX');
   });
 
   it('스페인어 음성이 없으면 영어 음성으로 억지로 읽지 않고 없다고 알린다', async () => {
@@ -79,14 +98,14 @@ describe('기기 음성', () => {
     expect(spoken.map((s) => s.text)).toEqual(['the house']);
   });
 
-  it('같은 언어 음성이 여러 개면 기기에 저장된 음성(인터넷 없이 나오는 것)을 먼저 쓴다', async () => {
-    const spoken = fakeDevice([{ name: 'Google español (network)', lang: 'es-ES', localService: false }, { name: 'Samsung Spanish', lang: 'es-ES', localService: true }, EN]);
+  it('목록에서는 기기에 저장된 음성(인터넷 없이 나오는 것)이 먼저 나온다', async () => {
+    fakeDevice([{ name: 'Google español (network)', lang: 'es-ES', localService: false }, { name: 'Samsung Spanish', lang: 'es-ES', localService: true }, EN]);
     await load();
-    speak([{ text: 'la casa', lang: 'es-ES' }]);
-    expect(spoken[0]!.voice).toBe('Samsung Spanish');
+    const { voicesFor } = await import('./webSpeech');
+    expect(voicesFor('es-ES')[0]!.name).toBe('Samsung Spanish');
   });
 
-  it('음성 목록이 늦게 도착해도 기다렸다가 그 음성으로 읽는다', async () => {
+  it('음성 목록이 늦게 도착해도 기다렸다가 고른 음성으로 읽는다', async () => {
     const voices: FakeVoice[] = [];
     const spoken = fakeDevice(voices);
     const synth = (globalThis as unknown as { window: { speechSynthesis: { addEventListener: (e: string, f: () => void) => void } } }).window.speechSynthesis;
@@ -98,7 +117,7 @@ describe('기기 음성', () => {
     voices.push(EN, ES); // 이제 도착
     fire();
     await ready;
-    speak([{ text: 'la casa', lang: 'es-ES' }]);
+    speak([{ text: 'la casa', lang: 'es-ES' }], { 'es-ES': 'Spanish Spain' });
     expect(spoken).toEqual([{ text: 'la casa', lang: 'es_ES', voice: 'Spanish Spain' }]);
   });
 

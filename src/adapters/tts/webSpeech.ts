@@ -75,6 +75,24 @@ function pickVoice(lang: string, preferred?: string): SpeechSynthesisVoice | und
   return list.find((v) => v.name === preferred) ?? list[0];
 }
 
+/**
+ * 읽을 문장 하나. 사용자가 고른 목소리가 있으면 그 목소리로, 없으면(또는 엔진을 바꿔서 그 목소리가 사라졌으면)
+ * 목소리를 정하지 않고 언어만 알려서 휴대폰 TTS 엔진의 기본 목소리로 읽게 한다.
+ * 예전에는 목록의 첫 목소리를 골랐는데, 목록 순서가 엔진·시점마다 달라서 목소리가 저절로 바뀌곤 했다.
+ * 속도·높낮이는 브라우저가 항상 직접 보내므로 휴대폰 설정 값은 쓰이지 않는다 → 앱 설정(deviceRate, devicePitch)으로 맞춘다.
+ */
+function utterance(item: Speech, preferred: string | undefined, rate: number, pitch: number): SpeechSynthesisUtterance {
+  const list = matching(item.lang);
+  const chosen = preferred ? list.find((v) => v.name === preferred) : undefined;
+  const u = new SpeechSynthesisUtterance(item.text);
+  // 고른 음성의 언어 태그를 같이 써야 안드로이드가 그 음성으로 읽는다. 기본 목소리는 그 언어의 첫 목소리 언어(es-US 등)로
+  u.lang = chosen?.lang ?? list[0]?.lang ?? item.lang;
+  if (chosen) u.voice = chosen;
+  u.rate = rate;
+  u.pitch = pitch;
+  return u;
+}
+
 /** 이 기기에 음성이 없는 언어들. 음성 목록이 아직 안 왔으면 알 수 없으니 비워 둔다. */
 export function missingVoiceLangs(items: readonly Speech[]): string[] {
   if (!ttsSupported() || !loadVoices().length) return [];
@@ -86,7 +104,7 @@ export function missingVoiceLangs(items: readonly Speech[]): string[] {
  * 그 언어의 음성이 없는 문장은 읽지 않는다. 억지로 읽으면 기본 음성(영어)이 스페인어를 영어처럼 읽어서
  * 더 헷갈린다. 음성 목록이 아직 도착하지 않았을 때만 언어 태그를 믿고 기기에 맡긴다.
  */
-export function speak(items: readonly Speech[], preferred: Record<string, string> = {}, rate = 0.9): boolean {
+export function speak(items: readonly Speech[], preferred: Record<string, string> = {}, rate = 0.9, pitch = 1): boolean {
   const s = synth();
   if (!s || !ttsSupported()) return false;
   s.cancel();
@@ -99,11 +117,7 @@ export function speak(items: readonly Speech[], preferred: Record<string, string
       found = false;
       continue;
     }
-    const u = new SpeechSynthesisUtterance(it.text);
-    u.lang = v?.lang ?? it.lang; // 고른 음성의 언어 태그를 같이 써야 안드로이드가 그 음성으로 읽는다
-    u.rate = rate;
-    if (v) u.voice = v;
-    s.speak(u);
+    s.speak(utterance(it, preferred[it.lang], rate, pitch));
   }
   return found;
 }
@@ -113,7 +127,7 @@ export function speak(items: readonly Speech[], preferred: Record<string, string
  */
 let cancelWaiter: (() => void) | undefined;
 
-export async function speakAndWait(item: Speech, preferred: Record<string, string> = {}, rate = 0.9): Promise<boolean> {
+export async function speakAndWait(item: Speech, preferred: Record<string, string> = {}, rate = 0.9, pitch = 1): Promise<boolean> {
   const s = synth();
   if (!s || !ttsSupported() || !item.text.trim()) return false;
   const v = pickVoice(item.lang, preferred[item.lang]);
@@ -129,10 +143,7 @@ export async function speakAndWait(item: Speech, preferred: Record<string, strin
       resolve(true);
     };
     cancelWaiter = done;
-    const u = new SpeechSynthesisUtterance(item.text);
-    u.lang = v?.lang ?? item.lang;
-    u.rate = rate;
-    if (v) u.voice = v;
+    const u = utterance(item, preferred[item.lang], rate, pitch);
     u.onend = done;
     u.onerror = done;
     const timeout = setTimeout(() => {
