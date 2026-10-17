@@ -3,7 +3,7 @@
 다른 AI 도구나 새 대화에서 이어서 작업할 때 이 문서부터 읽는다. 규칙은 `AGENTS.md`, 설계는 `docs/DESIGN.md`.
 작업을 마칠 때마다 이 문서를 고친다.
 
-마지막 갱신: 2026-10-17 (인도네시아어 영어 뜻 · 자주 쓰는 표현, 읽기 의미 단위 없앰, 어려운 단어)
+마지막 갱신: 2026-10-18 (기기 TTS 시스템 기본 음성 선택 시험)
 
 ## 사용자
 
@@ -33,6 +33,14 @@ npm run dev        # 개발 서버
 
 - 화면 테스트 스크린샷은 `test-results/shots/`에 저장된다. UI를 바꾸면 라이트·다크 둘 다 눈으로 확인한다.
 - 실제 Gemini·Google 서버는 테스트에서 가짜 응답(page.route)으로 대신한다. 진짜 키나 실제 사용자 데이터를 쓰지 않는다.
+
+## 기기 음성: 시스템 기본 TTS 시험 옵션 (2026-10-18)
+
+- 사용자 환경: Galaxy Fold · 삼성 인터넷 설치 PWA. 안드로이드 TTS 엔진을 Samsung↔Google로 바꿔도 앱의 인도네시아어 음성 목록에는 `Indonesian (Indonesia)` 한 개만 표시됐으며, Google 엔진 설정 화면의 샘플과 앱 목소리는 서로 달랐다. 브라우저를 바꾸면 Drive 재로그인·동기화 부담이 있으므로 **같은 PWA에서 시험하는 옵션**을 제공한다.
+- 설정 → 음성 → 기기 음성 → 인도네시아어 드롭다운에 **「시스템 기본 음성 (Google 시도)」** 추가. 선택값은 기존 언어별 `Settings.voices[lang]`에 특수 문자열 `__system_default__`로 저장한다. 기존 목소리 이름과 Gemini 설정/스토리/ReviewLog는 변경하지 않는다. 별도 설정 DB 마이그레이션 없음.
+- `webSpeech.speak`와 `speakAndWait`가 해당 언어의 시스템 기본 모드를 받으면 `SpeechSynthesisUtterance.lang='id-ID'`만 지정하고 `.voice`는 **설정하지 않는다**. 브라우저의 음성 목록이 제한되어도 시도할 수 있게 목록 검증은 건너뛴다. 음성 목록에서 특정 음성을 고르면 **기존 방식 그대로** 동작한다. 기기 음성 오류/중단 시 `speakAndWait`는 실패를 반환한다. Gemini를 켜 둔 스토리 줄은 먼저 Gemini가 재생되므로 **비교하려면 Gemini 음성으로 읽기 스위치를 꺼야** 한다.
+- 한계: Web Speech API에서는 Samsung Internet 브라우저가 Google Android TTS 엔진을 강제로 호출하도록 지정할 수 없다. 기본 목소리를 지정하지 않으면 Google로 바뀔 *가능성*만 시험하는 것이며, 여전히 Samsung 음성처럼 들릴 수 있다. 실제 Galaxy 기기 결과는 **미확인**. 미리 생성한 Gemini 음성·단어 기록·Drive 인증을 건드리지 않는다.
+- 회귀 테스트: `src/adapters/tts/webSpeech.test.ts`(지정 음성, 시스템 기본 모드, 누락 음성, 이야기 순차 재생), `e2e/settings.spec.ts`(UI 선택 저장).
 
 ## 지금 있는 기능
 
