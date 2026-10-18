@@ -37,8 +37,8 @@ npm run dev        # 개발 서버
 ## 안드로이드 앱 (2026-10-18 시작)
 
 - 사용자 요청: 엔진을 고를 수 있는 음성(삼성 TTS 선호), 휴대폰 설정의 속도·높낮이, 나중에 복습 알림·Fish Audio 등을 위해 안드로이드 앱으로. 자세한 내용은 **`docs/ANDROID.md`**.
-- Capacitor 앱이 배포된 웹앱을 불러온다 → 웹 배포가 곧 앱 업데이트. APK는 GitHub Actions(`android.yml`)가 서명 없이 만들어 릴리스 `android-latest`에 올리고, 서명해서 사용자에게 준다. **서명 키는 저장소에 없다** — 키를 어디에 보관할지 사용자와 정해야 함 (ANDROID.md).
-- 앱 안에서는 Google 로그인(Drive 동기화)이 안 될 수 있다 → 데이터는 백업 파일로 옮긴다. 다음 단계: 네이티브 Google 로그인, 복습 알림.
+- Capacitor 앱이 배포된 웹앱을 불러온다 → 웹 배포가 곧 앱 업데이트. APK는 GitHub Actions(`android.yml`)가 서명 없이 만들어 릴리스 `android-latest`에 올리고, 서명해서 사용자에게 준다. **서명 키는 저장소에 없다** — 사용자가 자기 Drive에 보관 (ANDROID.md).
+- 앱 안 Google 로그인은 네이티브 방식(`NativeGooglePlugin`)이고, 사용자가 Google Cloud에 Android 클라이언트를 한 번 만들어야 한다. 서명 키는 사용자 Drive에 보관(키가 필요하면 사용자에게 받는다). 다음 단계: 복습 알림.
 
 ## 지금 있는 기능
 

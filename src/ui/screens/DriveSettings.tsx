@@ -8,6 +8,7 @@ import { syncWithDrive } from '../driveSync';
 import { backupToDrive, connectDrive, driveErrorMessage, listDriveBackups, restoreFromDrive } from '../driveBackup';
 import { useToast } from '../toast';
 import { ask } from '../confirm';
+import { isNativeApp } from '../../adapters/native/platform';
 
 const CONSOLE = 'https://console.cloud.google.com/';
 
@@ -18,6 +19,40 @@ function when(t: number | string | undefined): string {
 
 export function DriveSettings({ s }: { s: Settings }) {
   return s.googleDrive?.clientId ? <Connected s={s} /> : <Setup />;
+}
+
+/** 안드로이드 앱의 서명 인증서 (docs/ANDROID.md). Google Cloud의 Android OAuth 클라이언트에 넣는다 */
+const ANDROID_PACKAGE = 'io.github.aminjhk.flashcards';
+const ANDROID_SHA1 = 'AD:05:E5:15:2A:AE:BC:CB:A1:5A:54:2D:D5:0C:56:83:99:30:4B:6B';
+
+/** 안드로이드 앱은 Google 로그인을 안드로이드 방식으로 해서, 같은 프로젝트에 "Android" 클라이언트가 한 번 더 필요하다 */
+function AndroidClientHelp() {
+  const code = { display: 'block', marginTop: 6, padding: '8px 10px', borderRadius: 10, background: 'var(--surface2)', color: 'var(--text)', fontSize: 13, wordBreak: 'break-all', userSelect: 'all' } as const;
+  return (
+    <details className="disclosure" open>
+      <summary>안드로이드 앱에서 처음 연결할 때 (한 번만, 약 3분)</summary>
+      <div>
+        <ol style={{ margin: 0, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 14, lineHeight: 1.55 }} className="muted">
+          <li>
+            <a href={CONSOLE} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 600 }}>
+              Google Cloud 콘솔
+            </a>
+            에서 브라우저용 클라이언트를 만든 <strong>같은 프로젝트</strong>를 열어요.
+          </li>
+          <li>
+            <strong>클라이언트 › 클라이언트 만들기</strong>에서 유형을 <strong>Android</strong>로 고르고 아래 두 값을 넣고 만들어요.
+            <span style={{ display: 'block', marginTop: 6 }}>패키지 이름</span>
+            <code style={code}>{ANDROID_PACKAGE}</code>
+            <span style={{ display: 'block', marginTop: 6 }}>SHA-1 인증서 디지털 지문</span>
+            <code style={code}>{ANDROID_SHA1}</code>
+          </li>
+          <li>
+            몇 분 뒤에 아래 칸에 <strong>브라우저용 클라이언트 ID</strong>(지금 쓰는 그 값)를 붙여넣고 <strong>Google로 로그인</strong>을 눌러요. 휴대폰의 Google 계정 선택 창이 떠요.
+          </li>
+        </ol>
+      </div>
+    </details>
+  );
 }
 
 function Setup() {
@@ -51,6 +86,7 @@ function Setup() {
     <div className="group">
       <Row col title="Google Drive 연결 (무료)" desc="내 Drive에 백업하고, 폰과 PC에서 같은 덱과 기록을 써요.">
         <span className="row-desc">다른 기기에서 이미 연결했다면, 그 기기의 설정 › 백업·동기화에서 클라이언트 ID를 복사해 아래에 붙여넣으세요.</span>
+        {isNativeApp() && <AndroidClientHelp />}
         <details className="disclosure">
           <summary>처음 연결하는 방법 (한 번만, 약 5분 · PC 추천)</summary>
           <div>

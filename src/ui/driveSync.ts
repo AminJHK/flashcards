@@ -1,5 +1,5 @@
 import { makeSyncFile, parseSyncFile, SYNC_FILE_NAME } from '../core/io/sync';
-import { clearTokenCache, getAccessToken, peekToken } from '../adapters/google/auth';
+import { clearTokenCache, getAccessToken, silentToken } from '../adapters/google/auth';
 import { DriveError, downloadText, ensureFolder, findFile, updateText, uploadJson } from '../adapters/google/drive';
 import { exportSyncData, getSettings, mergeIntoLocal, saveSettings } from '../adapters/storage/repo';
 
@@ -58,7 +58,7 @@ async function run({ interactive }: { interactive: boolean }): Promise<SyncResul
   const s = await getSettings();
   const drive = s.googleDrive;
   if (!drive?.clientId) throw new Error('Google Drive가 연결되어 있지 않아요');
-  let token = interactive ? await getAccessToken(drive.clientId, { email: drive.email }) : peekToken(drive.clientId);
+  let token = interactive ? await getAccessToken(drive.clientId, { email: drive.email }) : await silentToken(drive.clientId);
   if (!token) return undefined;
   const attempt = async (t: string): Promise<SyncResult> => {
     const folderId = await ensureFolder(t, drive.folderId);

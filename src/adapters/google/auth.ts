@@ -39,6 +39,7 @@ declare global {
 
 import { markActivationUsed } from '../activation';
 import { isNativeApp } from '../native/platform';
+import { nativeAuthorize } from './nativeGoogle';
 import { withTimeout } from '../net';
 
 export class GoogleAuthError extends Error {}
@@ -69,9 +70,8 @@ let cached: { clientId: string; token: string; expiresAt: number } | undefined;
  */
 export async function getAccessToken(clientId: string, opts: { forceConsent?: boolean; email?: string } = {}): Promise<string> {
   if (!opts.forceConsent && cached && cached.clientId === clientId && cached.expiresAt > Date.now() + 60_000) return cached.token;
-  // 안드로이드 앱 안 브라우저(WebView)에서는 Google이 로그인 창을 막는다. 창이 안 돌아와서 멈춰 있지 않게 바로 알린다
-  // (네이티브 Google 로그인은 다음 단계, docs/ANDROID.md)
-  if (isNativeApp()) throw new GoogleAuthError('앱에서는 아직 Google 로그인이 안 돼요. 백업 파일로 옮기거나 브라우저에서 동기화해 주세요');
+  // 안드로이드 앱 안 브라우저(WebView)에서는 Google이 로그인 창을 막는다 → 안드로이드의 Google 계정 권한 요청을 쓴다
+  if (isNativeApp()) return nativeToken(clientId, true);
   const gis = await withTimeout(loadGis(), 15_000, 'Google 로그인을 불러오지 못했어요. 인터넷 연결을 확인해 주세요');
   const token = new Promise<string>((resolve, reject) => {
     const client = gis.accounts.oauth2.initTokenClient({
@@ -96,13 +96,43 @@ export async function getAccessToken(clientId: string, opts: { forceConsent?: bo
   return withTimeout(token, 180_000, 'Google 로그인이 끝나지 않았어요. 다시 시도해 주세요');
 }
 
+const NATIVE_SCOPES = DRIVE_SCOPE.split(' ');
+
+async function nativeToken(clientId: string, interactive: boolean): Promise<string> {
+  let token: string | undefined;
+  try {
+    token = await nativeAuthorize(NATIVE_SCOPES, interactive);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : '';
+    throw new GoogleAuthError(/취소|cancel/i.test(msg) ? 'Google 로그인을 취소했어요' : `Google 로그인에 실패했어요${msg ? ` (${msg})` : ''}`);
+  }
+  if (!token) throw new GoogleAuthError('Google 로그인이 필요해요');
+  // 안드로이드가 주는 토큰도 1시간짜리. 만료 시각은 알려 주지 않아서 50분으로 잡는다
+  cached = { clientId, token, expiresAt: Date.now() + 50 * 60_000 };
+  return token;
+}
+
+/**
+ * 창 없이 받을 수 있는 토큰 (자동 동기화용). 브라우저는 받아 둔 토큰만,
+ * 안드로이드 앱은 한 번 허용했으면 창 없이 새 토큰을 받는다.
+ */
+export async function silentToken(clientId: string): Promise<string | undefined> {
+  const t = peekToken(clientId);
+  if (t || !isNativeApp()) return t;
+  try {
+    return await nativeToken(clientId, false);
+  } catch {
+    return undefined;
+  }
+}
+
 /** 로그인 창 없이 쓸 수 있는 토큰이 지금 있으면 돌려준다 (자동 동기화용) */
 export function peekToken(clientId: string): string | undefined {
   return cached && cached.clientId === clientId && cached.expiresAt > Date.now() + 60_000 ? cached.token : undefined;
 }
 
 export function forgetToken(): void {
-  if (cached && window.google?.accounts?.oauth2) window.google.accounts.oauth2.revoke(cached.token);
+  if (cached && !isNativeApp() && window.google?.accounts?.oauth2) window.google.accounts.oauth2.revoke(cached.token);
   cached = undefined;
 }
 

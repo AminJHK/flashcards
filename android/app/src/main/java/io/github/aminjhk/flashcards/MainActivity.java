@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         // 앱 안에서 만든 플러그인은 super.onCreate 전에 등록한다
         registerPlugin(NativeTtsPlugin.class);
+        registerPlugin(NativeGooglePlugin.class);
         super.onCreate(savedInstanceState);
     }
 }
