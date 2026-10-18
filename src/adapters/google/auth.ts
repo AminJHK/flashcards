@@ -38,6 +38,7 @@ declare global {
 }
 
 import { markActivationUsed } from '../activation';
+import { isNativeApp } from '../native/platform';
 import { withTimeout } from '../net';
 
 export class GoogleAuthError extends Error {}
@@ -68,6 +69,9 @@ let cached: { clientId: string; token: string; expiresAt: number } | undefined;
  */
 export async function getAccessToken(clientId: string, opts: { forceConsent?: boolean; email?: string } = {}): Promise<string> {
   if (!opts.forceConsent && cached && cached.clientId === clientId && cached.expiresAt > Date.now() + 60_000) return cached.token;
+  // 안드로이드 앱 안 브라우저(WebView)에서는 Google이 로그인 창을 막는다. 창이 안 돌아와서 멈춰 있지 않게 바로 알린다
+  // (네이티브 Google 로그인은 다음 단계, docs/ANDROID.md)
+  if (isNativeApp()) throw new GoogleAuthError('앱에서는 아직 Google 로그인이 안 돼요. 백업 파일로 옮기거나 브라우저에서 동기화해 주세요');
   const gis = await withTimeout(loadGis(), 15_000, 'Google 로그인을 불러오지 못했어요. 인터넷 연결을 확인해 주세요');
   const token = new Promise<string>((resolve, reject) => {
     const client = gis.accounts.oauth2.initTokenClient({

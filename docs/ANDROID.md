@@ -1,0 +1,39 @@
+# 안드로이드 앱
+
+설계 결정 D1(PWA를 Capacitor로 감싼다)에 따라 만든 안드로이드 앱. 2026-10-18 시작.
+
+## 구조
+
+- `capacitor.config.ts`: 앱 id `io.github.aminjhk.flashcards`, 이름 "단어 카드".
+  앱은 **배포된 웹앱(`https://aminjhk.github.io/flashcards/`)을 그대로 불러온다** (`server.url`).
+  그래서 화면·기능 업데이트는 웹 배포만으로 들어오고, 새 APK는 안드로이드 쪽이 바뀔 때만 필요하다.
+  인터넷이 없어 처음 화면을 못 불러오면 `android-web/offline.html`을 보여 준다 (`server.errorPath`). 한 번 열면 서비스 워커가 캐시한다.
+- `android/`: `npx cap add android`로 만든 프로젝트. 고친 곳:
+  - `NativeTtsPlugin.java`: 음성 엔진 플러그인 (엔진 목록, 목소리 목록, 언어 확인, 읽기, 멈춤). rate/pitch를 안 주면 휴대폰 설정(텍스트 음성 변환)의 속도·높낮이를 쓴다. `MainActivity`에서 등록.
+  - `AndroidManifest.xml`: 녹음 권한(말해서 답하기), TTS 엔진 목록을 보기 위한 `<queries>`.
+  - `app/build.gradle`: `versionCode`를 빌드 번호로 (`-PappVersionCode`).
+  - 아이콘·시작 화면: `node scripts/icons.mjs`가 `public/icon.svg`로 만든다.
+- 웹 쪽: `src/adapters/native/platform.ts`(`isNativeApp`), `src/adapters/tts/nativeTts.ts`(플러그인), `src/adapters/tts/device.ts`(앱이면 플러그인, 브라우저면 Web Speech).
+  설정 › 음성 › 기기 음성은 앱이면 `NativeVoiceSettings`(엔진·목소리·"휴대폰 설정의 속도·높낮이 쓰기", `Settings.nativeTts`).
+  백업 파일 내보내기는 앱이면 `@capacitor/filesystem` + `@capacitor/share` (앱 안 브라우저는 다운로드를 못 한다).
+
+## 빌드
+
+- 이 클라우드 환경에서는 `dl.google.com`이 막혀 있어서 안드로이드 SDK를 못 받는다 → **GitHub Actions**(`.github/workflows/android.yml`)가 빌드한다.
+  `android/**`, `capacitor.config.ts`, `package*.json` 등이 바뀌어 main 또는 claude/mvp에 올라가면 돈다 (수동 실행도 가능).
+- 결과: **서명하지 않은** APK를 릴리스 `android-latest`에 올린다 (`flashcards-<브랜치>-<번호>-unsigned.apk`). 공개 릴리스라 서명 키는 CI에 없다.
+
+## 서명
+
+- 안드로이드는 서명한 APK만 설치하고, **업데이트는 처음과 같은 키로 서명해야** 덮어 설치된다 (키가 다르면 지우고 다시 깔아야 하고, 그러면 앱 안 데이터가 지워진다).
+- 키(`flashcards-release.jks`, alias `flashcards`)는 **저장소에 넣지 않는다** (`android/.gitignore`에 `*.jks`, `*.keystore`). 인증서 SHA-256: `59:83:6C:E0:84:3B:71:53:8A:85:34:74:36:92:7F:5B:DD:52:B7:31:B5:05:7A:C5:F5:37:11:1F:0F:66:D2:A6`.
+- 서명 도구: SDK가 없으니 `uber-apk-signer`(GitHub 릴리스 jar, apksig 포함)로 v2/v3 서명. 예:
+  `java -jar uber-apk-signer-1.3.0.jar -a app-release-unsigned.apk --ks flashcards-release.jks --ksAlias flashcards --ksPass <비밀번호> --ksKeyPass <비밀번호>`
+- 키를 어디에 둘지는 사용자와 정해야 한다 (아래 "할 일").
+
+## 알려진 한계 · 할 일
+
+- **Google 로그인(Drive 동기화)은 앱 안에서 안 될 가능성이 크다.** Google은 앱 안 브라우저(WebView)에서의 로그인을 막고, 지금 코드는 팝업(GIS)을 쓴다. 데이터 옮기기는 백업 파일(내보내기 → 앱에서 가져오기)로 한다. 고치려면 네이티브 Google 로그인(안드로이드 OAuth 클라이언트 + 서명 SHA-1)이 필요하다.
+- 브라우저 음성 인식(webkitSpeechRecognition)은 WebView에 없다 → 말해서 답하기는 Gemini 받아쓰기로만.
+- 복습 알림, Fish Audio 등은 다음 단계.
+- 실제 기기에서 아직 확인 못 함.
