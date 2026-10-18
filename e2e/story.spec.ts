@@ -285,3 +285,55 @@ test('읽기: 이야기를 만드는 동안 다른 화면(복습)으로 가도 �
   await expect(page.locator('.story-row', { hasText: 'Bakso Malam' })).toBeVisible();
   await expect(page.getByRole('navigation', { name: '메인 메뉴' }).locator('.tab-dot')).toHaveCount(0);
 });
+
+test('읽기 · 듣고 읽기: 새 문장은 글자를 가리고, 눌러서 보거나 다음 줄로 넘어가면 보이며, 질문은 답할 때까지 앞 줄도 가린다', async ({ page }) => {
+  await mockGemini(page, { story: 0, prompts: [] });
+  await page.goto('/#/settings/voice');
+  await page.getByLabel('Gemini API 키').fill('FAKE-KEY');
+  await page.getByRole('button', { name: '연결' }).click();
+  await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();
+  await page.goto('/#/decks/new');
+  await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
+  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+  await page.getByRole('navigation', { name: '메인 메뉴' }).getByRole('link', { name: '읽기' }).click();
+  await page.getByRole('button', { name: '이야기 만들기' }).click();
+  await page.locator('.story-row', { hasText: 'Bakso Malam' }).click();
+  await expect(page.getByRole('heading', { name: 'Bakso Malam' })).toBeVisible();
+
+  const listen = page.getByRole('button', { name: '듣고 읽기 (글자 가리기)' });
+  await expect(listen).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('.story-hidden')).toHaveCount(0);
+  await listen.click();
+  await expect(listen).toHaveAttribute('aria-pressed', 'true');
+  // 지금 줄(내레이션)이 가려지고, 단어 버튼이 없다
+  await expect(page.locator('.story-narration .story-hidden')).toHaveCount(1);
+  await expect(page.locator('.story-narration').getByRole('button', { name: 'bakso' })).toHaveCount(0);
+  await expect(page.getByText(/듣고 읽기 · 먼저 듣고/)).toBeVisible();
+
+  // 다음 줄: 새 줄은 가리고 앞 줄은 보인다
+  await page.getByRole('button', { name: '다음 문장 읽기' }).click();
+  await expect(page.locator('.story-line').first().locator('.story-hidden')).toHaveCount(1);
+  await expect(page.locator('.story-narration .story-hidden')).toHaveCount(0);
+  await expect(page.locator('.story-narration').getByRole('button', { name: 'bakso' })).toBeVisible();
+  await page.screenshot({ path: 'test-results/shots/66-read-listen-first.png' });
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.screenshot({ path: 'test-results/shots/67-read-listen-first-dark.png' });
+  await page.emulateMedia({ colorScheme: 'light' });
+  // 눌러서 글자 보기
+  await page.locator('.story-line').first().getByRole('button', { name: '글자 보기' }).click();
+  await expect(page.locator('.story-line').first().locator('.story-hidden')).toHaveCount(0);
+  await expect(page.locator('.story-line').first().getByRole('button', { name: 'makan', exact: true })).toBeVisible();
+
+  // 질문이 나오면 바로 앞 줄은 답할 때까지 가린 채로
+  await page.getByRole('button', { name: '다음 문장 읽기' }).click(); // line(2)
+  await expect(page.locator('.story-line').nth(1).locator('.story-hidden')).toHaveCount(1);
+  await page.getByRole('button', { name: '다음 문장 읽기' }).click(); // 질문
+  await expect(page.getByText('부디는 무엇을 먹고 싶어 하나요?')).toBeVisible();
+  await expect(page.locator('.story-line').nth(1).locator('.story-hidden')).toHaveCount(1);
+  await page.getByRole('button', { name: '바소' }).click();
+  await expect(page.locator('.story-line').nth(1).locator('.story-hidden')).toHaveCount(0);
+
+  // 끄면 모두 보인다
+  await listen.click();
+  await expect(page.locator('.story-hidden')).toHaveCount(0);
+});

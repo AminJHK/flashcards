@@ -49,6 +49,12 @@ export function StoryReader({ id }: { id: string }) {
   const [tip, setTip] = useState<Tip>();
   /** 재생 버튼이 가리키는 줄 (블록 번호). 없으면 지금 보이는 마지막 줄 */
   const [cursor, setCursor] = useState<number>();
+  /**
+   * 듣고 읽기: 이 번호 이후의 이야기 줄은 글자를 가린다 (눌러서 연 줄은 revealed).
+   * 다음 줄로 넘어가면 앞 줄들은 보이고, 질문이 나오면 답할 때까지 앞 줄도 가린 채로 둔다 (들은 것만으로 풀게).
+   */
+  const [hideFrom, setHideFrom] = useState(0);
+  const [revealed, setRevealed] = useState<ReadonlySet<number>>(new Set());
   const [audioStatus, setAudioStatus] = useState('');
   const statusTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(statusTimer.current), []);
@@ -59,6 +65,7 @@ export function StoryReader({ id }: { id: string }) {
   const settings = useSettings();
   const end = useRef<HTMLDivElement>(null);
   const autoplay = settings?.storyAutoplay !== false;
+  const listenFirst = settings?.storyListenFirst === true;
   const autoModelSwitch = settings?.storyAutoModelSwitch !== false;
   const playbackRate = rateDraft ?? settings?.storyPlaybackRate ?? 0.85;
   const voiceAssignments = useMemo(
@@ -80,6 +87,7 @@ export function StoryReader({ id }: { id: string }) {
   useEffect(() => {
     void getProgress(id).then((p) => {
       setProgress(p);
+      setHideFrom(p.position - 1);
       if (p.completedAt) setResult(true);
     });
   }, [id]);
@@ -204,7 +212,9 @@ export function StoryReader({ id }: { id: string }) {
     const position = progress.position + 1;
     update({ ...progress, position });
     const b = story.blocks[position - 1]!;
-    if (b.kind === 'line' && (autoplay || forcePlay)) void speakLine(b);
+    // 다음 줄로 넘어가면 앞 줄들은 글자를 보여 준다 (질문이 나올 때는 가린 채로)
+    if (b.kind === 'line') setHideFrom(position - 1);
+    if (b.kind === 'line' && (autoplay || forcePlay || listenFirst)) void speakLine(b);
     else {
       stopAll();
       setAudioStatus('');
@@ -221,7 +231,17 @@ export function StoryReader({ id }: { id: string }) {
   const answer = (index: number, correct: boolean) => {
     if (progress.answers[index] !== undefined) return;
     update({ ...progress, answers: { ...progress.answers, [index]: correct } });
+    // 답했으면 앞 줄들의 글자를 보여 준다
+    setHideFrom((h) => Math.max(h, index));
   };
+  const toggleListenFirst = () => {
+    const enabled = !listenFirst;
+    void saveSettings({ storyListenFirst: enabled });
+    setHideFrom(progress.position - 1);
+    setRevealed(new Set());
+    if (enabled && !result && current.kind === 'line') void speakLine(current);
+  };
+  const isHidden = (i: number) => listenFirst && !result && i >= hideFrom && !revealed.has(i);
   const pct = Math.round((progress.position / story.blocks.length) * 100);
 
   return (
@@ -235,6 +255,16 @@ export function StoryReader({ id }: { id: string }) {
             <div className="progress-fill" style={{ width: `${result ? 100 : pct}%` }} />
           </div>
         </div>
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label="듣고 읽기 (글자 가리기)"
+          aria-pressed={listenFirst}
+          style={listenFirst ? { color: 'var(--accent)' } : undefined}
+          onClick={toggleListenFirst}
+        >
+          <Icon name="headphones" size={22} />
+        </button>
         <button type="button" className="icon-btn" aria-label="음성 속도와 목소리 설정" aria-expanded={audioOpen} onClick={() => setAudioOpen(true)}>
           <Icon name="settings" size={22} />
         </button>
@@ -274,6 +304,8 @@ export function StoryReader({ id }: { id: string }) {
             stopReplay();
             setCursor(undefined);
             update({ ...progress, position: 1, answers: {}, completedAt: undefined });
+            setHideFrom(0);
+            setRevealed(new Set());
             setResult(false);
           }} />
       ) : (
@@ -282,11 +314,11 @@ export function StoryReader({ id }: { id: string }) {
             <div className="story-title">
               <h1>{story.title}</h1>
               {story.titleKo && <span className="faint small">{story.titleKo}</span>}
-              <span className="faint small story-hint">단어를 누르면 뜻 · 문장을 길게 누르면 전체 뜻</span>
+              <span className="faint small story-hint">{listenFirst ? '듣고 읽기 · 먼저 듣고, 모르겠으면 가린 문장을 눌러 글자 보기' : '단어를 누르면 뜻 · 문장을 길게 누르면 전체 뜻'}</span>
             </div>
             {shown.map((b, i) =>
               b.kind === 'line' ? (
-                <LineView key={i} line={b} active={i === at} story={story} lex={lex} names={names} tipKey={tip?.line === b ? tip.key : undefined} onTip={(t) => setTip((cur) => (cur?.line === b && cur.key === t.key ? undefined : { ...t, line: b }))} onSay={() => {
+                <LineView key={i} line={b} active={i === at} hidden={isHidden(i)} onReveal={() => setRevealed((r) => new Set(r).add(i))} story={story} lex={lex} names={names} tipKey={tip?.line === b ? tip.key : undefined} onTip={(t) => setTip((cur) => (cur?.line === b && cur.key === t.key ? undefined : { ...t, line: b }))} onSay={() => {
                     setCursor(i);
                     void speakLine(b);
                   }} />
@@ -504,11 +536,21 @@ function useLongPress(onLong: () => void) {
   };
 }
 
-function LineView({ line, active, story, lex, names, tipKey, onTip, onSay }: { line: StoryLine; active: boolean; story: Story; lex: Lexicon; names: Set<string>; tipKey?: string; onTip: (t: Omit<Tip, 'line'>) => void; onSay: () => void }) {
+function LineView({ line, active, hidden = false, onReveal, story, lex, names, tipKey, onTip, onSay }: { line: StoryLine; active: boolean; hidden?: boolean; onReveal?: () => void; story: Story; lex: Lexicon; names: Set<string>; tipKey?: string; onTip: (t: Omit<Tip, 'line'>) => void; onSay: () => void }) {
   const [showKo, setShowKo] = useState(false);
   const long = useLongPress(() => setShowKo(true));
   const speakerName = story.characters.find((c) => c.id === line.speaker)?.name;
-  const body = (
+  // 듣고 읽기: 글자는 흐리게 가리고(문장 길이만 보이게) 누르면 보여 준다
+  const body = hidden ? (
+    <div className="story-text">
+      <button type="button" className="story-hidden" aria-label="글자 보기" onClick={onReveal}>
+        <span className="story-hidden-text" aria-hidden="true">
+          {line.text}
+        </span>
+        <span className="story-hidden-label">글자 보기</span>
+      </button>
+    </div>
+  ) : (
     <div className="story-text">
       <p className="story-p" {...long}>
         <Tokens line={line} story={story} lex={lex} names={names} tipKey={tipKey} onTip={onTip} />
