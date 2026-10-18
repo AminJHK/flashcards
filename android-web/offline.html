@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>단어 카드</title>
+    <style>
+      :root { color-scheme: light dark; --bg: #f3f4f6; --text: #14161a; --muted: #4a515e; --accent: #2f5bea; }
+      @media (prefers-color-scheme: dark) { :root { --bg: #0f1114; --text: #eceef2; --muted: #a3a9b5; --accent: #8ea8ff; } }
+      body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px; box-sizing: border-box; background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; text-align: center; }
+      p { color: var(--muted); line-height: 1.6; margin: 0; }
+      button { border: none; border-radius: 16px; padding: 14px 28px; font-size: 17px; font-weight: 600; background: var(--accent); color: #fff; }
+    </style>
+  </head>
+  <body>
+    <h1 style="margin: 0; font-size: 22px">인터넷에 연결해 주세요</h1>
+    <p>처음 한 번은 인터넷이 있어야 앱을 불러올 수 있어요.<br />한 번 열고 나면 인터넷 없이도 열려요.</p>
+    <button onclick="location.href = 'https://aminjhk.github.io/flashcards/'">다시 시도</button>
+  </body>
+</html>

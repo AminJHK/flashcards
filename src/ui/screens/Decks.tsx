@@ -18,7 +18,9 @@ import { MemoryMini, MemoryPanel, useMemoryByDeck, WordMeter } from '../componen
 import { EMPTY_MEMORY, HARD_LAPSES, hardWords, isHard, LEVELS, wordMemory, type WordMemory } from '../../core/stats/memory';
 import type { Card, Note } from '../../core/model/types';
 import { useDecks, useNow, useScheduler, useSettings } from '../hooks';
-import { speak as deviceSpeak, voicesFor, voicesReady } from '../../adapters/tts/webSpeech';
+import { speakDevice } from '../../adapters/tts/device';
+import { voicesFor } from '../../adapters/tts/webSpeech';
+import { isNativeApp } from '../../adapters/native/platform';
 import { LANGS, langName, noVoiceMessage } from '../langs';
 import { go } from '../router';
 import { useToast } from '../toast';
@@ -588,9 +590,8 @@ export function DeckDetail({ id }: { id: string }) {
                   const n = await db.notes.where('deckId').equals(id).first();
                   const text = (n?.fields.front ?? n?.fields.verb ?? '').trim();
                   if (!text) return toast('읽어 볼 단어가 없어요');
-                  await voicesReady();
-                  const ok = deviceSpeak([{ text, lang: s.langs.front }], settings?.voices, settings?.deviceRate, settings?.devicePitch);
-                  const voice = voicesFor(s.langs.front).find((v) => v.name === settings?.voices[s.langs.front])?.name ?? '휴대폰 기본 목소리';
+                  const ok = await speakDevice([{ text, lang: s.langs.front }], settings);
+                  const voice = isNativeApp() ? (settings?.nativeTts?.voices?.[s.langs.front] ?? '엔진 기본 목소리') : (voicesFor(s.langs.front).find((v) => v.name === settings?.voices[s.langs.front])?.name ?? '휴대폰 기본 목소리');
                   toast(ok ? `${langName(s.langs.front)} 음성으로 읽어요 · ${voice} · "${text}"` : noVoiceMessage([s.langs.front]));
                 }}
               >

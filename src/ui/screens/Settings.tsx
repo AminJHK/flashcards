@@ -17,6 +17,9 @@ import { applyUpdate, currentVersion, fetchLatestVersion } from '../../adapters/
 import { DriveSettings } from './DriveSettings';
 import { GeminiSettings, VoiceTest } from './GeminiSettings';
 import { fullscreenSupported } from '../../adapters/display/fullscreen';
+import { isNativeApp } from '../../adapters/native/platform';
+import { nativeEngines, nativeVoices, type NativeEngine, type NativeVoice } from '../../adapters/tts/nativeTts';
+import { speakDevice } from '../../adapters/tts/device';
 
 const SAMPLE: Record<string, string> = {
   'zh-CN': '你好，我们一起学习中文吧。',
@@ -205,10 +208,6 @@ function DisplaySettings({ s }: { s: SettingsT }) {
 
 function VoiceSettings({ s }: { s: SettingsT }) {
   const decks = useDecks() ?? [];
-  const toast = useToast();
-  const [, setVoicesTick] = useState(0);
-  useEffect(() => onVoicesChanged(() => setVoicesTick((n) => n + 1)), []);
-  const set = (patch: Partial<SettingsT>) => saveSettings(patch);
   // 덱에서 쓰는 언어 + 중국어·인도네시아어
   const langs = [...new Set(['zh-CN', 'id-ID', ...decks.flatMap((d) => [d.settings.langs.front, d.settings.langs.back]).filter((l) => l !== 'ko-KR')])];
   return (
@@ -219,6 +218,19 @@ function VoiceSettings({ s }: { s: SettingsT }) {
       <span className="section-label" style={{ paddingTop: 8 }}>
         기기 음성 {s.gemini?.apiKey ? '· 단어 카드와 Gemini를 못 쓸 때' : ''}
       </span>
+      {isNativeApp() ? <NativeVoiceSettings s={s} langs={langs} /> : <WebVoiceSettings s={s} langs={langs} />}
+    </>
+  );
+}
+
+/** 브라우저(PWA)의 기기 음성: Web Speech. 엔진은 휴대폰 설정을 따르고, 속도·높낮이는 앱이 정한다 */
+function WebVoiceSettings({ s, langs }: { s: SettingsT; langs: string[] }) {
+  const toast = useToast();
+  const [, setVoicesTick] = useState(0);
+  useEffect(() => onVoicesChanged(() => setVoicesTick((n) => n + 1)), []);
+  const set = (patch: Partial<SettingsT>) => saveSettings(patch);
+  return (
+    <>
       <div className="group">
         {!ttsSupported() && <Row title="이 브라우저에서는 발음을 쓸 수 없어요" desc="안드로이드 Chrome에서 열어 주세요." />}
         {ttsSupported() &&
@@ -398,5 +410,96 @@ function InstallRow() {
         )}
       </Row>
     </div>
+  );
+}
+
+/**
+ * 안드로이드 앱의 기기 음성: 음성 엔진(삼성, 구글 …)과 엔진 안의 목소리를 고르고,
+ * 속도·높낮이는 기본으로 휴대폰 설정(텍스트 음성 변환) 값을 그대로 쓴다.
+ */
+function NativeVoiceSettings({ s, langs }: { s: SettingsT; langs: string[] }) {
+  const toast = useToast();
+  const n = s.nativeTts ?? {};
+  const [engines, setEngines] = useState<{ engines: NativeEngine[]; defaultEngine: string }>();
+  const [voices, setVoices] = useState<Record<string, NativeVoice[]>>({});
+  const engine = n.engine || engines?.defaultEngine;
+  const set = (patch: Partial<NonNullable<SettingsT['nativeTts']>>) => saveSettings({ nativeTts: { ...n, ...patch } });
+  useEffect(() => {
+    nativeEngines()
+      .then(setEngines)
+      .catch(() => setEngines({ engines: [], defaultEngine: '' }));
+  }, []);
+  useEffect(() => {
+    if (!engines) return;
+    let alive = true;
+    void Promise.all(langs.map(async (l) => [l, await nativeVoices(l, engine).catch(() => [])] as const)).then((r) => alive && setVoices(Object.fromEntries(r)));
+    return () => {
+      alive = false;
+    };
+  }, [engines, engine, langs.join()]); // eslint-disable-line react-hooks/exhaustive-deps
+  const system = n.systemRatePitch !== false;
+  return (
+    <>
+      <div className="group">
+        <Row title="음성 엔진" desc="삼성, 구글처럼 휴대폰에 설치된 엔진 중에서 골라요. 휴대폰 설정의 기본 엔진과 상관없어요.">
+          <select className="select" aria-label="음성 엔진" value={engine ?? ''} onChange={(e) => set({ engine: e.target.value, voices: {} })}>
+            {(engines?.engines ?? []).map((e) => (
+              <option key={e.name} value={e.name}>
+                {e.label}
+              </option>
+            ))}
+          </select>
+        </Row>
+        {langs.map((lang) => {
+          const list = voices[lang] ?? [];
+          return (
+            <Row key={lang} title={langName(lang)}>
+              <select
+                className="select"
+                aria-label={`${langName(lang)} 음성`}
+                value={list.some((v) => v.name === n.voices?.[lang]) ? n.voices![lang] : ''}
+                onChange={(e) => {
+                  const { [lang]: _old, ...rest } = n.voices ?? {};
+                  set({ voices: e.target.value ? { ...rest, [lang]: e.target.value } : rest });
+                }}
+              >
+                <option value="">엔진 기본 목소리</option>
+                {list.map((v) => (
+                  <option key={v.name} value={v.name}>
+                    {v.name}
+                    {v.network ? ' (인터넷)' : ''}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="btn-plain"
+                style={{ border: 'none' }}
+                onClick={async () => {
+                  if (!(await speakDevice([{ text: SAMPLE[lang] ?? 'Hello', lang }], s))) toast(`이 엔진에는 ${langName(lang)} 음성이 없어요. 다른 엔진을 고르거나 엔진 설정에서 음성을 내려받아 주세요.`);
+                }}
+              >
+                듣기
+              </button>
+            </Row>
+          );
+        })}
+      </div>
+      <div className="group">
+        <Row title="휴대폰 설정의 속도·높낮이 쓰기" desc="켜 두면 휴대폰 설정 › 텍스트 음성 변환에서 맞춘 속도와 높낮이로 읽어요. 이야기 읽기도 같아요.">
+          <Switch label="휴대폰 설정의 속도·높낮이 쓰기" checked={system} onChange={(v) => set({ systemRatePitch: v })} />
+        </Row>
+        {!system && (
+          <>
+            <Row title="속도" desc="단어 카드를 읽는 빠르기예요. 이야기 읽기 속도는 읽기 화면의 톱니에서 따로 정해요.">
+              <Stepper label="기기 음성 속도" value={Math.round((s.deviceRate ?? 0.9) * 100)} min={50} max={150} step={5} format={(v) => `${(v / 100).toFixed(2)}배`} onChange={(v) => saveSettings({ deviceRate: v / 100 })} />
+            </Row>
+            <Row title="높낮이" desc="1.00이 보통이에요. 낮추면 차분하고 낮은 목소리가 돼요.">
+              <Stepper label="기기 음성 높낮이" value={Math.round((s.devicePitch ?? 1) * 100)} min={50} max={150} step={5} format={(v) => (v / 100).toFixed(2)} onChange={(v) => saveSettings({ devicePitch: v / 100 })} />
+            </Row>
+          </>
+        )}
+      </div>
+    </>
   );
 }

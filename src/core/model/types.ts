@@ -127,6 +127,15 @@ export interface Settings {
   deviceRate?: number;
   /** 기기 음성 높낮이 (1 = 보통) */
   devicePitch?: number;
+  /** 안드로이드 앱의 음성 엔진 설정 (이 기기에만) */
+  nativeTts?: {
+    /** 엔진 패키지 이름 (예: com.samsung.SMT). 없으면 휴대폰 기본 엔진 */
+    engine?: string;
+    /** 언어별 엔진 안의 목소리 이름. 없으면 엔진 기본 목소리 */
+    voices?: Record<Lang, string>;
+    /** 휴대폰 설정(텍스트 음성 변환)의 속도·높낮이를 쓸지. 기본 true. false면 deviceRate·devicePitch·이야기 속도 */
+    systemRatePitch?: boolean;
+  };
   lastBackupAt?: Millis;
   /** 자연스러운 음성 (Gemini API 무료 키). 키는 백업 파일에 넣지 않는다 */
   gemini?: GeminiSettings;

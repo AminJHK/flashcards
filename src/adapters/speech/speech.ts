@@ -6,7 +6,8 @@ import { withTimeout } from '../net';
 import { synthesize } from '../gemini/tts';
 import { allModelsMessage, canSwitchTtsModel, storyTtsModels, type TtsModelState } from './modelFallback';
 import { db } from '../storage/db';
-import { missingVoiceLangs, speak as deviceSpeak, speakAndWait, stopSpeaking, voicesReady } from '../tts/webSpeech';
+import { missingDeviceLangs, speakDevice, speakDeviceAndWait, stopDevice } from '../tts/device';
+import { voicesReady } from '../tts/webSpeech';
 
 /**
  * 발음 재생 순서 (docs/DESIGN.md §6)
@@ -261,7 +262,7 @@ export function stopAll(): void {
   interruptAudio?.();
   current?.pause();
   current = null;
-  stopSpeaking();
+  stopDevice();
 }
 
 function playBlob(blob: Blob, my: number, rate = 1): Promise<void> {
@@ -340,11 +341,11 @@ export async function play(items: readonly Speech[], s: Settings | undefined, op
       if (opts?.awaitDevice && list.length === 1) {
         // Report the source before speaking and wait for playback to finish.
         opts.onSource?.(result);
-        const ok = await speakAndWait(list[0]!, selected.voices, opts.rate ?? selected.deviceRate ?? 0.9, selected.devicePitch ?? 1);
-        return { ...result, via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list, selected.voices) };
+        const ok = await speakDeviceAndWait(list[0]!, selected, opts.rate);
+        return { ...result, via: ok ? 'device' : 'none', missing: ok ? undefined : missingDeviceLangs(list, selected) };
       }
-      const ok = deviceSpeak(list, selected.voices, opts?.rate ?? selected.deviceRate ?? 0.9, selected.devicePitch ?? 1);
-      const out: PlayResult = { ...result, via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list, selected.voices) };
+      const ok = await speakDevice(list, selected, opts?.rate);
+      const out: PlayResult = { ...result, via: ok ? 'device' : 'none', missing: ok ? undefined : missingDeviceLangs(list, selected) };
       opts?.onSource?.(out);
       return out;
     }
@@ -353,11 +354,11 @@ export async function play(items: readonly Speech[], s: Settings | undefined, op
   if (my !== token) return { via: 'device' };
   if (opts?.awaitDevice && list.length === 1) {
     opts.onSource?.({ via: 'device' });
-    const ok = await speakAndWait(list[0]!, s?.voices, opts.rate ?? s?.deviceRate ?? 0.9, s?.devicePitch ?? 1);
-    return { via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list, s?.voices) };
+    const ok = await speakDeviceAndWait(list[0]!, s, opts.rate);
+    return { via: ok ? 'device' : 'none', missing: ok ? undefined : missingDeviceLangs(list, s) };
   }
-  const ok = deviceSpeak(list, s?.voices, opts?.rate ?? s?.deviceRate ?? 0.9, s?.devicePitch ?? 1);
-  const result: PlayResult = { via: ok ? 'device' : 'none', missing: ok ? undefined : missingVoiceLangs(list, s?.voices) };
+  const ok = await speakDevice(list, s, opts?.rate);
+  const result: PlayResult = { via: ok ? 'device' : 'none', missing: ok ? undefined : missingDeviceLangs(list, s) };
   opts?.onSource?.(result);
   return result;
 }

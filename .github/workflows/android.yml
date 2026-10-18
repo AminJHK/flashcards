@@ -1,0 +1,56 @@
+name: 안드로이드 앱 빌드
+
+# 안드로이드 앱(android/)을 만든다. 앱은 배포된 웹앱을 불러오므로 화면·기능은 웹 배포로 바뀌고,
+# 이 빌드는 안드로이드 쪽(음성 엔진 플러그인, 아이콘, 권한 등)이 바뀔 때만 필요하다.
+# 서명하지 않은 APK를 "android-latest" 릴리스에 올린다. 서명은 docs/ANDROID.md 참고 (서명 키는 저장소에 넣지 않는다).
+on:
+  push:
+    branches: [main, claude/mvp]
+    paths:
+      - 'android/**'
+      - 'android-web/**'
+      - 'capacitor.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # 릴리스에 APK를 올리기 위해
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - run: npx cap sync android
+      - name: APK 만들기 (서명 없음)
+        working-directory: android
+        run: ./gradlew --no-daemon assembleRelease -PappVersionCode=${{ github.run_number }} -PappVersionName=1.${{ github.run_number }}
+      - name: 릴리스에 올리기
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          APK=android/app/build/outputs/apk/release/app-release-unsigned.apk
+          NAME="flashcards-${GITHUB_REF_NAME//\//-}-${{ github.run_number }}-unsigned.apk"
+          cp "$APK" "$NAME"
+          sha256sum "$NAME"
+          gh release view android-latest >/dev/null 2>&1 || gh release create android-latest --prerelease --title "안드로이드 앱 (빌드용)" --notes "서명하지 않은 빌드 결과물. 설치용 파일은 서명한 뒤 따로 전달한다 (docs/ANDROID.md)."
+          gh release upload android-latest "$NAME" --clobber
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: android/app/build/outputs/apk/release/*.apk

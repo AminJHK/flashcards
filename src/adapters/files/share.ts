@@ -1,7 +1,19 @@
 import { markActivationUsed } from '../activation';
+import { isNativeApp } from '../native/platform';
 
 /** 파일을 내보낸다. 안드로이드에서는 공유 시트(Drive 저장 등)를 먼저 시도하고, 안 되면 다운로드한다. */
 export async function saveFile(name: string, text: string, type = 'application/json'): Promise<'shared' | 'downloaded' | 'cancelled'> {
+  // 안드로이드 앱: 앱 안 브라우저는 다운로드를 못 하므로, 임시 파일로 쓰고 공유 시트(Drive, 내 파일 등)를 연다
+  if (isNativeApp()) {
+    const [{ Filesystem, Directory, Encoding }, { Share }] = await Promise.all([import('@capacitor/filesystem'), import('@capacitor/share')]);
+    const { uri } = await Filesystem.writeFile({ path: name, data: text, directory: Directory.Cache, encoding: Encoding.UTF8 });
+    try {
+      await Share.share({ title: name, files: [uri] });
+      return 'shared';
+    } catch {
+      return 'cancelled';
+    }
+  }
   const blob = new Blob([text], { type });
   const file = new File([blob], name, { type });
   const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
