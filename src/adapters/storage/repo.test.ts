@@ -178,4 +178,34 @@ describe('repo', () => {
     expect(again.moved).toBe(0);
     expect((await d.decks.toArray()).filter((x) => x.name === '연결어·표현')).toHaveLength(1);
   });
+
+  it('준비된 덱 고친 내용 받기: 시각을 올려서 동기화가 받기 전 내용으로 되돌리지 않고, 계속 "안 고친 단어"로 남는다', async () => {
+    const { mergeSync } = await import('../../core/io/sync');
+    const { packChanges } = await import('../../core/packs/update');
+    const { userEdited } = await import('../../core/model/notes');
+    const idSettings = { defaultTypeId: 'id-spoken', reverseEnabled: false, newPerDay: 10, autoplay: 'front' as const, langs: { front: 'id-ID', back: 'ko-KR' } };
+    const deck = await repo.createDeck('인니', idSettings, d);
+    const old = await repo.addNote(deck.id, 'id-spoken', { word: 'kurang', meaning: '부족한' }, d);
+    await d.notes.put({ ...old, tags: ['pack:p'] });
+    const before = (await d.notes.get(old.id))!; // 다른 기기(Drive)에 있는 예전 내용
+    const pack = { id: 'p', name: 'p', description: '', deckName: 'p', deckSettings: idSettings, fillEmpty: ['en'], notes: [{ typeId: 'id-spoken', fields: { word: 'kurang', meaning: '부족한', en: 'less' }, tags: [] }] };
+    await new Promise((r) => setTimeout(r, 2));
+    expect(await repo.applyPackChanges(packChanges(pack, [before]), d)).toBe(1);
+    const after = (await d.notes.get(old.id))!;
+    expect(after.fields.en).toBe('less');
+    expect(after.updatedAt).toBeGreaterThan(before.updatedAt);
+    expect(userEdited(after)).toBe(false);
+    const empty = { decks: [deck], cards: [], reviewLogs: [], tombstones: [] };
+    const merged = mergeSync({ ...empty, notes: [before] }, { ...empty, notes: [after] } as never);
+    expect(merged.notes[0]!.fields.en).toBe('less');
+
+    // 직접 고친 단어는 계속 "고친 단어": 빈 칸만 채우고 다음에도 덮어쓰지 않는다
+    await repo.updateNote(old.id, { fields: { ...after.fields, en: '', note: '내 메모' } }, d);
+    const mine = (await d.notes.get(old.id))!;
+    expect(userEdited(mine)).toBe(true);
+    await repo.applyPackChanges(packChanges(pack, [mine]), d);
+    const filled = (await d.notes.get(old.id))!;
+    expect([filled.fields.en, filled.fields.note, userEdited(filled)]).toEqual(['less', '내 메모', true]);
+  });
 });
+

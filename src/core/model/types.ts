@@ -43,7 +43,13 @@ export interface Note {
   ttsOverride?: Record<string, string>;
   tags: string[];
   createdAt: Millis;
+  /** 마지막으로 바뀐 시각. 기기 사이 동기화는 이 값이 더 나중인 쪽을 쓴다 */
   updatedAt: Millis;
+  /**
+   * 준비된 덱의 고친 내용을 받은(또는 앱이 옮긴) 시각. updatedAt이 이 값(없으면 createdAt)과 같으면 사용자가 직접 고치지 않은 단어다 (userEdited).
+   * 예전에는 받을 때 updatedAt을 그대로 둬서, 동기화가 받기 전 내용을 같은 시각으로 보고 되돌릴 수 있었다.
+   */
+  packUpdatedAt?: Millis;
 }
 
 /** 스케줄러가 쓰는 카드 기억 상태. 어떤 알고리즘이든 JSON으로 직렬화할 수 있어야 한다. */

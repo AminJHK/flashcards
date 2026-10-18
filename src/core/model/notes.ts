@@ -5,6 +5,11 @@ import { withState } from '../scheduler/queue';
 import { newId } from './ids';
 import type { Card, Deck, Millis, Note } from './types';
 
+/** 사용자가 직접 고친 단어인지 (준비된 덱 업데이트가 덮어쓰지 않는다) */
+export function userEdited(n: Pick<Note, 'createdAt' | 'updatedAt' | 'packUpdatedAt'>): boolean {
+  return n.updatedAt !== (n.packUpdatedAt ?? n.createdAt);
+}
+
 export function trimFields(type: CardType, fields: Record<string, string>): Record<string, string> {
   const out: Record<string, string> = {};
   for (const f of type.fields) out[f.key] = (fields[f.key] ?? '').trim();

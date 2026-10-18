@@ -4,7 +4,7 @@ import type { DeriveDeps } from '../../core/cardTypes/types';
 import type { Pack } from '../../core/packs/types';
 import { makeBackup, type Backup } from '../../core/io/backup';
 import { newId } from '../../core/model/ids';
-import { cardsForNote, createNote, trimFields } from '../../core/model/notes';
+import { cardsForNote, createNote, trimFields, userEdited } from '../../core/model/notes';
 import { DEFAULT_SETTINGS, type Card, type Deck, type DeckSettings, type Id, type Note, type Rating, type ReviewLog, type Settings } from '../../core/model/types';
 import { applyReview, withState } from '../../core/scheduler/queue';
 import { rebuildFromLogs } from '../../core/scheduler/rebuild';
@@ -99,7 +99,8 @@ export async function updateNote(
       fields: patch.fields ? trimFields(type, patch.fields) : note.fields,
       deckId: patch.deckId ?? note.deckId,
       ttsOverride: patch.ttsOverride ?? note.ttsOverride,
-      updatedAt: Date.now(),
+      // 고친 내용 받기와 같은 밀리초여도 "직접 고친 단어"로 남게 한 칸 뒤로
+      updatedAt: Math.max(Date.now(), (note.packUpdatedAt ?? note.createdAt) + 1),
     };
     await d.notes.put(next);
     if (next.deckId !== note.deckId) {
@@ -131,7 +132,8 @@ export async function moveConnectors(fromDeckId: Id, d: FlashcardsDB = db): Prom
     const notes: Note[] = [];
     const changed: Card[] = [];
     for (const n of mine) {
-      const next: Note = { ...n, deckId: deck.id, updatedAt: now };
+      // 덱만 옮긴 것이라 사용자가 고친 단어로 치지 않는다 (준비된 덱 업데이트를 계속 받게)
+      const next: Note = { ...n, deckId: deck.id, updatedAt: now, ...(userEdited(n) ? {} : { packUpdatedAt: now }) };
       notes.push(next);
       changed.push(...cardsForNote(next, byNote.get(n.id) ?? [], deck, now, sched));
     }
@@ -211,15 +213,17 @@ export async function applyPackChanges(changes: readonly PackChange[], d: Flashc
     for (const c of changes) {
       const note = await d.notes.get(c.noteId);
       if (!note) continue;
-      if (note.updatedAt !== note.createdAt) {
-        // 사용자가 고친 단어: 비어 있는 새 칸만 채운다 (직접 쓴 내용은 그대로)
+      // updatedAt을 올려야 동기화가 이 내용을 다른 기기로 보내고, 받기 전 내용으로 되돌리지 않는다
+      const now = Math.max(Date.now(), note.updatedAt + 1);
+      if (userEdited(note)) {
+        // 사용자가 고친 단어: 비어 있는 새 칸만 채운다 (직접 쓴 내용은 그대로, 계속 "고친 단어")
         const fill = Object.entries(c.fill ?? {}).filter(([k]) => !(note.fields[k] ?? '').trim());
         if (!fill.length) continue;
-        await d.notes.put({ ...note, fields: { ...note.fields, ...Object.fromEntries(fill) } });
+        await d.notes.put({ ...note, fields: { ...note.fields, ...Object.fromEntries(fill) }, updatedAt: now });
         n++;
         continue;
       }
-      await d.notes.put({ ...note, fields: c.fields });
+      await d.notes.put({ ...note, fields: c.fields, updatedAt: now, packUpdatedAt: now });
       n++;
     }
     return n;

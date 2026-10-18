@@ -1,4 +1,5 @@
 import { getCardType } from '../cardTypes/registry';
+import { userEdited } from '../model/notes';
 import type { Note } from '../model/types';
 import type { Pack } from './types';
 
@@ -13,7 +14,7 @@ export interface PackChange {
 /**
  * 이미 설치한 덱의 단어 중, 덱 꾸러미에서 내용이 바뀐 것을 찾는다.
  * - 같은 꾸러미에서 온 단어만 (태그 pack:<id>), 같은 카드 종류·같은 단어(duplicateKey)끼리 맞춘다.
- * - 사용자가 직접 고친 단어(updatedAt ≠ createdAt)는 건드리지 않는다. 단, pack.fillEmpty의 칸이 비어 있으면 그 칸만 채운다.
+ * - 사용자가 직접 고친 단어(userEdited)는 건드리지 않는다. 단, pack.fillEmpty의 칸이 비어 있으면 그 칸만 채운다.
  * - 꾸러미에 적힌 칸만 바꾸고, 나머지 칸(자동 병음 등)은 그대로 둔다. 복습 기록과는 상관없다.
  */
 export function packChanges(pack: Pack, notes: readonly Note[]): PackChange[] {
@@ -24,7 +25,7 @@ export function packChanges(pack: Pack, notes: readonly Note[]): PackChange[] {
     if (!n.tags.includes(tag)) continue;
     const pn = byKey.get(`${n.typeId}|${getCardType(n.typeId).duplicateKey(n.fields)}`);
     if (!pn) continue;
-    if (n.updatedAt !== n.createdAt) {
+    if (userEdited(n)) {
       const fill = Object.fromEntries((pack.fillEmpty ?? []).filter((k) => !(n.fields[k] ?? '').trim() && (pn.fields[k] ?? '').trim()).map((k) => [k, pn.fields[k]!.trim()]));
       if (Object.keys(fill).length) out.push({ noteId: n.id, fields: { ...n.fields, ...fill }, fill });
       continue;
