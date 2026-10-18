@@ -36,12 +36,19 @@ async function call<T>(token: string, url: string, init: RequestInit = {}): Prom
   if (res.status === 401) throw new DriveError('Google 로그인이 만료됐어요. 다시 시도해 주세요', 401);
   if (res.status === 403) {
     let msg = '';
+    let reason = '';
     try {
-      msg = ((await res.json()) as { error?: { message?: string } }).error?.message ?? '';
+      const e = ((await res.json()) as { error?: { message?: string; errors?: { reason?: string }[] } }).error;
+      msg = e?.message ?? '';
+      reason = e?.errors?.[0]?.reason ?? '';
     } catch {
       /* 없음 */
     }
-    throw new DriveError(/not been used|disabled/i.test(msg) ? 'Google Drive API가 꺼져 있어요. 안내 2단계(Drive API 사용)를 확인해 주세요' : 'Drive를 쓸 권한이 없어요', 403);
+    if (/not been used|disabled|accessNotConfigured/i.test(`${msg} ${reason}`)) throw new DriveError('Google Drive API가 꺼져 있어요. 안내 2단계(Drive API 사용)를 확인해 주세요 (안드로이드 앱이면 안드로이드 클라이언트를 만든 프로젝트에서 켜요)', 403);
+    // 로그인 때 Drive 항목을 체크하지 않으면 토큰에 Drive 권한이 없다 (권한 화면에 항목별 체크 칸이 있다)
+    if (/insufficient|scope/i.test(`${msg} ${reason}`)) throw new DriveError('로그인할 때 Drive 항목을 체크하지 않았어요. Google 계정 › 보안 › 타사 앱 연결에서 이 앱을 삭제한 뒤 다시 로그인하고, Drive 항목을 꼭 체크해 주세요', 403);
+    // 원인을 알 수 있게 Google이 알려 준 내용을 그대로 붙인다
+    throw new DriveError(`Drive를 쓸 권한이 없어요${msg || reason ? ` (${(msg || reason).slice(0, 120)})` : ''}`, 403);
   }
   if (!res.ok) throw new DriveError(`Drive 오류 (${res.status})`, res.status);
   if (res.status === 204) return undefined as T;
