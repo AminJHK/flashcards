@@ -143,3 +143,19 @@ test('지운 단어 되살리기: 지운 단어만(중복·어조 말 덱이 맡
   // 한 번 더 지워지지 않는다: 단어 수 997 + 3
   await expect(page.getByRole('button', { name: /단어 998개 보기/ })).toBeVisible();
 });
+
+test('aja 연습 덱: 준비된 덱에서 넣으면 예문 속 aja가 강조되고, 쓰임새가 섞여서 나온다', async ({ page }) => {
+  await page.goto('/#/decks/new');
+  await page.getByRole('button', { name: /^인도네시아어 aja 연습.* 추가하기$/ }).click();
+  await expect(page.getByLabel('덱 이름')).toHaveValue('인도네시아어 aja');
+  await page.getByRole('button', { name: '이 덱 복습' }).click();
+  await expect(page.getByText('「aja」는 여기서 어떤 느낌일까?')).toBeVisible();
+  await expect(page.locator('.cf-mark', { hasText: 'aja' }).first()).toBeVisible();
+  await expect(page.getByText('Aku minum air putih aja.')).toBeVisible();
+  await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
+  await expect(page.getByText('~만 · ~밖에 (그것뿐)')).toBeVisible();
+  await page.screenshot({ path: 'test-results/shots/68-aja-card.png' });
+  await page.getByRole('button', { name: /알았음/ }).click();
+  // 다음 새 카드는 다른 쓰임새
+  await expect(page.getByText('Duduk aja dulu.')).toBeVisible();
+});

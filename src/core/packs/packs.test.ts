@@ -166,3 +166,21 @@ describe('인도네시아어 구어체', () => {
     expect(pack.fillEmpty).toEqual(['en', 'phrases']);
   });
 });
+
+describe('인도네시아어 aja 연습', () => {
+  it('72장, 모든 예문에 aja가 있고, 쓰임새 12가지가 번갈아 나온다', async () => {
+    const { indonesianAja } = await import('./indonesianAja');
+    const notes = indonesianAja.notes;
+    expect(notes).toHaveLength(72);
+    expect(PACKS).toContain(indonesianAja);
+    for (const n of notes) {
+      expect(n.typeId).toBe('id-particle');
+      expect(n.fields.example!.toLowerCase(), n.fields.example).toMatch(/(^|[^a-z])aja([^a-z]|$)/);
+      expect(n.fields.exampleKo, n.fields.example).toMatch(HANGUL);
+    }
+    expect(new Set(notes.map((n) => n.fields.example)).size).toBe(72);
+    // 처음 12장은 쓰임새가 모두 다르다
+    expect(new Set(notes.slice(0, 12).map((n) => n.tags[1])).size).toBe(12);
+  });
+});
+
