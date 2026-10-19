@@ -361,6 +361,15 @@ test('읽기 · 받아쓰기: 빈칸 또는 문장 전체를 받아쓰고 확인
   await expect(page.getByText('받아쓰고 확인을 눌러 주세요')).toBeVisible();
   await expect(page.getByRole('button', { name: '다음 문장 읽기' })).toBeDisabled();
   await page.screenshot({ path: 'test-results/shots/69-dictation-blank.png' });
+  // 키보드가 올라온 것처럼 화면을 줄이고 빈칸을 누르면: 재생 버튼이 숨고, 문장·확인 버튼이 보이는 곳으로 올라온다
+  const size = page.viewportSize()!;
+  await page.setViewportSize({ width: size.width, height: 360 });
+  await page.getByRole('textbox', { name: '빈칸 1' }).click();
+  await expect(page.locator('.story-player')).toBeHidden();
+  await expect.poll(async () => (await page.getByRole('button', { name: '확인' }).boundingBox())!.y + 40).toBeLessThan(360);
+  await expect.poll(async () => (await page.locator('.dict-sentence').boundingBox())!.y).toBeGreaterThanOrEqual(0);
+  await page.screenshot({ path: 'test-results/shots/72-dictation-keyboard.png' });
+  await page.setViewportSize(size);
   await page.getByRole('textbox', { name: '빈칸 1' }).fill('zzz');
   await page.getByRole('button', { name: '확인' }).click();
   await expect(page.locator('.dict-result')).toContainText('(쓴 것: zzz)');

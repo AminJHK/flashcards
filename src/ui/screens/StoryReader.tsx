@@ -1036,19 +1036,63 @@ function StoryResult({ story, progress, lex, onRestart, onListen, onPick }: { st
 
 const inputProps = { autoCapitalize: 'off', autoCorrect: 'off', autoComplete: 'off', spellCheck: false, lang: 'id' } as const;
 
+/** 스크롤되는 가장 가까운 부모 */
+function scrollParent(el: HTMLElement): HTMLElement {
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    const y = getComputedStyle(p).overflowY;
+    if ((y === 'auto' || y === 'scroll') && p.scrollHeight > p.clientHeight) return p;
+  }
+  return (document.scrollingElement as HTMLElement) ?? document.documentElement;
+}
+
+/**
+ * 받아쓰기 칸을 누르면 키보드가 문장을 가리지 않게: 키보드가 올라온 뒤 보이는 화면(visualViewport) 안으로
+ * 받아쓰기 칸 전체(문장·입력칸·확인)를 올린다. 쓰는 동안은 아래 재생 버튼을 숨기고 아래에 여백을 둬서 올릴 자리를 만든다.
+ */
+function useKeepAboveKeyboard() {
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => () => document.documentElement.classList.remove('dict-typing'), []);
+  const keep = () => {
+    const el = box.current;
+    if (!el) return;
+    const vv = window.visualViewport;
+    const top = (vv?.offsetTop ?? 0) + 12;
+    const bottom = (vv ? vv.offsetTop + vv.height : window.innerHeight) - 12;
+    const r = el.getBoundingClientRect();
+    // 칸 전체가 들어가면 아래를 키보드 바로 위에, 너무 크면 위를 맞춘다
+    const delta = r.height > bottom - top ? r.top - top : r.bottom > bottom ? r.bottom - bottom : r.top < top ? r.top - top : 0;
+    if (Math.abs(delta) > 2) scrollParent(el).scrollBy({ top: delta, behavior: 'smooth' });
+  };
+  return {
+    ref: box,
+    onFocus: () => {
+      document.documentElement.classList.add('dict-typing');
+      // 키보드가 올라오는 동안 화면 크기가 바뀐다: 바로, 조금 뒤, 크기가 바뀔 때 한 번씩
+      requestAnimationFrame(keep);
+      setTimeout(keep, 350);
+      window.visualViewport?.addEventListener('resize', keep, { once: true });
+    },
+    onBlur: (e: React.FocusEvent) => {
+      if (box.current?.contains(e.relatedTarget as Node | null)) return;
+      document.documentElement.classList.remove('dict-typing');
+    },
+  };
+}
+
 /** 받아쓰기 칸. 빈칸: 문장 속 1~2단어 자리에 입력칸 / 전체: 글자를 가리고 문장 전체를 쓴다 */
 function Dictation({ line, style, blanks, onCheck }: { line: StoryLine; style: 'blank' | 'full'; blanks: readonly BlankCandidate[]; onCheck: (r: DictationResult) => void }) {
   const blankMode = style === 'blank' && blanks.length > 0;
   const [vals, setVals] = useState<string[]>(() => blanks.map(() => ''));
   const [full, setFull] = useState('');
   const refs = useRef<(HTMLInputElement | null)[]>([]);
+  const keep = useKeepAboveKeyboard();
   const check = () => {
     if (blankMode) onCheck({ mode: 'blank', items: blanks.map((b, k) => ({ word: b.text, typed: vals[k] ?? '', ok: sameWord(b.text, vals[k] ?? '') })) });
     else onCheck({ mode: 'full', items: markWords(line.text, full) });
   };
   if (!blankMode) {
     return (
-      <div className="dict">
+      <div className="dict" ref={keep.ref} onFocus={keep.onFocus} onBlur={keep.onBlur}>
         <span className="story-hidden-text" aria-hidden="true">
           {line.text}
         </span>
@@ -1094,7 +1138,7 @@ function Dictation({ line, style, blanks, onCheck }: { line: StoryLine; style: '
   });
   if (at < line.text.length) parts.push(line.text.slice(at));
   return (
-    <div className="dict">
+    <div className="dict" ref={keep.ref} onFocus={keep.onFocus} onBlur={keep.onBlur}>
       <p className="story-p dict-sentence">{parts}</p>
       <button type="button" className="btn btn-primary dict-check" onClick={check}>
         확인

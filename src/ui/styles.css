@@ -2791,6 +2791,16 @@ textarea.input-sentence {
 }
 
 /* 읽기 받아쓰기 */
+/* 받아쓰는 동안: 재생 버튼을 숨기고, 키보드 위로 문장을 올릴 수 있게 아래에 여백 */
+.dict-typing .story-player,
+.dict-typing .story-player-hint {
+  display: none;
+}
+
+.dict-typing .story-body {
+  padding-bottom: 60vh;
+}
+
 .dict {
   display: flex;
   flex-direction: column;
