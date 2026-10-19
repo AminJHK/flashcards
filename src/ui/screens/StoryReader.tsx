@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { play, setPlaybackRate, stopAll, type PlayResult } from '../../adapters/speech/speech';
 import { GEMINI_VOICES } from '../../adapters/gemini/tts';
 import { db } from '../../adapters/storage/db';
@@ -7,10 +7,11 @@ import { addNote, saveSettings } from '../../adapters/storage/repo';
 import { getProgress, saveProgress } from '../../adapters/storage/stories';
 import { nameSet } from '../../core/stories/plan';
 import { NARRATOR, roleOf, storyVoice } from '../../core/stories/voices';
-import type { StoryBlock, StoryLine, StoryProgress, StoryQuestion, Story } from '../../core/stories/types';
+import type { DictationResult, StoryBlock, StoryLine, StoryProgress, StoryQuestion, Story } from '../../core/stories/types';
+import { markWords, normalizeWord, pickBlanks, sameWord, type BlankCandidate } from '../../core/stories/dictation';
 import { analyzeText, findGloss, glossFor, type Lexicon, type Span } from '../../core/stories/vocab';
 import { Icon } from '../components/Icon';
-import { Switch } from '../components/Controls';
+import { Segmented, Switch } from '../components/Controls';
 import { useNotes, useSettings } from '../hooks';
 import { go } from '../router';
 import { useToast } from '../toast';
@@ -66,6 +67,8 @@ export function StoryReader({ id }: { id: string }) {
   const end = useRef<HTMLDivElement>(null);
   const autoplay = settings?.storyAutoplay !== false;
   const listenFirst = settings?.storyListenFirst === true;
+  const dictOn = settings?.storyDictation === true;
+  const dictStyle = settings?.storyDictationStyle ?? 'blank';
   const autoModelSwitch = settings?.storyAutoModelSwitch !== false;
   const playbackRate = rateDraft ?? settings?.storyPlaybackRate ?? 0.85;
   const voiceAssignments = useMemo(
@@ -113,7 +116,9 @@ export function StoryReader({ id }: { id: string }) {
   const names = nameSet(story.characters, story.properNouns);
   const shown = story.blocks.slice(0, progress.position);
   const current = story.blocks[progress.position - 1]!;
-  const waiting = current.kind !== 'line' && progress.answers[progress.position - 1] === undefined;
+  // 받아쓰기: 지금 줄을 받아쓰고 확인해야 다음으로
+  const dictPending = dictOn && current.kind === 'line' && !progress.dictation?.[progress.position - 1];
+  const waiting = (current.kind !== 'line' && progress.answers[progress.position - 1] === undefined) || dictPending;
   const last = progress.position >= story.blocks.length;
   const update = (p: StoryProgress) => {
     setProgress(p);
@@ -214,7 +219,7 @@ export function StoryReader({ id }: { id: string }) {
     const b = story.blocks[position - 1]!;
     // 다음 줄로 넘어가면 앞 줄들은 글자를 보여 준다 (질문이 나올 때는 가린 채로)
     if (b.kind === 'line') setHideFrom(position - 1);
-    if (b.kind === 'line' && (autoplay || forcePlay || listenFirst)) void speakLine(b);
+    if (b.kind === 'line' && (autoplay || forcePlay || listenFirst || dictOn)) void speakLine(b);
     else {
       stopAll();
       setAudioStatus('');
@@ -241,7 +246,19 @@ export function StoryReader({ id }: { id: string }) {
     setRevealed(new Set());
     if (enabled && !result && current.kind === 'line') void speakLine(current);
   };
-  const isHidden = (i: number) => listenFirst && !result && i >= hideFrom && !revealed.has(i);
+  const isHidden = (i: number) => listenFirst && !result && i >= hideFrom && !revealed.has(i) && !progress.dictation?.[i];
+  const toggleDictation = () => {
+    const enabled = !dictOn;
+    void saveSettings({ storyDictation: enabled });
+    if (enabled && !result && current.kind === 'line') void speakLine(current);
+  };
+  const checkDictation = (i: number, r: DictationResult) => update({ ...progress, dictation: { ...progress.dictation, [i]: r } });
+  const blanksFor = (i: number, line: StoryLine): BlankCandidate[] => {
+    const rank = { learning: 0, deckNew: 1, outside: 2, known: 3 } as const;
+    const spans = analyzeText(line.text, lex, names).filter((sp) => sp.cls !== 'name');
+    const cands = spans.map((sp) => ({ start: sp.start, end: sp.end, text: sp.text, rank: rank[sp.cls as keyof typeof rank] ?? 3 }));
+    return pickBlanks(cands, `${story.id}:${i}`, line.text.split(/\s+/).length);
+  };
   const pct = Math.round((progress.position / story.blocks.length) * 100);
 
   return (
@@ -255,6 +272,16 @@ export function StoryReader({ id }: { id: string }) {
             <div className="progress-fill" style={{ width: `${result ? 100 : pct}%` }} />
           </div>
         </div>
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label="받아쓰기"
+          aria-pressed={dictOn}
+          style={dictOn ? { color: 'var(--accent)' } : undefined}
+          onClick={toggleDictation}
+        >
+          <Icon name="edit" size={21} />
+        </button>
         <button
           type="button"
           className="icon-btn"
@@ -295,7 +322,7 @@ export function StoryReader({ id }: { id: string }) {
           }}
         />
       ) : result ? (
-        <StoryResult story={story} progress={progress} lex={lex}
+        <StoryResult story={story} progress={progress} lex={lex} onPick={setPicked}
           onListen={() => {
             setAudioStatus('');
             setListening(true);
@@ -303,7 +330,7 @@ export function StoryReader({ id }: { id: string }) {
           onRestart={() => {
             stopReplay();
             setCursor(undefined);
-            update({ ...progress, position: 1, answers: {}, completedAt: undefined });
+            update({ ...progress, position: 1, answers: {}, dictation: undefined, completedAt: undefined });
             setHideFrom(0);
             setRevealed(new Set());
             setResult(false);
@@ -314,14 +341,31 @@ export function StoryReader({ id }: { id: string }) {
             <div className="story-title">
               <h1>{story.title}</h1>
               {story.titleKo && <span className="faint small">{story.titleKo}</span>}
-              <span className="faint small story-hint">{listenFirst ? '듣고 읽기 · 먼저 듣고, 모르겠으면 가린 문장을 눌러 글자 보기' : '단어를 누르면 뜻 · 문장을 길게 누르면 전체 뜻'}</span>
+              <span className="faint small story-hint">
+                {dictOn ? '받아쓰기 · 듣고 쓴 뒤 확인을 눌러요' : listenFirst ? '듣고 읽기 · 먼저 듣고, 모르겠으면 가린 문장을 눌러 글자 보기' : '단어를 누르면 뜻 · 문장을 길게 누르면 전체 뜻'}
+              </span>
+              {dictOn && (
+                <Segmented
+                  label="받아쓰기 방식"
+                  options={[
+                    ['blank', '빈칸 (1~2단어)'],
+                    ['full', '문장 전체'],
+                  ]}
+                  value={dictStyle}
+                  onChange={(v) => void saveSettings({ storyDictationStyle: v })}
+                />
+              )}
             </div>
             {shown.map((b, i) =>
               b.kind === 'line' ? (
-                <LineView key={i} line={b} active={i === at} hidden={isHidden(i)} onReveal={() => setRevealed((r) => new Set(r).add(i))} story={story} lex={lex} names={names} tipKey={tip?.line === b ? tip.key : undefined} onTip={(t) => setTip((cur) => (cur?.line === b && cur.key === t.key ? undefined : { ...t, line: b }))} onSay={() => {
+                <Fragment key={i}>
+                <LineView line={b} active={i === at} hidden={isHidden(i)}
+                  dictation={dictPending && i === progress.position - 1 ? <Dictation key={`${dictStyle}${i}`} line={b} style={dictStyle} blanks={blanksFor(i, b)} onCheck={(r) => checkDictation(i, r)} /> : undefined} onReveal={() => setRevealed((r) => new Set(r).add(i))} story={story} lex={lex} names={names} tipKey={tip?.line === b ? tip.key : undefined} onTip={(t) => setTip((cur) => (cur?.line === b && cur.key === t.key ? undefined : { ...t, line: b }))} onSay={() => {
                     setCursor(i);
                     void speakLine(b);
                   }} />
+                {progress.dictation?.[i] && <DictationMark r={progress.dictation[i]} />}
+                </Fragment>
               ) : i === shown.length - 1 ? (
                 <QuestionView key={i} q={b} seed={`${story.id}:${i}`} result={progress.answers[i]} onAnswer={(c) => answer(i, c)} />
               ) : (
@@ -349,7 +393,7 @@ export function StoryReader({ id }: { id: string }) {
               </button>
             </div>
           )}
-          {waiting && <div className="story-player-hint" role="status">답을 골라 주세요</div>}
+          {waiting && <div className="story-player-hint" role="status">{dictPending ? '받아쓰고 확인을 눌러 주세요' : '답을 골라 주세요'}</div>}
         </>
       )}
       {tip && (
@@ -536,12 +580,14 @@ function useLongPress(onLong: () => void) {
   };
 }
 
-function LineView({ line, active, hidden = false, onReveal, story, lex, names, tipKey, onTip, onSay }: { line: StoryLine; active: boolean; hidden?: boolean; onReveal?: () => void; story: Story; lex: Lexicon; names: Set<string>; tipKey?: string; onTip: (t: Omit<Tip, 'line'>) => void; onSay: () => void }) {
+function LineView({ line, active, hidden = false, dictation, onReveal, story, lex, names, tipKey, onTip, onSay }: { line: StoryLine; active: boolean; hidden?: boolean; dictation?: ReactNode; onReveal?: () => void; story: Story; lex: Lexicon; names: Set<string>; tipKey?: string; onTip: (t: Omit<Tip, 'line'>) => void; onSay: () => void }) {
   const [showKo, setShowKo] = useState(false);
   const long = useLongPress(() => setShowKo(true));
   const speakerName = story.characters.find((c) => c.id === line.speaker)?.name;
   // 듣고 읽기: 글자는 흐리게 가리고(문장 길이만 보이게) 누르면 보여 준다
-  const body = hidden ? (
+  const body = dictation ? (
+    <div className="story-text">{dictation}</div>
+  ) : hidden ? (
     <div className="story-text">
       <button type="button" className="story-hidden" aria-label="글자 보기" onClick={onReveal}>
         <span className="story-hidden-text" aria-hidden="true">
@@ -901,7 +947,7 @@ function StoryListening({ story, activeLine, playingAll, onPlayAll, onStop, onPl
   );
 }
 
-function StoryResult({ story, progress, lex, onRestart, onListen }: { story: Story; progress: StoryProgress; lex: Lexicon; onRestart: () => void; onListen: () => void }) {
+function StoryResult({ story, progress, lex, onRestart, onListen, onPick }: { story: Story; progress: StoryProgress; lex: Lexicon; onRestart: () => void; onListen: () => void; onPick: (p: Picked) => void }) {
   const qs = story.blocks.map((b, i) => [b, i] as const).filter(([b]) => b.kind !== 'line');
   const right = qs.filter(([, i]) => progress.answers[i]).length;
   const names = nameSet(story.characters, story.properNouns);
@@ -910,6 +956,17 @@ function StoryResult({ story, progress, lex, onRestart, onListen }: { story: Sto
     for (const b of story.blocks as StoryBlock[]) if (b.kind === 'line') for (const s of analyzeText(b.text, lex, names)) if ((s.cls === 'outside' || s.cls === 'deckNew') && !seen.has(s.text.toLowerCase())) seen.set(s.text.toLowerCase(), s);
     return [...seen.values()];
   }, [story, lex, names]);
+  // 받아쓰기에서 놓친 단어: 누르면 단어 창(뜻·덱에 추가)
+  const missed = useMemo(
+    () =>
+      missedWords(progress).flatMap(({ word, line }) => {
+        const b = story.blocks[line];
+        if (b?.kind !== 'line') return [];
+        const span = analyzeText(b.text, lex, names).find((sp) => normalizeWord(sp.text) === normalizeWord(word));
+        return span ? [{ span, line: b }] : [];
+      }),
+    [progress, story, lex, names],
+  );
   return (
     <div className="screen story-body">
       <div className="center-fill" style={{ flex: 'none', paddingTop: 12 }}>
@@ -923,6 +980,25 @@ function StoryResult({ story, progress, lex, onRestart, onListen }: { story: Sto
         {story.usedDeckFallback && <span className="faint small">아는 단어가 아직 적어서 덱의 다음 단어를 섞었어요.</span>}
         {story.warning && <span className="faint small" style={{ lineHeight: 1.5 }}>{story.warning}</span>}
       </div>
+      {missed.length > 0 && (
+        <>
+          <span className="section-label">받아쓰기에서 놓친 단어 {missed.length}개</span>
+          <div className="group">
+            {missed.map((m) => {
+              const g = glossFor(m.span, story.glossary);
+              return (
+                <button key={m.span.text} type="button" className="row row-btn" aria-label={`${m.span.text} 자세히 보기`} onClick={() => onPick(m)}>
+                  <span className="row-text">
+                    <span className="row-title">{m.span.text}</span>
+                    <span className="row-desc">{[g.ko, g.en].filter(Boolean).join(' · ') || '뜻 정보 없음'}</span>
+                  </span>
+                  <span className="chip">{g.inDeck ? '덱에 있음' : '덱에 넣기'}</span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
       {fresh.length > 0 && (
         <>
           <span className="section-label">이 이야기의 새 단어</span>
@@ -956,4 +1032,116 @@ function StoryResult({ story, progress, lex, onRestart, onListen }: { story: Sto
       </div>
     </div>
   );
+}
+
+const inputProps = { autoCapitalize: 'off', autoCorrect: 'off', autoComplete: 'off', spellCheck: false, lang: 'id' } as const;
+
+/** 받아쓰기 칸. 빈칸: 문장 속 1~2단어 자리에 입력칸 / 전체: 글자를 가리고 문장 전체를 쓴다 */
+function Dictation({ line, style, blanks, onCheck }: { line: StoryLine; style: 'blank' | 'full'; blanks: readonly BlankCandidate[]; onCheck: (r: DictationResult) => void }) {
+  const blankMode = style === 'blank' && blanks.length > 0;
+  const [vals, setVals] = useState<string[]>(() => blanks.map(() => ''));
+  const [full, setFull] = useState('');
+  const refs = useRef<(HTMLInputElement | null)[]>([]);
+  const check = () => {
+    if (blankMode) onCheck({ mode: 'blank', items: blanks.map((b, k) => ({ word: b.text, typed: vals[k] ?? '', ok: sameWord(b.text, vals[k] ?? '') })) });
+    else onCheck({ mode: 'full', items: markWords(line.text, full) });
+  };
+  if (!blankMode) {
+    return (
+      <div className="dict">
+        <span className="story-hidden-text" aria-hidden="true">
+          {line.text}
+        </span>
+        <input
+          {...inputProps}
+          className="input dict-full"
+          aria-label="들은 문장 쓰기"
+          placeholder="들은 문장을 써 보세요"
+          value={full}
+          onChange={(e) => setFull(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && check()}
+        />
+        <button type="button" className="btn btn-primary dict-check" onClick={check}>
+          확인
+        </button>
+      </div>
+    );
+  }
+  const parts: ReactNode[] = [];
+  let at = 0;
+  blanks.forEach((b, k) => {
+    if (b.start > at) parts.push(line.text.slice(at, b.start));
+    parts.push(
+      <input
+        key={k}
+        {...inputProps}
+        ref={(el) => {
+          refs.current[k] = el;
+        }}
+        className="dict-blank"
+        aria-label={`빈칸 ${k + 1}`}
+        style={{ width: `${Math.max(3, b.text.length + 1)}ch` }}
+        value={vals[k] ?? ''}
+        onChange={(e) => setVals((v) => v.map((x, j) => (j === k ? e.target.value : x)))}
+        onKeyDown={(e) => {
+          if (e.key !== 'Enter') return;
+          if (k < blanks.length - 1) refs.current[k + 1]?.focus();
+          else check();
+        }}
+      />,
+    );
+    at = b.end;
+  });
+  if (at < line.text.length) parts.push(line.text.slice(at));
+  return (
+    <div className="dict">
+      <p className="story-p dict-sentence">{parts}</p>
+      <button type="button" className="btn btn-primary dict-check" onClick={check}>
+        확인
+      </button>
+    </div>
+  );
+}
+
+/** 확인한 줄 아래: 맞았는지와 놓친 단어 */
+function DictationMark({ r }: { r: DictationResult }) {
+  const missed = r.items.filter((x) => !x.ok);
+  if (!missed.length) return <div className="dict-result dict-good">받아쓰기 ✓ 다 맞았어요</div>;
+  if (r.mode === 'full') {
+    return (
+      <div className="dict-result" aria-label={`받아쓰기 ${r.items.length - missed.length}/${r.items.length}`}>
+        {r.items.map((x, k) => (
+          <span key={k} className={x.ok ? 'dict-ok' : 'dict-miss'}>
+            {x.word}{' '}
+          </span>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className="dict-result">
+      {missed.map((x, k) => (
+        <span key={k}>
+          <span className="dict-miss">{x.word}</span>
+          {x.typed ? <span className="faint"> (쓴 것: {x.typed})</span> : <span className="faint"> (안 씀)</span>}
+          {k < missed.length - 1 ? ' · ' : ''}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** 이야기 전체에서 받아쓰기로 놓친 단어 (중복 없이) */
+function missedWords(progress: StoryProgress): { word: string; line: number }[] {
+  const seen = new Set<string>();
+  const out: { word: string; line: number }[] = [];
+  for (const [i, r] of Object.entries(progress.dictation ?? {})) {
+    for (const x of r.items) {
+      const key = normalizeWord(x.word);
+      if (x.ok || !key || seen.has(key)) continue;
+      seen.add(key);
+      out.push({ word: x.word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, ''), line: Number(i) });
+    }
+  }
+  return out;
 }

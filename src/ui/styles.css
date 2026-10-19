@@ -2789,3 +2789,83 @@ textarea.input-sentence {
 .chip-new {
   color: var(--accent);
 }
+
+/* 읽기 받아쓰기 */
+.dict {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dict-sentence {
+  line-height: 2;
+}
+
+.dict-blank {
+  min-width: 3ch;
+  max-width: 100%;
+  margin: 0 2px;
+  padding: 2px 6px;
+  border: none;
+  border-bottom: 2px solid var(--accent);
+  border-radius: 6px 6px 0 0;
+  background: var(--accent-soft);
+  color: var(--text);
+  font: inherit;
+  text-align: center;
+}
+
+.dict-blank:focus {
+  outline: none;
+  background: var(--surface2);
+}
+
+.input.dict-full {
+  height: 48px;
+}
+
+.btn.dict-check {
+  align-self: flex-end;
+  width: auto;
+  height: 40px;
+  padding: 0 22px;
+  font-size: 15px;
+  border-radius: 12px;
+}
+
+.dict-result {
+  margin: -4px 0 4px 54px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--surface2);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text2);
+}
+
+.dict-result.dict-good {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.dict-ok {
+  color: var(--accent);
+}
+
+.dict-miss {
+  color: var(--again);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.row.row-btn {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}

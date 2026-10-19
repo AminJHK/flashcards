@@ -123,6 +123,9 @@ export interface Settings {
   storyAutoplay?: boolean;
   /** 이야기 "듣고 읽기": 새 문장은 글자를 가리고 소리만 먼저 들려준다 (누르면 글자) */
   storyListenFirst?: boolean;
+  /** 이야기 받아쓰기: 새 문장마다 듣고 받아쓴 뒤 확인해야 다음으로 (빈칸 1~2개 또는 문장 전체) */
+  storyDictation?: boolean;
+  storyDictationStyle?: 'blank' | 'full';
   /** 이야기 TTS가 429/404를 만나면 다른 무료 TTS 모델로 변경할지. 카드 재생에는 영향 없음. */
   storyAutoModelSwitch?: boolean;
   /** 이야기 음성 재생 속도. 이미 저장한 WAV도 재생 중에 바꿀 수 있다. */

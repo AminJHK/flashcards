@@ -112,12 +112,20 @@ export interface Story {
   warning?: string;
 }
 
+/** 받아쓰기 한 줄의 결과. 빈칸이면 빈칸마다 쓴 것(typed), 전체면 정답 문장의 단어마다 */
+export interface DictationResult {
+  mode: 'blank' | 'full';
+  items: { word: string; typed?: string; ok: boolean }[];
+}
+
 export interface StoryProgress {
   storyId: Id;
   /** 보여 준 블록 수 (1부터) */
   position: number;
   /** 블록 번호 → 처음 답에서 맞혔는지 */
   answers: Record<number, boolean>;
+  /** 블록 번호 → 받아쓰기 결과 (받아쓰기 모드에서 확인을 누른 줄) */
+  dictation?: Record<number, DictationResult>;
   completedAt?: Millis;
   readCount: number;
   updatedAt: Millis;

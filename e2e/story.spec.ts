@@ -337,3 +337,76 @@ test('읽기 · 듣고 읽기: 새 문장은 글자를 가리고, 눌러서 보�
   await listen.click();
   await expect(page.locator('.story-hidden')).toHaveCount(0);
 });
+
+test('읽기 · 받아쓰기: 빈칸 또는 문장 전체를 받아쓰고 확인해야 다음으로, 놓친 단어를 표시한다', async ({ page }) => {
+  await mockGemini(page, { story: 0, prompts: [] });
+  await page.goto('/#/settings/voice');
+  await page.getByLabel('Gemini API 키').fill('FAKE-KEY');
+  await page.getByRole('button', { name: '연결' }).click();
+  await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();
+  await page.goto('/#/decks/new');
+  await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
+  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+  await page.getByRole('navigation', { name: '메인 메뉴' }).getByRole('link', { name: '읽기' }).click();
+  await page.getByRole('button', { name: '이야기 만들기' }).click();
+  await page.locator('.story-row', { hasText: 'Bakso Malam' }).click();
+  await expect(page.getByRole('heading', { name: 'Bakso Malam' })).toBeVisible();
+
+  const dict = page.getByRole('button', { name: '받아쓰기' });
+  await dict.click();
+  await expect(dict).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText('받아쓰기 · 듣고 쓴 뒤 확인을 눌러요')).toBeVisible();
+  // 빈칸 (긴 문장이라 2개). 확인하기 전에는 다음으로 못 간다
+  await expect(page.getByRole('textbox', { name: /^빈칸/ })).toHaveCount(2);
+  await expect(page.getByText('받아쓰고 확인을 눌러 주세요')).toBeVisible();
+  await expect(page.getByRole('button', { name: '다음 문장 읽기' })).toBeDisabled();
+  await page.screenshot({ path: 'test-results/shots/69-dictation-blank.png' });
+  await page.getByRole('textbox', { name: '빈칸 1' }).fill('zzz');
+  await page.getByRole('button', { name: '확인' }).click();
+  await expect(page.locator('.dict-result')).toContainText('(쓴 것: zzz)');
+  await expect(page.locator('.dict-result')).toContainText('(안 씀)');
+  await expect(page.getByRole('textbox', { name: /^빈칸/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '다음 문장 읽기' })).toBeEnabled();
+
+  // 문장 전체: 다 맞게 쓰면 "다 맞았어요", 일부만 쓰면 놓친 단어 표시
+  await page.getByRole('group', { name: '받아쓰기 방식' }).getByRole('button', { name: '문장 전체' }).click();
+  await page.getByRole('button', { name: '다음 문장 읽기' }).click();
+  const full = page.getByRole('textbox', { name: '들은 문장 쓰기' });
+  await expect(full).toBeVisible();
+  await expect(full).toHaveAttribute('autocorrect', 'off');
+  await full.fill('Aku kamu mau makan minum pulang gak udah lagi sini');
+  await page.getByRole('button', { name: '확인' }).click();
+  await expect(page.getByText('받아쓰기 ✓ 다 맞았어요')).toBeVisible();
+  await page.getByRole('button', { name: '다음 문장 읽기' }).click();
+  await page.getByRole('textbox', { name: '들은 문장 쓰기' }).fill('aku kamu');
+  await page.getByRole('textbox', { name: '들은 문장 쓰기' }).press('Enter');
+  await expect(page.locator('.dict-result').last().locator('.dict-miss').first()).toHaveText(/mau/);
+  await page.screenshot({ path: 'test-results/shots/70-dictation-full.png' });
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.screenshot({ path: 'test-results/shots/71-dictation-full-dark.png' });
+  await page.emulateMedia({ colorScheme: 'light' });
+
+  // 끄면 바로 다음으로 갈 수 있다
+  await dict.click();
+  await expect(page.getByRole('group', { name: '받아쓰기 방식' })).toHaveCount(0);
+
+  // 끝 화면: 받아쓰기에서 놓친 단어를 모아 보여 주고, 누르면 단어 창
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const open = indexedDB.open('flashcards');
+        open.onsuccess = () => {
+          const tx = open.result.transaction('storyProgress', 'readwrite');
+          const store = tx.objectStore('storyProgress');
+          store.getAll().onsuccess = (e) => {
+            for (const p of (e.target as IDBRequest).result) store.put({ ...p, completedAt: Date.now() });
+          };
+          tx.oncomplete = () => resolve();
+        };
+      }),
+  );
+  await page.reload();
+  await expect(page.getByText(/받아쓰기에서 놓친 단어 \d+개/)).toBeVisible();
+  await page.getByRole('button', { name: 'pulang 자세히 보기' }).click();
+  await expect(page.getByRole('dialog', { name: 'pulang 뜻' })).toBeVisible();
+});
