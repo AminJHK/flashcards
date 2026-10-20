@@ -197,3 +197,17 @@ describe('헷갈리는 말: 데려가다 묶음', () => {
   });
 });
 
+describe('헷갈리는 말: 가져가다·가져오다·주다·받다 묶음', () => {
+  const pack = PACKS.find((p) => p.id === 'indonesian-colloquial')!;
+  it('물건 이동 말들의 한국어 뜻이 서로 겹치지 않고, 가져가다·가져오다는 각각 한 단어에만 있다', () => {
+    const of = (w: string) => pack.notes.find((n) => n.fields.word === w)!.fields;
+    const group = ['bawa', 'ambil', 'ngambil', 'kasih', 'kirim', 'nerima', 'dapet'];
+    const meaning = (w: string) => of(w).meaning ?? '';
+    expect(new Set(group.map(meaning)).size).toBe(group.length);
+    expect(group.filter((w) => meaning(w).includes('가져가다'))).toEqual(['ambil']);
+    expect(group.filter((w) => meaning(w).includes('가져오다'))).toEqual(['ngambil']);
+    expect(group.filter((w) => meaning(w).includes('받다'))).toEqual(['nerima']);
+    for (const w of group.filter((x) => x !== 'bawa')) for (const other of ['bawa', 'ambil', 'kasih', 'kirim']) expect(of(w).note, `${w} → ${other}`).toContain(other);
+  });
+});
+
