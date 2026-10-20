@@ -126,6 +126,19 @@ export function resetStoryQuota(): void {
   unavailableTts.clear();
 }
 
+/**
+ * 저장된 음성 중 이 문장의 것 (모델은 상관없이). 예전에 쓰던 모델·지금 목록에 없는 모델로 만든 음성도 다시 만들지 않고 쓰게.
+ * (사용자: 10월 18일 전에 만든 이야기 음성이 다 없어졌다 → 지워진 게 아니라 다른 모델 이름으로 저장돼 있어서 못 찾았다)
+ * 같은 목소리를 먼저 찾고, anyVoice면 다른 목소리로 만든 것도 쓴다.
+ */
+export function savedStoryClipKey(keys: readonly string[], item: Speech, voice: string, anyVoice: boolean): string | undefined {
+  const tail = `|${item.lang}|${item.text}${item.style ? `|style:${item.style}` : ''}`;
+  const usable = (k: string) => k.endsWith(tail) && (k.startsWith(`${MODERN_CLIP_VERSION}|`) || k.startsWith(`${LEGACY_STORY_VERSION}|`) || (k.startsWith(`${CLIP_VERSION}|`) && !k.startsWith(`${CLIP_VERSION}|gemini-3.8-`)));
+  const voiceOf = (k: string) => k.slice(0, -tail.length).split('|')[2];
+  const same = keys.find((k) => usable(k) && voiceOf(k) === voice);
+  return same ?? (anyVoice ? keys.find(usable) : undefined);
+}
+
 /** First reuse any cached line from any eligible engine, then try available free engines.
  * One request succeeds at most once. Never retry bad keys, network errors or other unexpected failures.
  */
@@ -134,6 +147,8 @@ export async function storyClipFor(
   s: Settings & { gemini: NonNullable<Settings['gemini']> },
   switching: boolean,
   cachedOnly = false,
+  /** 목소리를 따로 고르지 않은 역할이면 true: 예전에 다른 목소리로 만든 음성도 쓴다 */
+  anyVoice = false,
 ): Promise<{ blob: Blob; model: string; cached: boolean }> {
   const models = storyTtsModels(s.gemini.ttsModel, switching);
   for (const model of models) {
@@ -141,6 +156,9 @@ export async function storyClipFor(
     const cached = await db.audio.get(clipKey(item, selected));
     if (cached) return { blob: cached.blob, model, cached: true };
   }
+  const other = savedStoryClipKey((await db.audio.toCollection().primaryKeys()) as string[], item, s.gemini.voice, anyVoice);
+  const found = other ? await db.audio.get(other) : undefined;
+  if (other && found) return { blob: found.blob, model: other.split('|')[1] ?? s.gemini.ttsModel, cached: true };
 
   // Results/re-listen should never burn a second API request just to repeat the story.
   if (cachedOnly) throw new GeminiError('이 문장은 아직 저장된 AI 음성이 없어요. 기기 음성으로 읽을게요.', 'empty');
@@ -218,7 +236,7 @@ export async function prepareStoryAudio(
     for (let attempt = 0; attempt < 4 && !prepared; attempt++) {
       if (cancelled()) return;
       try {
-        await storyClipFor({ text: line.text, lang: story.lang, style: 'story' }, selected, settings.storyAutoModelSwitch !== false);
+        await storyClipFor({ text: line.text, lang: story.lang, style: 'story' }, selected, settings.storyAutoModelSwitch !== false, false, !overrides[roleOf(story, line)]);
         prepared = true;
         onProgress(i + 1, total);
       } catch (error) {
@@ -241,16 +259,17 @@ export async function prepareStoryAudio(
 export async function preparedStoryLines(story: import('../../core/stories/types').Story, settings: Settings | undefined): Promise<number | undefined> {
   if (!geminiOn(settings)) return undefined;
   const overrides = settings.storyVoices?.[story.id] ?? {};
+  const keys = (await db.audio.toCollection().primaryKeys()) as string[];
+  const have = new Set(keys);
+  const models = storyTtsModels(settings.gemini.ttsModel, settings.storyAutoModelSwitch !== false);
   let n = 0;
   for (const line of story.blocks) {
     if (line.kind !== 'line') continue;
-    const selected = { ...settings, gemini: { ...settings.gemini, voice: storyVoice(story, roleOf(story, line), overrides) } };
-    try {
-      await storyClipFor({ text: line.text, lang: story.lang, style: 'story' }, selected, settings.storyAutoModelSwitch !== false, true);
-      n++;
-    } catch {
-      /* 아직 없음 */
-    }
+    const role = roleOf(story, line);
+    const voice = storyVoice(story, role, overrides);
+    const item: Speech = { text: line.text, lang: story.lang, style: 'story' };
+    const direct = models.some((model) => have.has(clipKey(item, { ...settings, gemini: { ...settings.gemini, voice, ttsModel: model } })));
+    if (direct || savedStoryClipKey(keys, item, voice, !overrides[role])) n++;
   }
   return n;
 }
@@ -323,7 +342,7 @@ export interface PlayResult {
   missing?: string[];
 }
 
-export async function play(items: readonly Speech[], s: Settings | undefined, opts?: { timeoutMs?: number; onSource?: (result: PlayResult) => void; voice?: string; rate?: number; storyAutoModel?: boolean; cachedOnly?: boolean; awaitDevice?: boolean }): Promise<PlayResult> {
+export async function play(items: readonly Speech[], s: Settings | undefined, opts?: { timeoutMs?: number; onSource?: (result: PlayResult) => void; voice?: string; rate?: number; storyAutoModel?: boolean; cachedOnly?: boolean; awaitDevice?: boolean; anyVoice?: boolean }): Promise<PlayResult> {
   stopAll();
   const list = items.filter((i) => i.text.trim());
   if (!list.length) return { via: 'none' };
@@ -338,7 +357,7 @@ export async function play(items: readonly Speech[], s: Settings | undefined, op
         let usedModel = selected.gemini.ttsModel;
         let cached = false;
         if (it.style === 'story') {
-          const resolved = await withTimeout(storyClipFor(it, selected, opts?.storyAutoModel !== false, opts?.cachedOnly), opts?.timeoutMs ?? 30_000, '자연스러운 음성을 만드는 데 시간이 걸려요');
+          const resolved = await withTimeout(storyClipFor(it, selected, opts?.storyAutoModel !== false, opts?.cachedOnly, opts?.anyVoice), opts?.timeoutMs ?? 30_000, '자연스러운 음성을 만드는 데 시간이 걸려요');
           blob = resolved.blob;
           usedModel = resolved.model;
           cached = resolved.cached;

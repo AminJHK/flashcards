@@ -143,6 +143,8 @@ export function StoryReader({ id }: { id: string }) {
       storyAutoModel: autoModelSwitch,
       cachedOnly,
       awaitDevice: cachedOnly,
+      // 목소리를 따로 고르지 않은 역할이면 예전에 다른 목소리로 만든 음성도 쓴다
+      anyVoice: !requestedVoice && !voiceAssignments[roleOf(story, line)],
       onSource: (source: PlayResult) => {
         clearTimeout(statusTimer.current);
         if (source.via === 'gemini') setAudioStatus('');

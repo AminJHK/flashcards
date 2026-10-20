@@ -43,6 +43,18 @@ describe('free-tier TTS model failover integration', () => {
     expect(request).not.toHaveBeenCalled();
   });
 
+  it('finds lines saved under a model that is no longer in the list (and, for roles without a chosen voice, under another voice)', async () => {
+    const saved = new Blob([new Uint8Array([82, 73, 70, 70])], { type: 'audio/wav' });
+    await db.audio.put({ key: 'v3-story|gemini-2.5-pro-preview-tts|Aoede|id-ID|Aku suka membaca.|style:story', blob: saved, createdAt: 1 });
+    await db.audio.put({ key: 'v4|gemini-3.8-flash-tts|Puck|id-ID|Aku lapar.|style:story', blob: saved, createdAt: 1 });
+    vi.stubGlobal('fetch', vi.fn(() => { throw new Error('must not request TTS'); }));
+    const old = await storyClipFor(speech, settings(), true, true);
+    expect(old).toMatchObject({ model: 'gemini-2.5-pro-preview-tts', cached: true });
+    // 목소리가 다르면: 따로 고른 목소리면 쓰지 않고, 기본 목소리면 쓴다
+    await expect(storyClipFor({ ...speech, text: 'Aku lapar.' }, settings(), true, true)).rejects.toMatchObject({ kind: 'empty' });
+    expect(await storyClipFor({ ...speech, text: 'Aku lapar.' }, settings(), true, true, true)).toMatchObject({ model: 'gemini-3.8-flash-tts', cached: true });
+  });
+
   it('rotates on a daily quota error, saves the actual model and reuses the result offline', async () => {
     const calls: string[] = [];
     vi.stubGlobal('fetch', vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
