@@ -24,6 +24,8 @@
   --font-hanzi: 'Noto Serif SC', 'Noto Serif CJK SC', serif;
   --font-latin: 'Noto Sans', 'IBM Plex Sans KR', sans-serif;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* 안드로이드 앱: 화면이 상태표시줄 밑까지 펼쳐지므로 그만큼 위를 비운다 (브라우저에서는 0) */
+  --safe-top: env(safe-area-inset-top, 0px);
 }
 
 * {
@@ -83,6 +85,7 @@ select:focus-visible {
   position: relative;
   overflow: hidden;
   background: var(--bg);
+  padding-top: var(--safe-top);
 }
 
 .screen {
@@ -2054,7 +2057,7 @@ textarea.input-sentence {
 /* 어느 화면에서든 맨 위에 붙는 얇은 막대 */
 .job-top {
   position: absolute;
-  top: 0;
+  top: var(--safe-top);
   left: 0;
   right: 0;
   height: 4px;

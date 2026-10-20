@@ -31,6 +31,11 @@
   `java -jar uber-apk-signer-1.3.0.jar -a app-release-unsigned.apk --ks flashcards-release.jks --ksAlias flashcards --ksPass <비밀번호> --ksKeyPass <비밀번호>`
 - 키는 사용자가 받아서 자기 Google Drive에 보관한다 (2026-10-18, 사용자 결정). 새 APK를 서명할 때는 사용자에게 키 파일을 다시 받아야 한다. 저장소·CI에는 넣지 않는다.
 
+## 상태표시줄 겹침 (2026-10-20)
+
+- 안드로이드 앱의 WebView는 화면 맨 위(상태표시줄 밑)까지 펼쳐진다(`viewport-fit=cover` + Capacitor 8 `SystemBars`). 그래서 `.app`에 `padding-top: var(--safe-top)`(= `env(safe-area-inset-top)`)을 둔다. 브라우저·PWA에서는 0이다. 웹 배포만으로 적용된다.
+- 상태표시줄을 아예 숨기고 싶으면 `capacitor.config.ts`의 `plugins.SystemBars.hidden: true` (새 APK 필요, 시계·배터리가 안 보임).
+
 ## 알려진 한계 · 할 일
 
 - **Google 로그인(Drive 동기화·백업):** Google은 앱 안 브라우저(WebView)의 로그인 창을 막는다 → 앱에서는 `NativeGooglePlugin`(play-services-auth의 `AuthorizationClient`)으로 drive.file·openid·email 권한 토큰을 받는다 (`auth.ts`의 `nativeToken`). 한 번 허용하면 창 없이 새 토큰을 받으므로 자동 동기화도 된다 (`silentToken`).
