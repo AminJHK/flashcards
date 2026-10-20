@@ -1,5 +1,5 @@
 import type { Card, Millis, Note } from '../model/types';
-import { wordMemory } from '../stats/memory';
+import { isHard, wordMemory } from '../stats/memory';
 import type { Scheduler } from '../scheduler/types';
 import type { Coverage, GlossEntry } from './types';
 
@@ -23,6 +23,8 @@ export interface VocabEntry {
   root: string;
   status: VocabStatus;
   recall?: number;
+  /** 여러 번 잊어버린 "어려운 단어" (core/stats/memory.ts isHard) */
+  hard?: boolean;
   /** 'particle'이면 어조 말(sih, dong …). 예문마다 노트가 있어도 말 하나로 묶인 항목이다 */
   kind?: 'particle';
   /** 덱 안의 순서 (작을수록 먼저 나오는 = 자주 쓰는 단어) */
@@ -78,7 +80,7 @@ export function buildLexicon(notes: readonly Note[], cards: readonly Card[], sch
     const m = wordMemory(byNote.get(n.id) ?? [], scheduler, now);
     if (!m) return; // 카드가 모두 숨겨졌거나 보류됨
     const status: VocabStatus = m.level === 'fresh' ? 'deckNew' : m.level !== 'learning' && (m.recall ?? 0) >= KNOWN_RECALL ? 'known' : 'learning';
-    entries.push({ noteId: n.id, word: n.fields.word!.trim(), meaning: n.fields.meaning ?? '', standard: n.fields.standard ?? '', root: n.fields.root ?? '', status, recall: m.recall, order: i });
+    entries.push({ noteId: n.id, word: n.fields.word!.trim(), meaning: n.fields.meaning ?? '', standard: n.fields.standard ?? '', root: n.fields.root ?? '', status, recall: m.recall, ...(isHard(m) ? { hard: true } : {}), order: i });
   });
   addParticles(entries, notes, byNote, scheduler, now, sorted.length);
   const forms = new Map<string, VocabEntry>();

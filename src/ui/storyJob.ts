@@ -3,7 +3,8 @@ import { prepareStoryAudio } from '../adapters/speech/speech';
 import { getSettings } from '../adapters/storage/repo';
 import { createStory, type StoryStep } from '../adapters/gemini/story';
 import { saveStory } from '../adapters/storage/stories';
-import { planStory } from '../core/stories/plan';
+import { db } from '../adapters/storage/db';
+import { planStory, type StoryHistory } from '../core/stories/plan';
 import type { StoryDifficulty } from '../core/stories/types';
 import type { Lexicon } from '../core/stories/vocab';
 
@@ -51,8 +52,16 @@ export function startStoryJob(args: { lex: Lexicon; difficulty: StoryDifficulty;
   set({ status: 'running', step: { attempt: 1, stage: 'writing' }, error: undefined, storyId: undefined, title: undefined, audio: undefined });
   void (async () => {
     try {
-      const plan = planStory(args.lex, args.difficulty);
-      const story = await createStory({ lex: args.lex, plan, topicKey: args.topicKey, key: args.key, onStep: (step) => set({ step }) });
+      // 최근 이야기에서 쓴 단어·상황은 피한다 (같은 줄거리 반복 방지)
+      const recent = await db.stories.orderBy('createdAt').reverse().limit(12).toArray();
+      const history: StoryHistory = {
+        newWords: recent.slice(0, 5).flatMap((x) => x.plan?.newWords ?? []),
+        reinforce: recent[0]?.plan?.reinforce ?? [],
+        seeds: recent.flatMap((x) => (x.plan?.seed ? [x.plan.seed] : [])),
+      };
+      const plan = planStory(args.lex, args.difficulty, history, args.topicKey);
+      const made = await createStory({ lex: args.lex, plan, topicKey: args.topicKey, key: args.key, onStep: (step) => set({ step }) });
+      const story = { ...made, plan: { newWords: plan.newWords.map((e) => e.word), reinforce: [...plan.focus, ...plan.reinforce].map((e) => e.word), seed: plan.seed?.id } };
       await saveStory(story);
       // The story is available immediately; voice preparation runs after saving.
       const total = story.blocks.filter((block) => block.kind === 'line').length;

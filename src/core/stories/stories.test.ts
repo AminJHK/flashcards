@@ -84,6 +84,37 @@ describe('이야기 계획과 요청문', () => {
     expect(p).toContain('At least 95%');
   });
 
+  it('새 단어는 최근 이야기에서 소개한 것을 건너뛰고, 어려운 단어는 FOCUS로, 상황 씨앗은 최근 것을 피한다', () => {
+    const hard = (w: string) => {
+      const x = word(w, {}, 'learning', 0.5);
+      return { ...x, card: { ...x.card, lapses: 5 } };
+    };
+    const items = [
+      ...Array.from({ length: 30 }, (_, i) => word(`kata${i}`)),
+      ...Array.from({ length: 10 }, (_, i) => word(`lemah${i}`, {}, 'learning', 0.6)),
+      hard('susah0'),
+      hard('susah1'),
+      ...Array.from({ length: 20 }, (_, i) => word(`baru${i}`, {}, 'new')),
+    ];
+    const lex = lexOf(items);
+    expect(lex.entries.find((e) => e.word === 'susah0')!.hard).toBe(true);
+    const rng = () => 0.3;
+    const plan = planStory(lex, 'normal', { newWords: ['baru0', 'baru1'], reinforce: [], seeds: [] }, 'food', rng);
+    expect(plan.newWords.map((e) => e.word)).toEqual(['baru2', 'baru3', 'baru4', 'baru5']);
+    expect(plan.focus.map((e) => e.word).sort()).toEqual(['susah0', 'susah1']);
+    expect(plan.reinforce.every((e) => e.word.startsWith('lemah'))).toBe(true);
+    expect(plan.reinforce.length).toBeLessThanOrEqual(6);
+    expect(plan.seed).toBeDefined();
+    expect(plan.seed!.topics.length === 0 || plan.seed!.topics.includes('food')).toBe(true);
+    const again = planStory(lex, 'normal', { newWords: [], reinforce: [], seeds: [plan.seed!.id] }, 'food', rng);
+    expect(again.seed!.id).not.toBe(plan.seed!.id);
+    const p = userPrompt(plan, 'food');
+    expect(p).toContain('FOCUS WORDS: ');
+    expect(p).toContain('Use every FOCUS WORD at least twice');
+    expect(p).toContain(`Situation (start from this idea`);
+    expect(p).toContain(plan.seed!.en);
+  });
+
   it('단어가 너무 적으면 만들지 않고 이유를 알려준다', () => {
     expect(() => planStory(lexOf([word('aku')]), 'normal')).toThrow(/너무 적어요/);
   });

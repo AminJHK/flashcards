@@ -110,6 +110,8 @@ export interface Story {
   attempts: number;
   /** 목표 비율을 못 맞췄을 때 등 */
   warning?: string;
+  /** 만들 때 고른 단어·상황 (다음 이야기가 같은 것을 피하게) */
+  plan?: { newWords: string[]; reinforce: string[]; seed?: string };
 }
 
 /** 받아쓰기 한 줄의 결과. 빈칸이면 빈칸마다 쓴 것(typed), 전체면 정답 문장의 단어마다 */

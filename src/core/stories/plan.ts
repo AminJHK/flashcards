@@ -1,5 +1,6 @@
 import { DIFFICULTIES, type Coverage, type GlossEntry, type StoryBlock, type StoryCharacter, type StoryDifficulty, type StoryQuestion } from './types';
 import { chunkSegments } from './chunks';
+import { pickSeed, type StorySeed } from './seeds';
 import { FALLBACK_MIN_FAMILIAR, norm, offendingWords, tokenize, type Lexicon, type VocabEntry } from './vocab';
 
 /** 이야기 하나를 만들 때 AI에게 줄 단어 목록 */
@@ -8,8 +9,12 @@ export interface StoryPlan {
   knownTarget: number;
   /** 마음껏 써도 되는 단어 (아는 + 배우는 중) */
   familiar: VocabEntry[];
-  /** 복습 겸 꼭 몇 개 넣을 단어 (배우는 중, 기억이 약한 순) */
+  /** 복습 겸 꼭 몇 개 넣을 단어 (배우는 중, 기억이 약한 것 중에서 섞어 고름) */
   reinforce: VocabEntry[];
+  /** 어려운 단어 (여러 번 잊은 단어). 이야기에서 두 번 이상 쓴다 */
+  focus: VocabEntry[];
+  /** 이야기 상황 씨앗 (같은 줄거리 반복을 막는다) */
+  seed?: StorySeed;
   /** 이번에 새로 소개할 단어 (덱의 다음 단어 = 빈도순) */
   newWords: VocabEntry[];
   /** 어조 말 (sih, dong …) 중 이미 본 것. 기억이 약한 순. 대화에 자연스럽게 1~3개 섞는다 */
@@ -25,7 +30,33 @@ export class StoryPlanError extends Error {}
 
 const NEW_WORDS: Record<StoryDifficulty, number> = { easy: 2, normal: 4, challenge: 6 };
 
-export function planStory(lex: Lexicon, difficulty: StoryDifficulty): StoryPlan {
+/** 최근 이야기에서 쓴 것 (다음 이야기는 피한다) */
+export interface StoryHistory {
+  /** 최근 몇 개 이야기에서 새 단어로 소개한 말 */
+  newWords: readonly string[];
+  /** 바로 전 이야기의 복습·어려운 단어 */
+  reinforce: readonly string[];
+  /** 최근 이야기의 상황 씨앗 id */
+  seeds: readonly string[];
+}
+
+const NO_HISTORY: StoryHistory = { newWords: [], reinforce: [], seeds: [] };
+
+function shuffle<T>(items: readonly T[], rng: () => number): T[] {
+  const a = [...items];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j]!, a[i]!];
+  }
+  return a;
+}
+
+/**
+ * 이야기에 쓸 단어를 고른다. 매번 같은 단어를 주면 Gemini가 비슷한 줄거리를 써서(사용자 피드백), 
+ * 새 단어는 최근에 소개하지 않은 것을 덱 순서대로, 복습 단어는 약한 단어 중에서 섞어서, 어려운 단어는 따로(FOCUS) 고른다.
+ * topicKey가 있으면 상황 씨앗도 하나 고른다.
+ */
+export function planStory(lex: Lexicon, difficulty: StoryDifficulty, history: StoryHistory = NO_HISTORY, topicKey?: string, rng: () => number = Math.random): StoryPlan {
   const allParticles = lex.entries.filter((e) => e.kind === 'particle');
   // 어조 말 덱에 있는 말은 단어 목록에서 뺀다 (구어체 덱에 같은 말이 있어도 어조 말로만 다룬다)
   const particleWords = new Set(allParticles.map((e) => norm(e.word)));
@@ -36,15 +67,26 @@ export function planStory(lex: Lexicon, difficulty: StoryDifficulty): StoryPlan 
   const newParticle = allParticles.filter((e) => e.status === 'deckNew').sort((a, b) => a.order - b.order)[0];
   if (familiar.length + deckNew.length < 40) throw new StoryPlanError('인도네시아어 단어가 너무 적어요. 먼저 인도네시아어 덱을 추가해 주세요');
   const fallback = familiar.length < FALLBACK_MIN_FAMILIAR;
-  const newWords = deckNew.slice(0, NEW_WORDS[difficulty]);
+  const seen = (list: readonly string[]) => new Set(list.map(norm));
+  // 새 단어: 덱의 다음 단어 24개 중 최근 이야기에서 소개하지 않은 것부터 (모자라면 소개했던 것도)
+  const recentNew = seen(history.newWords);
+  const window = deckNew.slice(0, 24);
+  const n = NEW_WORDS[difficulty];
+  const newWords = [...window.filter((e) => !recentNew.has(norm(e.word))), ...window.filter((e) => recentNew.has(norm(e.word)))].slice(0, n).sort((a, b) => a.order - b.order);
+  // 어려운 단어(최대 3)와 복습 단어(최대 6): 바로 전 이야기에서 쓴 것은 쉬게 하고 약한 것 중에서 섞어 고른다
+  const lastReview = seen(history.reinforce);
+  const rested = <T extends VocabEntry>(list: T[]) => (list.filter((e) => !lastReview.has(norm(e.word))).length >= 3 ? list.filter((e) => !lastReview.has(norm(e.word))) : list);
+  const weakFirst = (a: VocabEntry, b: VocabEntry) => (a.recall ?? 0) - (b.recall ?? 0);
+  const focus = shuffle(rested(familiar.filter((e) => e.hard).sort(weakFirst).slice(0, 10)), rng).slice(0, 3);
+  const focusSet = new Set(focus);
+  const reinforce = shuffle(rested(familiar.filter((e) => e.status === 'learning' && !focusSet.has(e)).sort(weakFirst).slice(0, 15)), rng).slice(0, 6);
   return {
     difficulty,
     knownTarget: DIFFICULTIES[difficulty].known,
     familiar: familiar.slice(0, 450),
-    reinforce: familiar
-      .filter((e) => e.status === 'learning')
-      .sort((a, b) => (a.recall ?? 0) - (b.recall ?? 0))
-      .slice(0, 8),
+    reinforce,
+    focus,
+    seed: topicKey ? pickSeed(topicKey, history.seeds, rng) : undefined,
     newWords,
     particles,
     newParticle,
@@ -79,6 +121,7 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
   const lines = [
     `Topic: ${topic}.`,
     'Story: 2 or 3 recurring characters with Indonesian first names, a clear beginning, middle and ending, and a small surprise, joke or twist. Avoid a generic "vocabulary demo" plot.',
+    plan.seed ? `Situation (start from this idea and adapt it to the topic; do not build the plot around finding objects on the floor): ${plan.seed.en}.` : '',
     'Length: 120 to 180 Indonesian words in total across narration and dialogue, in 10 to 18 short lines. Use narration sparingly.',
     '',
     'VOCABULARY RULES (very important, they are checked automatically by counting every word occurrence):',
@@ -86,6 +129,7 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     '- You may use the forms in brackets, e.g. "nyari(=mencari)" means both nyari and mencari are known. Adding -nya, -lah, -kah, -ku or -mu to a known word is fine. Other affixes (me-, ber-, di-, -kan, -i) make a NEW word.',
     `- Introduce the NEW WORDS below (use each one at least twice so the reader can guess it). Apart from them, avoid any word that is not listed.`,
     plan.reinforce.length ? '- Also use 3 or more of the REVIEW WORDS (the learner is still learning them).' : '',
+    plan.focus.length ? '- Use every FOCUS WORD at least twice, in different lines, in a way that makes its meaning clear from the situation.' : '',
     plan.particles.length || plan.newParticle
       ? '- PARTICLES are short spoken particles (sih, dong, deh, kok, kan, lho …). Use them naturally in the dialogue lines only (never in narration), where a native speaker really would say them: ' +
         [plan.particles.length ? 'use 1 to 3 of the PARTICLE WORDS, preferring the first ones' : '', plan.newParticle ? 'use the NEW PARTICLE at least twice in different lines so the reader can feel its meaning' : ''].filter(Boolean).join(', and ') +
@@ -98,6 +142,7 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     '',
     `KNOWN WORDS: ${plan.familiar.map(form).join(', ')}`,
     plan.reinforce.length ? `REVIEW WORDS: ${plan.reinforce.map(form).join(', ')}` : '',
+    plan.focus.length ? `FOCUS WORDS: ${plan.focus.map(form).join(', ')}` : '',
     plan.particles.length ? `PARTICLE WORDS (known, weakest first): ${plan.particles.map(form).join(', ')}` : '',
     plan.newParticle ? `NEW PARTICLE: ${plan.newParticle.word}` : '',
     `NEW WORDS: ${plan.newWords.map(form).join(', ') || '(none)'}`,
