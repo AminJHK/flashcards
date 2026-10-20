@@ -20,6 +20,9 @@ test('어조 말 덱: 예문 카드로 복습하고, 연결어는 새 덱으로 
   await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
   await expect(page.getByText('도대체 넌 왜 계속 늦어?')).toBeVisible();
   await expect(page.getByText('투덜대는 궁금함 · ~긴 한데')).toBeVisible();
+  // 붙는 자리: 이 말이 보통 붙는 자리 + 이 예문에서의 자리(자동)
+  await expect(page.getByText('붙는 자리 · 문미 · 문중 (강조할 말 바로 뒤)')).toBeVisible();
+  await expect(page.getByText('이 문장에서 · 문중')).toBeVisible();
   await page.screenshot({ path: 'test-results/shots/54-particle-back.png' });
   await page.getByRole('button', { name: /알았음/ }).click();
 

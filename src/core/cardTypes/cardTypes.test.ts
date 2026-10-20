@@ -72,9 +72,15 @@ describe('카드 종류', () => {
       { kind: 'prompt', text: '「sih」는 여기서 어떤 느낌일까?' },
       { kind: 'sentence', text: 'Kenapa sih?', lang: 'id-ID', emphasis: 'main', highlight: 'sih' },
     ]);
-    // 뒷면: 말 · 느낌(위) → 예문 · 번역 · 이 문장에서(아래)
-    expect(v.back.map((b) => b.kind)).toEqual(['word', 'meaning', 'sentence', 'sentence', 'memo']);
+    // 뒷면: 말 · 느낌(위) → 예문 · 번역 · 이 문장에서(아래). 이 문장에서의 자리(문두·문중·문미)는 예문을 보고 자동으로 붙는다
+    expect(v.back.map((b) => b.kind)).toEqual(['word', 'meaning', 'tags', 'sentence', 'sentence', 'memo']);
+    expect(v.back[2]).toEqual({ kind: 'tags', items: ['이 문장에서 · 문미'] });
     expect(v.tts.front).toEqual([{ text: 'Kenapa sih?', lang: 'id-ID' }]);
+    // 붙는 자리 칸이 있으면 같이 보인다. 예전 단어(칸 없음)는 자동 표시만
+    const withPos = t.view('forward', { fields: { word: 'kok', meaning: '왜', position: '문두 · 문미', example: 'Kok sepi?', exampleKo: '왜 조용해?' }, deck: d });
+    expect(withPos.back[2]).toEqual({ kind: 'tags', items: ['붙는 자리 · 문두 · 문미', '이 문장에서 · 문두'] });
+    expect(t.version).toBe(2);
+    expect(t.migrate!(1, { word: 'sih' })).toEqual({ word: 'sih', position: '' });
     expect(t.duplicateKey({ word: 'sih', example: 'A' })).not.toBe(t.duplicateKey({ word: 'sih', example: 'B' }));
   });
 
@@ -108,6 +114,15 @@ describe('카드 종류', () => {
     expect(back[5]).toEqual({ kind: 'phrases', items: [{ text: 'kurang tidur', ko: '잠이 부족하다' }], lang: 'id-ID', highlight: 'kurang' });
     // 예전 단어(빈 칸)는 그대로
     expect(t.view('forward', { fields: { ...f, en: '', phrases: '' }, deck: d }).back.map((b) => b.kind)).toEqual(['word', 'meaning', 'sentence', 'sentence', 'memo']);
+  });
+
+  it('어조 말 자리 계산: 문두·문중·문미, 쉼표·문장부호는 단어에 안 센다', async () => {
+    const { particlePlace } = await import('./idParticle');
+    expect(particlePlace('Lho, kamu belum pulang?', 'lho')).toBe('문두');
+    expect(particlePlace('Kamu suka pedas, kan?', 'kan')).toBe('문미');
+    expect(particlePlace('Dia kan lagi sibuk.', 'kan')).toBe('문중');
+    expect(particlePlace('Ya udah deh, aku ikut.', 'deh')).toBe('문중');
+    expect(particlePlace('Tidak ada', 'sih')).toBeUndefined();
   });
 });
 

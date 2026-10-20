@@ -231,3 +231,17 @@ describe('헷갈리는 말: 분명·확실·진짜 묶음', () => {
   });
 });
 
+describe('어조 말 붙는 자리', () => {
+  it('어조 말·aja 덱의 모든 카드에 붙는 자리가 있고, 예문에서 그 말의 자리를 찾을 수 있다', async () => {
+    const { particlePlace } = await import('../cardTypes/idParticle');
+    for (const id of ['indonesian-particles', 'indonesian-aja']) {
+      const pack = PACKS.find((p) => p.id === id)!;
+      expect(pack.fillEmpty).toEqual(['position']);
+      for (const n of pack.notes) {
+        expect(n.fields.position, n.fields.word).toMatch(/문[두중미]/);
+        expect(particlePlace(n.fields.example!, n.fields.word!), n.fields.example).toBeDefined();
+      }
+    }
+  });
+});
+

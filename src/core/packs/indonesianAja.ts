@@ -12,7 +12,7 @@ type Ex = [example: string, exampleKo: string, note?: string];
 function usage(meaning: string, tag: string, examples: Ex[]): PackNote[] {
   return examples.map(([example, exampleKo, note]) => ({
     typeId: 'id-particle',
-    fields: { word: 'aja', meaning, example, exampleKo, note: note ?? '' },
+    fields: { word: 'aja', meaning, position: '문중 · 문미 (꾸미는 말 바로 뒤)', example, exampleKo, note: note ?? '' },
     tags: ['aja', tag],
   }));
 }
@@ -133,6 +133,7 @@ export const indonesianAja: Pack = {
   name: '인도네시아어 aja 연습 · 예문 72장',
   description: '어디에나 붙는 aja의 쓰임새 12가지 (~만, 그냥 ~해, 아무 ~나, 방금, 똑같아, ~조차 …)를 예문으로 섞어서 익혀요.',
   deckName: '인도네시아어 aja',
+  fillEmpty: ['position'],
   deckSettings: {
     defaultTypeId: 'id-particle',
     reverseEnabled: false,
