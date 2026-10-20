@@ -5,7 +5,7 @@ import type { Pack } from '../../core/packs/types';
 import { makeBackup, type Backup } from '../../core/io/backup';
 import { newId } from '../../core/model/ids';
 import { cardsForNote, createNote, trimFields, userEdited } from '../../core/model/notes';
-import { DEFAULT_SETTINGS, type Card, type Deck, type DeckSettings, type Id, type Note, type Rating, type ReviewLog, type Settings } from '../../core/model/types';
+import { DEFAULT_SETTINGS, type Card, type Deck, type DeckSettings, type Id, type Millis, type Note, type Rating, type ReviewLog, type Settings } from '../../core/model/types';
 import { applyReview, withState } from '../../core/scheduler/queue';
 import { rebuildFromLogs } from '../../core/scheduler/rebuild';
 import { createScheduler } from '../../core/scheduler/registry';
@@ -248,13 +248,18 @@ async function freshCard(card: Card, sched: Scheduler, d: FlashcardsDB): Promise
 }
 
 /** 답을 기록한다. 반환값은 되돌리기에 쓰는 로그 id. */
-export async function recordReview(cardId: Id, rating: Rating, durationMs: number | undefined, d: FlashcardsDB = db): Promise<Id> {
+/** at: 답한 시각 (알림에서 누른 답은 누른 시각). 이미 더 나중 기록이 있으면 로그로 다시 계산해서 순서를 지킨다 */
+export async function recordReview(cardId: Id, rating: Rating, durationMs: number | undefined, d: FlashcardsDB = db, at: Millis = Date.now()): Promise<Id> {
   return d.transaction('rw', [d.cards, d.reviewLogs, d.settings], async () => {
     const card = await d.cards.get(cardId);
     if (!card) throw new Error('카드를 찾을 수 없어요');
     const sched = schedulerFor(await getSettings(d));
-    const at = Date.now();
     const log: ReviewLog = { id: newId(), cardId, kind: 'review', rating, at, tzOffsetMin: tz(), durationMs, scheduler: sched.version };
+    if (card.lastReviewAt !== undefined && at < card.lastReviewAt) {
+      await d.reviewLogs.add(log);
+      await rebuildCard(cardId, d);
+      return log.id;
+    }
     const updated = applyReview(await freshCard(card, sched, d), rating, at, sched);
     await d.reviewLogs.add(log);
     await d.cards.put(updated);

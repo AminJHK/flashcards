@@ -20,6 +20,8 @@ import { fullscreenSupported } from '../../adapters/display/fullscreen';
 import { isNativeApp } from '../../adapters/native/platform';
 import { nativeEngines, nativeVoices, voiceChoices, type NativeEngine, type NativeVoice } from '../../adapters/tts/nativeTts';
 import { speakDevice } from '../../adapters/tts/device';
+import { notifyPermissions, openExactAlarmSettings, requestNotifyPermission, scheduleAlarms } from '../../adapters/native/reviewNotify';
+import { DEFAULT_NOTIFY_PREFS } from '../../core/notify/plan';
 
 const SAMPLE: Record<string, string> = {
   'zh-CN': '你好，我们一起学习中文吧。',
@@ -61,6 +63,7 @@ export function Settings({ section }: { section?: string }) {
         <h1 className="title">{sec.title}</h1>
       </div>
       {sec.key === 'study' && <StudySettings s={s} />}
+      {sec.key === 'study' && isNativeApp() && <ReviewNotifySettings s={s} />}
       {sec.key === 'display' && <DisplaySettings s={s} />}
       {sec.key === 'voice' && <VoiceSettings s={s} />}
       {sec.key === 'backup' && <BackupSettings s={s} />}
@@ -166,6 +169,71 @@ function StudySettings({ s }: { s: SettingsT }) {
         />
       </Row>
     </div>
+  );
+}
+
+/**
+ * 안드로이드 앱의 복습 알림 (adapters/native/reviewNotify.ts). 켤 때 알림 허락을 묻는다.
+ * 정확한 시간에 울리려면 "알람 및 리마인더" 허락이 따로 필요하다 (안드로이드 12+).
+ */
+function ReviewNotifySettings({ s }: { s: SettingsT }) {
+  const toast = useToast();
+  const n = { ...DEFAULT_NOTIFY_PREFS, ...s.reviewNotify, enabled: s.reviewNotify?.enabled === true };
+  const [perm, setPerm] = useState<{ notifications: boolean; exact: boolean }>();
+  useEffect(() => {
+    const refresh = () => void notifyPermissions().then(setPerm, () => {});
+    refresh();
+    document.addEventListener('visibilitychange', refresh);
+    return () => document.removeEventListener('visibilitychange', refresh);
+  }, []);
+  const set = (patch: Partial<typeof n>) => saveSettings({ reviewNotify: { ...n, ...patch } });
+  const hour = (h: number) => (h === 0 ? '자정' : h < 12 ? `오전 ${h}시` : h === 12 ? '낮 12시' : `오후 ${h - 12}시`);
+  return (
+    <>
+      <span className="section-label" style={{ paddingTop: 8 }}>
+        복습 알림
+      </span>
+      <div className="group">
+        <Row title="복습 알림" desc="짧은 복습(1분·10분 뒤 등)은 그 시각에 카드 알림이 와요. 알림에서 뜻을 보고 바로 다시·어려움·알았음으로 답해요. 며칠 뒤 복습은 카드가 쌓이면 알려요. 앱을 보고 있을 때는 울리지 않아요.">
+          <Switch
+            label="복습 알림"
+            checked={n.enabled}
+            onChange={async (v) => {
+              if (v) {
+                const r = await requestNotifyPermission().catch(() => ({ notifications: false }));
+                if (!r.notifications) {
+                  toast('휴대폰 설정 › 애플리케이션 › 단어 카드 › 알림에서 허용해 주세요');
+                  return;
+                }
+              }
+              await set({ enabled: v });
+              void scheduleAlarms().catch(() => {});
+              void notifyPermissions().then(setPerm, () => {});
+            }}
+          />
+        </Row>
+        {n.enabled && perm && !perm.exact && (
+          <Row title="정확한 시간에 울리기" desc="허용하지 않으면 휴대폰이 알림을 몇 분 늦게 울릴 수 있어요. 열리는 화면에서 '알람 및 리마인더'를 켜 주세요.">
+            <button type="button" className="btn-soft" style={{ border: 'none' }} onClick={() => void openExactAlarmSettings()}>
+              허용하기
+            </button>
+          </Row>
+        )}
+        {n.enabled && (
+          <>
+            <Row title="조용한 시간 시작" desc="이 시각부터는 울리지 않고, 끝나는 시각에 모아서 알려요">
+              <Stepper label="조용한 시간 시작" value={n.quietStart} min={0} max={23} format={hour} onChange={(v) => set({ quietStart: v })} />
+            </Row>
+            <Row title="조용한 시간 끝">
+              <Stepper label="조용한 시간 끝" value={n.quietEnd} min={0} max={23} format={hour} onChange={(v) => set({ quietEnd: v })} />
+            </Row>
+            <Row title="쌓임 알림" desc="며칠 간격 카드가 이만큼 쌓이면 알려요 (최소 3시간 간격, 하루 4번까지)">
+              <Stepper label="쌓임 알림 기준" value={n.pileMin} min={5} max={100} step={5} format={(v) => `${v}장`} onChange={(v) => set({ pileMin: v })} />
+            </Row>
+          </>
+        )}
+      </div>
+    </>
   );
 }
 

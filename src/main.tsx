@@ -19,14 +19,18 @@ import { cleanVersionParam } from './adapters/update/update';
 applyCachedTheme();
 cleanVersionParam();
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+// 안드로이드 앱이 알림에서 받은 답을 처리하려고 화면 없이 켠 경우 (HeadlessRunner.java): 화면은 그리지 않는다
+const headlessRun = 'FlashcardsHeadless' in window;
+if (headlessRun) void import('./headless');
+else
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
 
 // 오프라인 사용을 위한 서비스 워커. 미리보기처럼 등록할 수 없는 곳에서는 조용히 넘어간다.
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+if (!headlessRun && 'serviceWorker' in navigator && import.meta.env.PROD) {
   import('virtual:pwa-register')
     .then(({ registerSW }) =>
       registerSW({

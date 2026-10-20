@@ -41,6 +41,22 @@
 - 실제 폰(갤럭시 폴드)에서 엔진 목록에 Google만 나왔다. `<queries>`(TTS_SERVICE)는 있다. 삼성 One UI 7(안드로이드 15)부터 **삼성 TTS는 삼성 앱에서만 쓸 수 있게 막혀** 있다는 보고가 있다 (삼성 인터넷에서는 됐던 이유). 앱에서 고칠 방법이 없어 설정 설명에 적었다.
 - 목소리 이름(`id-id-x-ide-local` …)은 `voiceChoices`(nativeTts.ts)가 "목소리 1, 2 …"로 바꾼다: -local/-network는 하나로 묶고 저장된 판(local)을 먼저 고르며, `…-language`(엔진 기본과 같음)는 뺀다. 예전에 고른 이름은 `members`로 찾는다.
 
+## 복습 알림 (2026-10-20)
+
+- 사용자 요청: 1분·10분 뒤 같은 짧은 복습을 앱에 들어가지 않고 알림에서 바로 답하고 싶다. 정확한 시간에. 답은 3버튼(다시·어려움·알았음).
+- 계산은 전부 앱(웹 코드)이 한다: `src/core/notify/plan.ts`(`planAlarms`)가 카드의 due(FSRS-7)로 알림 계획을 만든다.
+  - 짧은 복습(직전 복습~다음 복습이 하루 미만)은 카드마다 그 시각에 카드 알림 (최대 30개). 듣기 카드는 빼고 쌓임에 센다.
+  - 며칠 간격 카드는 `pileMin`(기본 10)장 이상 쌓이면 알림. 앱을 닫은 뒤 3시간부터, 3시간 간격, 하루 4번까지, 7일 앞까지.
+  - 조용한 시간(기본 22~8시, 휴대폰 시각)은 끝나는 시각으로 미룬다.
+- `src/adapters/native/reviewNotify.ts` + `src/ui/useReviewNotify.ts`: 앱 화면이 보이면 알림을 모두 끄고(`clear`), 앱을 내리면 계획을 보낸다(`schedule`). 설정 › 복습 › 복습 알림(`Settings.reviewNotify`, 기본 꺼짐).
+- 휴대폰 쪽 (`android/.../`):
+  - `ReviewAlarms.java`: 계획 저장(SharedPreferences), AlarmManager 예약(`setExactAndAllowWhileIdle`, "알람 및 리마인더" 허락이 없으면 `setAndAllowWhileIdle`), 알림 띄우기(카드: 앞면+[뜻 보기] → 뒷면+[다시][어려움][알았음], 쌓임: 장수), 답 저장(누른 시각, id).
+  - `ReviewReceiver.java`: FIRE(앱 화면이 보이면 안 띄움)·REVEAL·ANSWER·BOOT_COMPLETED/MY_PACKAGE_REPLACED(다시 예약).
+  - 답하면 바로 앱을 깨운다: 앱이 켜져 있으면 `ReviewNotifyPlugin.notifyAnswers()` → 웹의 'answers' 소식, 꺼져 있으면 `HeadlessRunner.java`가 화면 없는 WebView로 같은 주소를 열고 `window.FlashcardsHeadless`를 넣는다 → `src/headless.ts`(main.tsx가 화면을 그리지 않음)가 `applyAnswers`(같은 `recordReview`, 누른 시각) → 새 계획 → `done()`. 9초 안에 못 끝내면 답은 남아 있다가 다음에 앱이 켜질 때 들어간다.
+  - 누른 시각이 이미 있는 기록보다 앞이면 `recordReview`가 로그로 다시 계산한다 (순서 보장).
+- 권한: POST_NOTIFICATIONS(켤 때 묻는다), SCHEDULE_EXACT_ALARM(설정의 "허용하기" → 시스템 화면), RECEIVE_BOOT_COMPLETED.
+- 실제 기기에서 아직 확인 못 함: 정확한 시각, 화면 없는 WebView가 9초 안에 끝나는지, 잠금 화면 버튼.
+
 ## 알려진 한계 · 할 일
 
 - **Google 로그인(Drive 동기화·백업):** Google은 앱 안 브라우저(WebView)의 로그인 창을 막는다 → 앱에서는 `NativeGooglePlugin`(play-services-auth의 `AuthorizationClient`)으로 drive.file·openid·email 권한 토큰을 받는다 (`auth.ts`의 `nativeToken`). 한 번 허용하면 창 없이 새 토큰을 받으므로 자동 동기화도 된다 (`silentToken`).

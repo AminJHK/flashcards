@@ -1,3 +1,4 @@
+import type { NotifyPrefs } from '../notify/plan';
 // 앱 전체의 데이터 모델 (docs/DESIGN.md §10).
 // 시각은 모두 UTC 밀리초(number)로 다룬다.
 
@@ -143,6 +144,8 @@ export interface Settings {
   /** 기기 음성 높낮이 (1 = 보통) */
   devicePitch?: number;
   /** 안드로이드 앱의 음성 엔진 설정 (이 기기에만) */
+  /** 안드로이드 앱의 복습 알림 (core/notify/plan.ts). 기본은 꺼짐 (알림 허락이 필요해서) */
+  reviewNotify?: { enabled: boolean } & Partial<NotifyPrefs>;
   nativeTts?: {
     /** 엔진 패키지 이름 (예: com.samsung.SMT). 없으면 휴대폰 기본 엔진 */
     engine?: string;

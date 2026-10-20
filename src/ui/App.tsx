@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Settings as SettingsData } from '../core/model/types';
 import { requestPersistence } from '../adapters/files/share';
 import { migrateToFsrs7 } from '../adapters/storage/repo';
+import { useReviewNotify } from './useReviewNotify';
 import { enterFullscreen, exitFullscreen } from '../adapters/display/fullscreen';
 import { TabBar } from './components/TabBar';
 import { useSettings } from './hooks';
@@ -29,6 +30,7 @@ const wantsGate = (s: SettingsData | undefined) => !!s?.googleDrive?.clientId &&
 export function App() {
   const route = useRoute();
   const settings = useSettings();
+  useReviewNotify();
 
   // 테마: 설정이 바뀌거나, "시스템"일 때 기기 테마가 바뀌면 다시 적용
   useEffect(() => {

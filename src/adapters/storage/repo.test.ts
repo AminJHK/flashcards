@@ -222,3 +222,23 @@ describe('FSRS-7로 옮기기', () => {
     expect((await repo.getSettings(d)).schedulerId).toBe('fsrs-6');
   });
 });
+
+describe('알림에서 누른 답 (누른 시각으로 기록)', () => {
+  it('누른 시각이 이미 있는 기록보다 앞이면 로그 순서대로 다시 계산한다 (앱에서 한 것과 같은 결과)', async () => {
+    const deck = await repo.createDeck('HSK', settings, d);
+    const note = await repo.addNote(deck.id, 'zh-word', { hanzi: '书', meaning: '책' }, d);
+    const card = (await d.cards.where('noteId').equals(note.id).toArray()).find((c) => c.templateId === 'forward')!;
+    const t0 = Date.now() - 3_600_000;
+    await repo.recordReview(card.id, 3, undefined, d, t0 + 60_000);
+    await repo.recordReview(card.id, 1, undefined, d, t0); // 늦게 들어온, 더 이른 답
+    const late = (await d.cards.get(card.id))!;
+    const d2 = new FlashcardsDB(`test-order-${n}`);
+    const deck2 = await repo.createDeck('HSK', settings, d2);
+    const note2 = await repo.addNote(deck2.id, 'zh-word', { hanzi: '书', meaning: '책' }, d2);
+    const card2 = (await d2.cards.where('noteId').equals(note2.id).toArray()).find((c) => c.templateId === 'forward')!;
+    await repo.recordReview(card2.id, 1, undefined, d2, t0);
+    await repo.recordReview(card2.id, 3, undefined, d2, t0 + 60_000);
+    const inOrder = (await d2.cards.get(card2.id))!;
+    expect([late.due, late.reps, late.lapses, late.phase]).toEqual([inOrder.due, inOrder.reps, inOrder.lapses, inOrder.phase]);
+  });
+});

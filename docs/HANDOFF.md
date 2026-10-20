@@ -149,6 +149,9 @@ npm run dev        # 개발 서버
 - 읽기 › 톱니(이야기 음성) › **기기 음성으로 읽기** (`Settings.storyDeviceVoice`): Gemini 음성을 끈 설정으로 재생하고(`voiceSettings`), 만든 직후의 AI 음성 준비도 하지 않는다. 속도는 같은 읽기 속도 슬라이더(`storyPlaybackRate`)로. 안드로이드 앱에서 "휴대폰 설정의 속도·높낮이 쓰기"를 켜 두면 휴대폰 속도를 쓴다.
 - 백그라운드: 아래 "이야기·음성 만들기를 서비스 워커에서"로 했다.
 
+## 복습 알림 (안드로이드 앱, 2026-10-20)
+- 짧은 복습은 카드마다 정시 알림 → 알림에서 [뜻 보기] → [다시][어려움][알았음]으로 바로 답, 며칠 간격은 쌓이면 알림. 자세한 구조는 **docs/ANDROID.md "복습 알림"**. 새 APK가 필요하다 (서명 키는 사용자 Drive의 `flashcards-signing-key.zip`, 이 세션에 Drive가 연결돼 있으면 직접 가져와 서명하고 바로 지운다).
+
 ## FSRS-7 (2026-10-20)
 - 사용자 요청으로 **기본 알고리즘을 FSRS-7로** 바꿨다 (`ts-fsrs` 6.0.0-beta.15를 `ts-fsrs7` 별명으로 고정 설치, `src/core/scheduler/fsrs7.ts`). FSRS-6(`ts-fsrs` 5.4.2)은 그대로 남아 설정 › 복습 › 알고리즘에서 되돌릴 수 있다. 자세한 내용은 DESIGN.md §4.1.
 - 바뀌는 느낌: 새 카드에 '알았음'이면 10분 뒤가 아니라 며칠 뒤로 갈 수 있다 (FSRS-7 기본 `allowModelOverride`). 사용자가 예전처럼 10분 뒤 다시 보기를 원하면 `allowModelOverride: false`.
