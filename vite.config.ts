@@ -34,6 +34,13 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false,
+      // 서비스 워커를 직접 쓴다 (src/sw.ts): 오프라인 파일 저장 + 웹앱을 내려도 이야기·음성 만들기
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,svg,png}'],
+      },
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: '플래시카드',
@@ -50,18 +57,6 @@ export default defineConfig({
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
           { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-        ],
-      },
-      workbox: {
-        // 한자 폰트는 글자 범위별로 수백 개 파일로 나뉘어 있다. 전부 미리 받지 않고, 쓰는 것만 받아서 저장한다.
-        globPatterns: ['**/*.{js,css,html,svg,png}'],
-        navigateFallback: 'index.html',
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) => /\.(woff2?|ttf)$/.test(url.pathname),
-            handler: 'CacheFirst',
-            options: { cacheName: 'fonts', expiration: { maxEntries: 400 } },
-          },
         ],
       },
     }),

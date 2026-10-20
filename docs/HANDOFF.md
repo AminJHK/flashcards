@@ -147,7 +147,15 @@ npm run dev        # 개발 서버
   - 첫 글자를 기다리는 시간 `STREAM_TIMING.firstMs` 120초 → 75초 (붐비는 모델을 빨리 버리고 flash-lite로).
   - 실제로 무엇이 느렸는지(시도 횟수·모델)는 확인하지 못했다. 그래도 느리면 Story의 `attempts`·`model`을 보거나 사용자에게 진행 문구("다시 쓰는 중 (2번째)" 등)를 물을 것.
 - 읽기 › 톱니(이야기 음성) › **기기 음성으로 읽기** (`Settings.storyDeviceVoice`): Gemini 음성을 끈 설정으로 재생하고(`voiceSettings`), 만든 직후의 AI 음성 준비도 하지 않는다. 속도는 같은 읽기 속도 슬라이더(`storyPlaybackRate`)로. 안드로이드 앱에서 "휴대폰 설정의 속도·높낮이 쓰기"를 켜 두면 휴대폰 속도를 쓴다.
-- 백그라운드(웹앱을 내려도 계속 만들기)는 아직 안 했다 — 브라우저가 내려간 웹앱의 작업을 멈춘다. 사용자에게 방법(서비스 워커로 옮기기 / 안드로이드 앱의 포그라운드 서비스)을 제안함.
+- 백그라운드: 아래 "이야기·음성 만들기를 서비스 워커에서"로 했다.
+
+## 이야기·음성 만들기를 서비스 워커에서 (2026-10-20, 사용자가 A안 선택)
+- 웹앱을 내리면 브라우저가 화면의 작업을 멈춘다 → 이야기 만들기와 음성 만들기를 **서비스 워커**(`src/sw.ts`)에서 돌린다. vite-plugin-pwa를 `generateSW` → `injectManifest`로 바꿨다 (예전 설정: 미리 저장 `**/*.{js,css,html,svg,png}`, index.html 대체, 폰트 CacheFirst 400개를 sw.ts에 그대로 옮김). workbox-* 패키지를 devDependencies에 추가.
+- 실제 일은 `adapters/stories/jobs.ts`(`runStory`, `runAudio`)에 있고 화면과 서비스 워커가 같이 쓴다. 화면(`ui/storyJob.ts`)은 서비스 워커에 `postMessage`로 맡기고, 소식은 `BroadcastChannel('story-jobs')`로 받는다 (ack/step/done/error/audio/status). 3초 안에 ack가 없으면(서비스 워커 없음, 예전 버전) 화면 안에서 돌린다.
+- 서비스 워커는 `event.waitUntil`로 끝날 때까지 살려 달라고 한다. 브라우저가 보통 몇 분까지만 살려 두므로 너무 길면 멈출 수 있다 → 화면이 다시 보이면(그리고 보이는 동안 20초마다) `story:status`로 맞춰 보고, 일을 잃었으면 저장된 이야기가 있는지 보고 완성 또는 "앱을 내려 둔 사이 … 멈췄어요"로 바꾼다.
+- 다 되면 화면이 안 보일 때만 휴대폰 알림(`showNotification`, tag 'story'): 이야기 완성 → 음성까지 준비(같은 알림을 바꿈). 누르면 그 이야기로. 알림 허락은 "이야기 만들기"를 처음 누를 때 묻는다. 안드로이드 앱(WebView)은 알림이 없다.
+- 서비스 워커 안에서는 동적 import를 못 쓴다 (Vite의 preload 도우미가 `import.meta`를 남겨 SW가 안 켜졌다) → speech.ts의 voices를 정적 import로. 서비스 워커에 들어가는 코드에서 `await import()`를 쓰지 말 것.
+- 화면 테스트: Gemini 가짜 응답을 `page.context().route`로 (서비스 워커의 요청도 잡힌다). `e2e/story.spec.ts` "백그라운드": 만드는 중에 화면을 닫아도 이야기·음성이 저장된다.
 
 ## 이야기 음성: 나머지 한 번에 만들기 (2026-10-20)
 - 이야기를 만든 뒤 음성 만들기가 한도·앱 닫기로 멈추면, 예전에는 다음 줄로 갈 때마다 하나씩 만들었다 (사용자: 한 번에 만드는 버튼이 필요하다).

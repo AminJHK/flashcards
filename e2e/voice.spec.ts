@@ -81,7 +81,7 @@ test('Gemini: 이 기기에서 WAV 변환이 안 되면 녹음 원본 형식으�
     AudioContext.prototype.decodeAudioData = () => Promise.reject(new DOMException('Unable to decode audio data', 'EncodingError'));
   });
   const mimes: string[] = [];
-  await page.route('https://generativelanguage.googleapis.com/**', async (route) => {
+  await page.context().route('https://generativelanguage.googleapis.com/**', async (route) => {
     const url = route.request().url();
     if (url.includes('/models?')) return route.fulfill({ json: { models: [{ name: 'models/gemini-flash-latest' }, { name: 'models/gemini-3.8-flash-tts' }] } });
     if (url.endsWith('/interactions')) return route.fulfill({ json: { steps: [{ type: 'model_output', content: [{ type: 'audio', data: 'AAAA', mime_type: 'audio/L16;codec=pcm;rate=24000' }] }] } });

@@ -67,7 +67,7 @@ test('읽기: 어조 말이 이야기 만들기 요청에 PARTICLE로 들어가�
     ],
     glossary: [],
   };
-  await page.route('https://generativelanguage.googleapis.com/**', async (route) => {
+  await page.context().route('https://generativelanguage.googleapis.com/**', async (route) => {
     const url = route.request().url();
     if (url.includes('/models?')) return route.fulfill({ json: { models: [{ name: 'models/gemini-flash-latest' }, { name: 'models/gemini-3.8-flash-tts' }] } });
     if (url.endsWith('/interactions')) return route.fulfill({ json: { steps: [{ type: 'model_output', content: [{ type: 'audio', data: btoa('RIFF' + '\0'.repeat(4) + 'WAVE'), mime_type: 'audio/wav' }] }] } });

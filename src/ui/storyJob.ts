@@ -1,19 +1,22 @@
 import { useSyncExternalStore } from 'react';
-import { prepareStoryAudio } from '../adapters/speech/speech';
-import { getSettings } from '../adapters/storage/repo';
-import { createStory, type StoryStep } from '../adapters/gemini/story';
-import { saveStory } from '../adapters/storage/stories';
+import type { StoryStep } from '../adapters/gemini/story';
 import { db } from '../adapters/storage/db';
-import { planStory, type StoryHistory } from '../core/stories/plan';
+import { runAudio, runStory, type AudioState, type JobEvent, type StoryJobArgs } from '../adapters/stories/jobs';
+import { newId } from '../core/model/ids';
 import type { Story, StoryDifficulty } from '../core/stories/types';
 import type { Lexicon } from '../core/stories/vocab';
 
 /**
- * 이야기 만들기는 화면과 따로 뒤에서 돈다 (다른 화면으로 가도 계속된다).
- * 앱을 완전히 닫거나 새로고침하면 중단된다. 끝나면 저장하고 알림만 주고, 화면을 옮기지는 않는다.
+ * 이야기 만들기·음성 만들기는 화면과 따로 뒤에서 돈다 (다른 화면으로 가도 계속된다).
+ * 서비스 워커가 있으면 거기서 돌린다 (sw.ts): 웹앱을 내려도 한동안 계속되고, 끝나면 휴대폰 알림을 띄운다.
+ * 서비스 워커가 없거나 답하지 않으면(개발 화면, 예전 버전) 이 화면 안에서 돌린다 (앱을 내리면 멈출 수 있음).
+ * 끝나면 저장하고 알림만 주고, 화면을 옮기지는 않는다.
  */
 export interface StoryJob {
   status: 'idle' | 'running' | 'done' | 'error';
+  /** 지금(마지막) 작업 번호 */
+  id?: string;
+  startedAt?: number;
   step?: StoryStep;
   error?: string;
   storyId?: string;
@@ -23,6 +26,12 @@ export interface StoryJob {
   /** 알림을 한 번만 띄우려는 번호 */
   seq: number;
 }
+
+export type StoryAudioJob = AudioState;
+
+const CHANNEL = 'story-jobs';
+/** 서비스 워커가 이 시간 안에 받았다고 답하지 않으면 화면 안에서 돌린다 */
+const ACK_MS = 3000;
 
 let job: StoryJob = { status: 'idle', unseen: false, seq: 0 };
 const listeners = new Set<() => void>();
@@ -38,52 +47,6 @@ export const subscribeStoryJob = (l: () => void) => {
 };
 export const useStoryJob = (): StoryJob => useSyncExternalStore(subscribeStoryJob, getStoryJob);
 
-export function markStorySeen(): void {
-  if (job.unseen) set({ unseen: false });
-}
-
-export function dismissStoryError(): void {
-  if (job.status === 'error') set({ status: 'idle', error: undefined });
-}
-
-export function startStoryJob(args: { lex: Lexicon; difficulty: StoryDifficulty; topicKey: string; key: string }): void {
-  if (job.status === 'running') return;
-  set({ status: 'running', step: { attempt: 1, stage: 'writing' }, error: undefined, storyId: undefined, title: undefined });
-  void (async () => {
-    try {
-      // 최근 이야기에서 쓴 단어·상황은 피한다 (같은 줄거리 반복 방지)
-      const recent = await db.stories.orderBy('createdAt').reverse().limit(12).toArray();
-      const history: StoryHistory = {
-        newWords: recent.slice(0, 5).flatMap((x) => x.plan?.newWords ?? []),
-        reinforce: recent[0]?.plan?.reinforce ?? [],
-        seeds: recent.flatMap((x) => (x.plan?.seed ? [x.plan.seed] : [])),
-      };
-      const plan = planStory(args.lex, args.difficulty, history, args.topicKey);
-      const made = await createStory({ lex: args.lex, plan, topicKey: args.topicKey, key: args.key, onStep: (step) => set({ step }) });
-      const story = { ...made, plan: { newWords: plan.newWords.map((e) => e.word), reinforce: [...plan.focus, ...plan.reinforce].map((e) => e.word), seed: plan.seed?.id } };
-      await saveStory(story);
-      // 이야기는 바로 읽을 수 있고, 음성은 저장한 뒤에 뒤에서 만든다
-      set({ status: 'done', storyId: story.id, title: story.title, unseen: true, step: undefined, seq: job.seq + 1 });
-      startStoryAudio(story, true);
-    } catch (e) {
-      set({ status: 'error', error: e instanceof Error ? e.message : String(e), step: undefined, seq: job.seq + 1 });
-    }
-  })();
-}
-
-/**
- * 이야기 음성(Gemini) 한꺼번에 만들기. 이야기를 만든 직후에 저절로 돌고, 읽기 화면의 "나머지 음성 만들기"로 다시 돌릴 수 있다
- * (한도·앱 닫기로 중간에 멈췄을 때). 이야기 만들기처럼 화면과 따로 돌아서 다른 화면으로 가도 계속된다. 한 번에 이야기 하나만.
- */
-export interface StoryAudioJob {
-  storyId?: string;
-  done: number;
-  total: number;
-  running: boolean;
-  /** 멈춘 이유 (한도 등) */
-  note?: string;
-}
-
 let audioJob: StoryAudioJob = { done: 0, total: 0, running: false };
 const audioListeners = new Set<() => void>();
 const setAudio = (next: StoryAudioJob) => {
@@ -96,26 +59,138 @@ const subscribeAudio = (l: () => void) => {
 };
 export const useStoryAudioJob = (): StoryAudioJob => useSyncExternalStore(subscribeAudio, () => audioJob);
 
+export function markStorySeen(): void {
+  if (job.unseen) set({ unseen: false });
+}
+
+export function dismissStoryError(): void {
+  if (job.status === 'error') set({ status: 'idle', error: undefined });
+}
+
+/** 작업 소식 (서비스 워커에서 오든 화면 안에서 돌든 같은 모양) */
+function onEvent(e: JobEvent): void {
+  if (e.kind === 'audio') {
+    setAudio(e.audio);
+    return;
+  }
+  if (e.kind === 'status') {
+    void reconcile(e);
+    return;
+  }
+  if (e.kind === 'ack' || e.id !== job.id) return;
+  if (e.kind === 'step') {
+    if (job.status === 'running') set({ step: e.step });
+  } else if (e.kind === 'done') {
+    if (job.status === 'running') set({ status: 'done', storyId: e.storyId, title: e.title, unseen: true, step: undefined, seq: job.seq + 1 });
+  } else if (job.status === 'running') set({ status: 'error', error: e.message, step: undefined, seq: job.seq + 1 });
+}
+
+const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(CHANNEL) : undefined;
+const acks = new Map<string, () => void>();
+channel?.addEventListener('message', (m: MessageEvent<JobEvent>) => {
+  if (m.data.kind === 'ack') acks.get(m.data.id)?.();
+  onEvent(m.data);
+});
+
+const worker = (): ServiceWorker | null | undefined => (typeof navigator !== 'undefined' ? navigator.serviceWorker?.controller : undefined);
+
+/** 서비스 워커에 일을 맡긴다. 받았다고 답하면 true */
+function toWorker(msg: unknown, id: string): Promise<boolean> {
+  const sw = worker();
+  if (!sw || !channel) return Promise.resolve(false);
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      acks.delete(id);
+      resolve(false);
+    }, ACK_MS);
+    acks.set(id, () => {
+      clearTimeout(timer);
+      acks.delete(id);
+      resolve(true);
+    });
+    sw.postMessage(msg);
+  });
+}
+
+/** 다 되면 휴대폰 알림을 띄울 수 있게 처음 한 번 허락을 묻는다 (버튼을 누른 순간에만 물을 수 있다) */
+function askNotifications(): void {
+  try {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') void Notification.requestPermission().catch(() => {});
+  } catch {
+    /* 알림을 못 쓰는 곳 (앱 안 브라우저 등) */
+  }
+}
+
+export function startStoryJob(args: { lex: Lexicon; difficulty: StoryDifficulty; topicKey: string; key: string }): void {
+  if (job.status === 'running') return;
+  askNotifications();
+  const full: StoryJobArgs = { ...args, id: newId(), startedAt: Date.now() };
+  set({ status: 'running', id: full.id, startedAt: full.startedAt, step: { attempt: 1, stage: 'writing' }, error: undefined, storyId: undefined, title: undefined });
+  void (async () => {
+    if (await toWorker({ type: 'story:start', args: full }, full.id)) return;
+    // 서비스 워커가 없으면 이 화면에서 만든다
+    hereStory = true;
+    const story = await runStory(full, onEvent);
+    hereStory = false;
+    if (story) runAudioHere(story, true);
+  })();
+}
+
+/** 화면 안에서 도는 중이면 서비스 워커 상태와 맞추지 않는다 */
+let hereStory = false;
+let hereAudio = false;
+let localAudio: string | undefined;
+function runAudioHere(story: Story, replace: boolean): void {
+  if (audioJob.running && !replace) return;
+  localAudio = story.id;
+  hereAudio = true;
+  void runAudio(story, setAudio, () => localAudio !== story.id).finally(() => {
+    if (localAudio === story.id) hereAudio = false;
+  });
+}
+
 /** 다른 이야기의 음성을 만드는 중이면 무시한다. 방금 만든 이야기(replace)는 하던 것을 멈추고 먼저 한다 */
 export function startStoryAudio(story: Story, replace = false): void {
   if (audioJob.running && !replace) return;
-  const total = story.blocks.filter((b) => b.kind === 'line').length;
-  setAudio({ storyId: story.id, done: 0, total, running: true });
-  const mine = () => audioJob.storyId === story.id;
+  const id = newId();
+  setAudio({ storyId: story.id, done: 0, total: story.blocks.filter((b) => b.kind === 'line').length, running: true });
   void (async () => {
-    try {
-      const settings = await getSettings();
-      if (settings.storyDeviceVoice) {
-        // 기기 음성으로 읽기를 켰으면 AI 음성을 만들지 않는다 (무료 한도 아끼기)
-        if (mine()) setAudio({ storyId: story.id, done: 0, total, running: false, note: '기기 음성으로 읽어요' });
-        return;
-      }
-      await prepareStoryAudio(story, settings, (done, count, note) => {
-        if (mine()) setAudio({ storyId: story.id, done, total: count, running: !note && done < count, note });
-      }, () => !mine());
-    } catch {
-      if (mine()) setAudio({ ...audioJob, running: false, note: '음성 준비가 중단됐어요' });
-    }
-    if (mine() && audioJob.running) setAudio({ ...audioJob, running: false });
+    if (await toWorker({ type: 'story:audio', storyId: story.id, replace, id }, id)) return;
+    runAudioHere(story, true);
   })();
+}
+
+/**
+ * 화면이 다시 보일 때: 서비스 워커가 하고 있는 일과 맞춘다.
+ * 서비스 워커가 그새 꺼져서 작업을 잃었으면, 이야기가 저장됐는지 보고 완성 또는 "멈췄어요"로 바꾼다.
+ */
+async function reconcile(s: Extract<JobEvent, { kind: 'status' }>): Promise<void> {
+  if (s.audio) setAudio(s.audio);
+  else if (audioJob.running && !hereAudio) setAudio({ ...audioJob, running: false, note: '앱을 내려 둔 사이 음성 만들기가 멈췄어요' });
+  if (s.running) {
+    if (job.status !== 'running' || job.id !== s.running.id) set({ status: 'running', id: s.running.id, step: s.running.step });
+    return;
+  }
+  if (job.status !== 'running' || !job.id || hereStory) return;
+  const made = await db.stories.where('createdAt').aboveOrEqual(job.startedAt ?? 0).first();
+  if (job.status !== 'running') return;
+  if (made) set({ status: 'done', storyId: made.id, title: made.title, unseen: true, step: undefined, seq: job.seq + 1 });
+  else set({ status: 'error', error: '앱을 내려 둔 사이 이야기 만들기가 멈췄어요. 다시 만들어 주세요', step: undefined, seq: job.seq + 1 });
+}
+
+
+function askStatus(): void {
+  worker()?.postMessage({ type: 'story:status' });
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') askStatus();
+  });
+  navigator.serviceWorker?.addEventListener('controllerchange', askStatus);
+  askStatus();
+  // 화면이 보이는 동안 일하는 중이면 20초마다 물어본다: 서비스 워커를 깨워 두고, 그새 꺼져서 일을 잃었으면 알아챈다
+  setInterval(() => {
+    if (document.visibilityState === 'visible' && ((job.status === 'running' && !hereStory) || (audioJob.running && !hereAudio))) askStatus();
+  }, 20_000);
 }

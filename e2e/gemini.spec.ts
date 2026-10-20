@@ -13,7 +13,7 @@ test.use({
 const silence = Buffer.alloc(24000 * 2 * 0.2).toString('base64');
 
 async function mockGemini(page: Page, calls: { tts: string[]; stt: number }) {
-  await page.route('https://generativelanguage.googleapis.com/**', async (route) => {
+  await page.context().route('https://generativelanguage.googleapis.com/**', async (route) => {
     const url = route.request().url();
     if (url.includes('/models?')) {
       return route.fulfill({ json: { models: [{ name: 'models/gemini-flash-latest' }, { name: 'models/gemini-3.8-flash-tts' }] } });
@@ -79,7 +79,7 @@ test('Gemini 키를 연결하면 단어 음성을 만들어 저장하고, 말한
 });
 
 test('Gemini가 실패하면 기기 음성으로 대신 읽고 이유를 알려준다', async ({ page }) => {
-  await page.route('https://generativelanguage.googleapis.com/**', (route) =>
+  await page.context().route('https://generativelanguage.googleapis.com/**', (route) =>
     route.request().url().includes('/models?')
       ? route.fulfill({ json: { models: [{ name: 'models/gemini-3.8-flash-tts' }] } })
       : route.request().url().endsWith('/interactions') && JSON.stringify(route.request().postDataJSON()).includes('你好')

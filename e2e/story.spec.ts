@@ -35,7 +35,7 @@ const STORY = {
 };
 
 async function mockGemini(page: Page, calls: { story: number; prompts: string[] }, delayMs = 0) {
-  await page.route('https://generativelanguage.googleapis.com/**', async (route) => {
+  await page.context().route('https://generativelanguage.googleapis.com/**', async (route) => {
     const url = route.request().url();
     if (url.includes('/models?')) return route.fulfill({ json: { models: [{ name: 'models/gemini-flash-latest' }, { name: 'models/gemini-3.8-flash-tts' }] } });
     if (url.includes('-tts:generateContent')) return route.fulfill({ json: { candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/L16;codec=pcm;rate=24000', data: '' } }] } }] } });
@@ -422,7 +422,7 @@ test('읽기 · 받아쓰기: 빈칸 또는 문장 전체를 받아쓰고 확인
 
 test('읽기 · 음성: 음성 만들기가 중간에 멈춘 이야기는 준비된 문장 수와 "나머지 한 번에 만들기" 버튼을 보여 주고, 누르면 뒤에서 다 만든다', async ({ page }) => {
   let ttsDown = true;
-  await page.route('https://generativelanguage.googleapis.com/**', async (route) => {
+  await page.context().route('https://generativelanguage.googleapis.com/**', async (route) => {
     const url = route.request().url();
     if (url.includes('/models?')) return route.fulfill({ json: { models: [{ name: 'models/gemini-flash-latest' }, { name: 'models/gemini-3.8-flash-tts' }] } });
     if (url.endsWith('/interactions')) {
@@ -468,4 +468,34 @@ test('읽기 · 음성: 음성 만들기가 중간에 멈춘 이야기는 준비
   ttsDown = false;
   await make.click();
   await expect(page.locator('.story-audio-bar')).toHaveCount(0, { timeout: 15000 });
+});
+
+test('읽기 · 백그라운드: 이야기는 서비스 워커가 만들어서, 만드는 중에 앱 화면을 닫아도 끝까지 만들어 저장한다', async ({ page, context }) => {
+  const calls = { story: 0, prompts: [] as string[] };
+  await mockGemini(page, calls, 3000); // 3초 걸리는 Gemini
+  await page.goto('/#/settings/voice');
+  await page.getByLabel('Gemini API 키').fill('FAKE-KEY');
+  await page.getByRole('button', { name: '연결' }).click();
+  await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();
+  await page.goto('/#/decks/new');
+  await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
+  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+  await page.goto('/#/read');
+  // 서비스 워커가 이 화면을 맡을 때까지
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller) await new Promise((r) => navigator.serviceWorker.addEventListener('controllerchange', r, { once: true }));
+  });
+  await page.getByRole('button', { name: '이야기 만들기' }).click();
+  await expect(page.getByText('이야기를 쓰는 중…')).toBeVisible();
+  await page.close(); // 화면이 없어져도
+
+  const again = await context.newPage();
+  await again.goto('/#/read');
+  await expect(again.locator('.story-row', { hasText: 'Bakso Malam' })).toBeVisible({ timeout: 15000 });
+  expect(calls.story).toBe(1);
+  // 음성도 서비스 워커가 이어서 만들었다
+  await again.locator('.story-row', { hasText: 'Bakso Malam' }).click();
+  await expect(again.getByText('Bakso Malam').first()).toBeVisible();
+  await expect(again.locator('.story-audio-bar')).toHaveCount(0, { timeout: 15000 });
 });

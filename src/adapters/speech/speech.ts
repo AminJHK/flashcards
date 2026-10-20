@@ -8,6 +8,7 @@ import { allModelsMessage, canSwitchTtsModel, storyTtsModels, type TtsModelState
 import { db } from '../storage/db';
 import { missingDeviceLangs, speakDevice, speakDeviceAndWait, stopDevice } from '../tts/device';
 import { voicesReady } from '../tts/webSpeech';
+import { roleOf, storyVoice } from '../../core/stories/voices';
 
 /**
  * 발음 재생 순서 (docs/DESIGN.md §6)
@@ -200,7 +201,6 @@ export async function prepareStoryAudio(
   onProgress: (done: number, total: number, stopped?: string) => void,
   cancelled: () => boolean = () => false,
 ): Promise<void> {
-  const { roleOf, storyVoice } = await import('../../core/stories/voices');
   const lines = story.blocks.filter((b): b is import('../../core/stories/types').StoryLine => b.kind === 'line');
   const total = lines.length;
   if (!geminiOn(settings) || !navigator.onLine) {
@@ -240,7 +240,6 @@ export async function prepareStoryAudio(
 /** 이 이야기에서 AI 음성이 이미 저장된 문장 수 (prepareStoryAudio와 같은 목소리 기준). Gemini 음성이 꺼져 있으면 undefined */
 export async function preparedStoryLines(story: import('../../core/stories/types').Story, settings: Settings | undefined): Promise<number | undefined> {
   if (!geminiOn(settings)) return undefined;
-  const { roleOf, storyVoice } = await import('../../core/stories/voices');
   const overrides = settings.storyVoices?.[story.id] ?? {};
   let n = 0;
   for (const line of story.blocks) {
