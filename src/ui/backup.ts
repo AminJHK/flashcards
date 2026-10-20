@@ -1,6 +1,7 @@
 import { backupFileName, BackupError, parseBackup } from '../core/io/backup';
 import { pickTextFile, saveFile } from '../adapters/files/share';
-import { exportBackup, importBackup, saveSettings } from '../adapters/storage/repo';
+import { exportBackup, getSettings, importBackup, saveSettings, schedulerFor } from '../adapters/storage/repo';
+import { studyCsv, studyFileName } from '../core/io/studyExport';
 import { ask } from './confirm';
 
 export async function runBackup(toast: (m: string) => void): Promise<void> {
@@ -13,6 +14,21 @@ export async function runBackup(toast: (m: string) => void): Promise<void> {
     toast(res === 'shared' ? '백업 파일을 보냈어요' : '백업 파일을 다운로드 폴더에 저장했어요');
   } catch {
     toast('백업하지 못했어요. 다시 시도해 주세요');
+  }
+}
+
+/** AI(ChatGPT 등)에게 보여 줄 학습 기록 파일 (단어마다 한 줄, CSV). 사용자가 직접 저장하거나 보낸다 */
+export async function runStudyExport(toast: (m: string) => void): Promise<void> {
+  try {
+    const now = Date.now();
+    const [backup, settings] = await Promise.all([exportBackup(), getSettings()]);
+    const csv = studyCsv(backup, schedulerFor(settings), now);
+    // 엑셀에서 열어도 한글이 깨지지 않게 BOM을 붙인다
+    const res = await saveFile(studyFileName(now), `\uFEFF${csv}`, 'text/csv');
+    if (res === 'cancelled') return;
+    toast(res === 'shared' ? '학습 기록 파일을 보냈어요' : '학습 기록 파일을 다운로드 폴더에 저장했어요');
+  } catch {
+    toast('학습 기록을 만들지 못했어요. 다시 시도해 주세요');
   }
 }
 

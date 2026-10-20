@@ -122,6 +122,12 @@ test('백업 내보내기 → 복원', async ({ page }) => {
   const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: '지금 백업' }).click()]);
   const path = await download.path();
   expect(download.suggestedFilename()).toMatch(/^flashcards-backup-\d{8}-\d{4}\.json$/);
+  // AI에게 보여 줄 학습 기록: 단어마다 한 줄인 CSV
+  const [study] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: '내보내기' }).click()]);
+  expect(study.suggestedFilename()).toMatch(/^flashcards-study-\d{8}\.csv$/);
+  const csv = (await import('node:fs')).readFileSync((await study.path())!, 'utf8');
+  expect(csv).toContain('덱,카드 종류,단어(앞면),뜻(뒷면),상태');
+  expect(csv).toContain('친구');
 
   // 데이터를 지우고 복원
   await page.evaluate(() => new Promise((r) => { const q = indexedDB.deleteDatabase('flashcards'); q.onsuccess = q.onerror = q.onblocked = () => r(null); }));

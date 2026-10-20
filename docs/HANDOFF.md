@@ -149,6 +149,10 @@ npm run dev        # 개발 서버
 - 읽기 › 톱니(이야기 음성) › **기기 음성으로 읽기** (`Settings.storyDeviceVoice`): Gemini 음성을 끈 설정으로 재생하고(`voiceSettings`), 만든 직후의 AI 음성 준비도 하지 않는다. 속도는 같은 읽기 속도 슬라이더(`storyPlaybackRate`)로. 안드로이드 앱에서 "휴대폰 설정의 속도·높낮이 쓰기"를 켜 두면 휴대폰 속도를 쓴다.
 - 백그라운드: 아래 "이야기·음성 만들기를 서비스 워커에서"로 했다.
 
+## AI에게 보여 줄 학습 기록 (2026-10-20)
+- 사용자: ChatGPT(Codex)가 내 카드와 복습 기록을 보고 덱을 고치게 하고 싶다. **공개 저장소라 기록을 저장소에 넣을 수는 없다** (AGENTS.md 절대 규칙) → 사용자가 직접 보내는 파일로.
+- 설정 › 백업 › "AI에게 보여 줄 학습 기록" → `flashcards-study-YYYYMMDD.csv` (`core/io/studyExport.ts`): 단어(노트)마다 한 줄, 덱·카드 종류·앞면·뒷면(`summary`)·상태·떠올릴 확률·복습 횟수(취소·초기화 전 답 제외)·틀린 횟수·어려운 단어·마지막/다음 복습·최근 답 8개·태그. 엑셀용 BOM. 웹은 공유 시트 또는 다운로드, 앱은 공유 시트(`saveFile`). 앱이 어디로 보내지는 않는다.
+
 ## 이야기·음성 만들기를 서비스 워커에서 (2026-10-20, 사용자가 A안 선택)
 - 웹앱을 내리면 브라우저가 화면의 작업을 멈춘다 → 이야기 만들기와 음성 만들기를 **서비스 워커**(`src/sw.ts`)에서 돌린다. vite-plugin-pwa를 `generateSW` → `injectManifest`로 바꿨다 (예전 설정: 미리 저장 `**/*.{js,css,html,svg,png}`, index.html 대체, 폰트 CacheFirst 400개를 sw.ts에 그대로 옮김). workbox-* 패키지를 devDependencies에 추가.
 - 실제 일은 `adapters/stories/jobs.ts`(`runStory`, `runAudio`)에 있고 화면과 서비스 워커가 같이 쓴다. 화면(`ui/storyJob.ts`)은 서비스 워커에 `postMessage`로 맡기고, 소식은 `BroadcastChannel('story-jobs')`로 받는다 (ack/step/done/error/audio/status). 3초 안에 ack가 없으면(서비스 워커 없음, 예전 버전) 화면 안에서 돌린다.

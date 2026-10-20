@@ -4,7 +4,7 @@ import type { AccentKey, FontScale, Settings as SettingsT, ThemePref } from '../
 import { requestPersistence } from '../../adapters/files/share';
 import { saveSettings } from '../../adapters/storage/repo';
 import { onVoicesChanged, speak, SYSTEM_DEFAULT_VOICE, ttsSupported, voicesFor } from '../../adapters/tts/webSpeech';
-import { daysSince, runBackup, runRestore } from '../backup';
+import { daysSince, runBackup, runRestore, runStudyExport } from '../backup';
 import { Row, Segmented, Stepper, Switch } from '../components/Controls';
 import { useDecks, useScheduler, useSettings } from '../hooks';
 import { Icon, type IconName } from '../components/Icon';
@@ -315,6 +315,11 @@ function BackupSettings({ s }: { s: SettingsT }) {
         <Row title="백업 파일로 복원" desc="지금 데이터는 백업 내용으로 바뀌어요">
           <button type="button" className="btn-plain" style={{ border: 'none' }} onClick={() => runRestore(toast)}>
             파일 고르기
+          </button>
+        </Row>
+        <Row title="AI에게 보여 줄 학습 기록" desc="단어마다 상태·떠올릴 확률·복습 횟수·틀린 횟수·최근 답이 한 줄씩 든 파일(CSV)이에요. ChatGPT 같은 AI에 첨부하면 내 기록을 보고 덱을 고칠 곳을 찾아 줘요. 파일은 직접 보낼 때만 나가요.">
+          <button type="button" className="btn-plain" style={{ border: 'none' }} onClick={() => runStudyExport(toast)}>
+            내보내기
           </button>
         </Row>
         <Row title="영구 저장" desc={persisted ? '브라우저가 이 앱의 데이터를 함부로 지우지 않아요.' : '저장 공간이 부족해도 데이터가 지워지지 않게 해요.'}>
