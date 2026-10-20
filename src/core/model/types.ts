@@ -130,6 +130,8 @@ export interface Settings {
   storyAutoModelSwitch?: boolean;
   /** 이야기 음성 재생 속도. 이미 저장한 WAV도 재생 중에 바꿀 수 있다. */
   storyPlaybackRate?: number;
+  /** 이야기도 기기 음성으로 읽기 (Gemini 음성을 만들지도 쓰지도 않는다). 속도는 storyPlaybackRate */
+  storyDeviceVoice?: boolean;
   /** 이야기 ID → 등장인물 ID(또는 '__narrator__') → Gemini 목소리. API 키와 무관하다. */
   storyVoices?: Record<string, Record<string, string>>;
   /** 언어별로 고른 기기 음성 이름. 없으면 휴대폰 TTS 엔진의 기본 목소리 */

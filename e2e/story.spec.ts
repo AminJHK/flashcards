@@ -450,6 +450,20 @@ test('읽기 · 음성: 음성 만들기가 중간에 멈춘 이야기는 준비
   await expect(make).toBeVisible();
   await page.screenshot({ path: 'test-results/shots/49-read-audio-bar.png' });
 
+  // 기기 음성으로 읽기를 켜면 AI 음성 막대와 Gemini 목소리 설정이 사라지고, 속도는 그대로 고를 수 있다
+  await page.getByRole('button', { name: '음성 속도와 목소리 설정' }).click();
+  const sheet = page.getByRole('dialog', { name: '이야기 음성 설정' });
+  await sheet.getByRole('switch', { name: '기기 음성으로 읽기' }).click();
+  await expect(sheet.getByText('역할별 목소리')).toHaveCount(0);
+  await expect(sheet.getByRole('slider', { name: '이야기 읽기 속도' })).toBeVisible();
+  await page.screenshot({ path: 'test-results/shots/49b-read-device-voice.png' });
+  await sheet.getByRole('button', { name: '완료' }).click();
+  await expect(page.locator('.story-audio-bar')).toHaveCount(0);
+  await page.getByRole('button', { name: '음성 속도와 목소리 설정' }).click();
+  await sheet.getByRole('switch', { name: '기기 음성으로 읽기' }).click();
+  await sheet.getByRole('button', { name: '완료' }).click();
+  await expect(make).toBeVisible();
+
   // 서버가 돌아온 뒤 누르면 다 만들고 막대는 사라진다
   ttsDown = false;
   await make.click();

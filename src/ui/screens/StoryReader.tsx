@@ -72,6 +72,10 @@ export function StoryReader({ id }: { id: string }) {
   const dictOn = settings?.storyDictation === true;
   const dictStyle = settings?.storyDictationStyle ?? 'blank';
   const autoModelSwitch = settings?.storyAutoModelSwitch !== false;
+  const hasGemini = !!(settings?.gemini?.apiKey && settings.gemini.useTts);
+  // 기기 음성으로 읽기: Gemini 음성을 끈 설정으로 재생한다 (만들지도 않음)
+  const deviceOnly = hasGemini && settings?.storyDeviceVoice === true;
+  const voiceSettings = deviceOnly ? { ...settings!, gemini: { ...settings!.gemini!, useTts: false } } : settings;
   const playbackRate = rateDraft ?? settings?.storyPlaybackRate ?? 0.85;
   const voiceAssignments = useMemo(
     () => ({ ...(settings?.storyVoices?.[id] ?? {}), ...(voiceDraft[id] ?? {}) }),
@@ -132,7 +136,7 @@ export function StoryReader({ id }: { id: string }) {
     clearTimeout(statusTimer.current);
     setAudioStatus('');
     statusTimer.current = setTimeout(() => setAudioStatus('음성 준비 중…'), 1200);
-    return play([{ text: line.text, lang: 'id-ID', style: 'story' }], settings, {
+    return play([{ text: line.text, lang: 'id-ID', style: 'story' }], voiceSettings, {
       timeoutMs: 30_000,
       voice,
       rate: playbackRate,
@@ -142,7 +146,7 @@ export function StoryReader({ id }: { id: string }) {
       onSource: (source: PlayResult) => {
         clearTimeout(statusTimer.current);
         if (source.via === 'gemini') setAudioStatus('');
-        else if (source.via === 'device') setAudioStatus(source.error && settings?.gemini?.useTts ? `기기 음성으로 읽어요 · ${source.error}` : '');
+        else if (source.via === 'device') setAudioStatus(source.error && voiceSettings?.gemini?.useTts ? `기기 음성으로 읽어요 · ${source.error}` : '');
         else setAudioStatus(source.error ? `음성 오류: ${source.error}` : '사용할 수 있는 음성이 없어요');
       },
     });
@@ -309,7 +313,7 @@ export function StoryReader({ id }: { id: string }) {
         </button>
       </div>
       {!!audioStatus && (!result || listening) && <div className="story-playback-status" role="status" aria-live="polite">{audioStatus}</div>}
-      <StoryAudioBar story={story} settings={settings} />
+      {!deviceOnly && <StoryAudioBar story={story} settings={settings} />}
       {listening ? (
         <StoryListening
           story={story}
@@ -426,7 +430,12 @@ export function StoryReader({ id }: { id: string }) {
             if (rateDraft !== undefined) void saveSettings({ storyPlaybackRate: playbackRate });
             setAudioOpen(false);
           }}
-          hasGemini={!!(settings?.gemini?.apiKey && settings.gemini.useTts)}
+          hasGemini={hasGemini}
+          deviceOnly={deviceOnly}
+          onDeviceOnly={(on) => {
+            stopAll();
+            void saveSettings({ storyDeviceVoice: on });
+          }}
           autoModelSwitch={autoModelSwitch}
           onAutoModelSwitch={(enabled) => void saveSettings({ storyAutoModelSwitch: enabled })}
         />
@@ -466,7 +475,7 @@ function StoryAudioBar({ story, settings }: { story: Story; settings: Settings |
 }
 
 /** Reading-only audio controls. Every line is synthesized separately, so the cast may have >2 voices. */
-function StoryAudioSheet({ story, rate, voices, onRate, onVoice, onPreview, onClose, hasGemini, autoModelSwitch, onAutoModelSwitch }: {
+function StoryAudioSheet({ story, rate, voices, onRate, onVoice, onPreview, onClose, hasGemini, deviceOnly, onDeviceOnly, autoModelSwitch, onAutoModelSwitch }: {
   story: Story;
   rate: number;
   voices: Record<string, string>;
@@ -475,6 +484,8 @@ function StoryAudioSheet({ story, rate, voices, onRate, onVoice, onPreview, onCl
   onPreview: (line: StoryLine, voice: string) => void;
   onClose: () => void;
   hasGemini: boolean;
+  deviceOnly: boolean;
+  onDeviceOnly: (on: boolean) => void;
   autoModelSwitch: boolean;
   onAutoModelSwitch: (enabled: boolean) => void;
 }) {
@@ -487,13 +498,23 @@ function StoryAudioSheet({ story, rate, voices, onRate, onVoice, onPreview, onCl
           <h2>이야기 음성</h2>
           <button type="button" className="icon-btn" aria-label="음성 설정 닫기" onClick={onClose}><Icon name="close" size={20} /></button>
         </div>
+        {hasGemini && (
+          <section className="story-audio-section">
+            <div className="story-audio-title">
+              <strong>기기 음성으로 읽기</strong>
+              <Switch checked={deviceOnly} onChange={onDeviceOnly} label="기기 음성으로 읽기" />
+            </div>
+            <p className="story-audio-hint">AI 음성 대신 휴대폰 음성으로 읽어요. 기다림 없이 바로 읽고 Gemini 무료 한도도 쓰지 않아요. 빠르기는 아래 읽기 속도로 맞춰요.</p>
+          </section>
+        )}
         <section className="story-audio-section">
           <div className="story-audio-title"><strong>읽기 속도</strong><strong className="story-audio-rate">{rate.toFixed(2)}×</strong></div>
           <input type="range" className="story-audio-slider" aria-label="이야기 읽기 속도" min="0.6" max="1.2" step="0.05" value={rate}
             onChange={(e) => onRate(Number(e.target.value))} />
           <div className="story-audio-range"><span>천천히 · 0.6×</span><span>빠르게 · 1.2×</span></div>
-          <span className="story-audio-hint">재생 중에도 바뀌고, 저장된 음성을 다시 만들지 않아요.</span>
+          <span className="story-audio-hint">{deviceOnly || !hasGemini ? '다음 문장부터 이 빠르기로 읽어요.' : '재생 중에도 바뀌고, 저장된 음성을 다시 만들지 않아요.'}</span>
         </section>
+        {!deviceOnly && (<>
         <section className="story-audio-section">
           <div className="story-audio-title">
             <strong>무료 TTS 모델 자동 전환</strong>
@@ -523,6 +544,7 @@ function StoryAudioSheet({ story, rate, voices, onRate, onVoice, onPreview, onCl
             })}
           </div>
         </section>
+        </>)}
         <button type="button" className="btn btn-primary story-audio-done" onClick={onClose}>완료</button>
       </div>
     </div>

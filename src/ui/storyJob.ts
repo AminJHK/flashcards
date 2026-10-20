@@ -105,6 +105,11 @@ export function startStoryAudio(story: Story, replace = false): void {
   void (async () => {
     try {
       const settings = await getSettings();
+      if (settings.storyDeviceVoice) {
+        // 기기 음성으로 읽기를 켰으면 AI 음성을 만들지 않는다 (무료 한도 아끼기)
+        if (mine()) setAudio({ storyId: story.id, done: 0, total, running: false, note: '기기 음성으로 읽어요' });
+        return;
+      }
       await prepareStoryAudio(story, settings, (done, count, note) => {
         if (mine()) setAudio({ storyId: story.id, done, total: count, running: !note && done < count, note });
       }, () => !mine());

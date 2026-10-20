@@ -9,6 +9,8 @@ import { GeminiError, generate, generateStream, OFFLINE_TEXT, type StreamResult 
 export const STORY_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
 /** 처음 + 고쳐 달라는 요청 2번까지 */
 export const MAX_ATTEMPTS = 3;
+/** 아는 단어 비율이 목표보다 이만큼 이내로 모자라면 다시 쓰지 않는다 (속도가 더 중요) */
+export const NEAR_TARGET = 0.02;
 
 /** pct: 0~1. 쓰는 중에는 지금까지 받은 글자 수로 어림한 값 (실제 길이는 이야기마다 달라서 어림이다) */
 export type StoryStep = { attempt: number; stage: 'writing' | 'checking' | 'revising' | 'retrying' | 'waiting'; pct?: number };
@@ -44,10 +46,10 @@ interface Turn {
 }
 
 /**
- * 조금씩 받을 때의 시간 제한. Gemini는 쓰기 전에 생각하는 동안 아무것도 보내지 않아서 첫 글자는 길게(2분) 기다리고,
+ * 조금씩 받을 때의 시간 제한. Gemini는 쓰기 전에 생각하는 동안 아무것도 보내지 않아서 첫 글자는 길게(75초) 기다리고,
  * 글이 오기 시작한 뒤에는 60초 넘게 멈추면 포기한다. (테스트에서 줄일 수 있게 바꿀 수 있는 값)
  */
-export const STREAM_TIMING = { firstMs: 120_000, idleMs: 60_000, totalMs: 300_000 };
+export const STREAM_TIMING = { firstMs: 75_000, idleMs: 60_000, totalMs: 300_000 };
 
 /** 서버가 붐빌 때 같은 모델에 다시 시도하는 기다림 (밀리초). 그래도 안 되면 다음 모델로 */
 export const BUSY_WAITS = [2_000, 6_000];
@@ -208,10 +210,13 @@ export async function createStory(opts: {
     let coverage: Coverage | undefined;
     if (parsed.draft && !parsed.fatal) {
       coverage = measureCoverage(storyTexts(parsed.draft.blocks), lex, nameSet(parsed.draft.characters, parsed.draft.properNouns));
-      const ok = meetsTarget(coverage, plan.knownTarget, plan.fallback) && parsed.problems.length === 0;
-      const cand: Candidate = { draft: parsed.draft, coverage, ok, problems: parsed.problems };
+      // 질문 하나가 틀린 정도(그 질문만 뺌)는 다시 쓰게 하지 않는다: 한 번 더 쓰면 시간이 두 배 걸린다
+      const ok = meetsTarget(coverage, plan.knownTarget, plan.fallback) && parsed.blocking.length === 0;
+      const cand: Candidate = { draft: parsed.draft, coverage, ok, problems: parsed.blocking };
       if (!best || score(cand, plan) > score(best, plan)) best = cand;
       if (ok) break;
+      // 목표에 아주 가까우면(NEAR_TARGET 안) 다시 쓰지 않고 그대로 쓴다 (경고만 보여 준다)
+      if (parsed.blocking.length === 0 && meetsTarget(coverage, plan.knownTarget - NEAR_TARGET, plan.fallback)) break;
       if (salvaged) {
         // 끊긴 답을 살려 쓴 것: 다시 고쳐 달라고 해도 또 끊기기 쉬우니 여기서 멈춘다
         break;

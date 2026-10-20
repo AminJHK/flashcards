@@ -49,7 +49,7 @@ const reply = (body: unknown) => new Response(JSON.stringify({ candidates: [{ co
 
 describe('AI 이야기 만들기', () => {
   it('모르는 단어가 너무 많으면 그 단어를 알려주며 다시 써 달라고 하고, 맞는 결과를 저장용 이야기로 만든다', async () => {
-    const f = vi.fn().mockResolvedValueOnce(reply(story(['bakso', 'sate', 'kerupuk', 'es', 'teh', 'jeruk', 'soto', 'mie']))).mockResolvedValueOnce(reply(story(['bakso'])));
+    const f = vi.fn().mockResolvedValueOnce(reply(story(['bakso', 'sate', 'kerupuk', 'es', 'teh', 'jeruk', 'soto', 'mie', 'gado', 'rujak', 'pecel', 'lontong']))).mockResolvedValueOnce(reply(story(['bakso'])));
     vi.stubGlobal('fetch', f);
     const steps: string[] = [];
     const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'food', key: 'K', stream: false, onStep: (x) => steps.push(`${x.attempt}:${x.stage}`) });
@@ -87,12 +87,31 @@ describe('AI 이야기 만들기', () => {
   });
 
   it('고쳐 쓰다가 연결이 끊겨도, 앞에서 받은 이야기는 버리지 않는다', async () => {
-    const f = vi.fn().mockResolvedValueOnce(reply(story(['bakso', 'sate', 'kerupuk', 'es', 'teh', 'jeruk', 'soto', 'mie']))).mockRejectedValue(new TypeError('Failed to fetch'));
+    const f = vi.fn().mockResolvedValueOnce(reply(story(['bakso', 'sate', 'kerupuk', 'es', 'teh', 'jeruk', 'soto', 'mie', 'gado', 'rujak', 'pecel', 'lontong']))).mockRejectedValue(new TypeError('Failed to fetch'));
     vi.stubGlobal('fetch', f);
     const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', stream: false, sleep: async () => {} });
     expect(s.title).toBe('Pagi');
     expect(s.attempts).toBe(1);
     expect(s.warning).toMatch(/목표는 아는 단어 95%/);
+  });
+
+  it('목표에 아주 가까우면(2% 안) 다시 쓰지 않고 그대로 쓴다 (경고만)', async () => {
+    const f = vi.fn().mockResolvedValue(reply(story(['bakso', 'sate', 'kerupuk', 'es', 'teh', 'jeruk', 'soto', 'mie']))); // 94%, 목표 95%
+    vi.stubGlobal('fetch', f);
+    const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', stream: false });
+    expect(f).toHaveBeenCalledTimes(1);
+    expect(s.warning).toMatch(/목표는 아는 단어 95%였는데 실제로는 94%예요/);
+  });
+
+  it('질문 하나가 틀린 정도는 그 질문만 빼고, 이야기를 다시 쓰게 하지 않는다', async () => {
+    const body = story([]);
+    body.blocks.splice(4, 0, { type: 'choice', prompt: '?', options: ['가', '나'], answer: 5, explain: '' } as never);
+    const f = vi.fn().mockResolvedValue(reply(body));
+    vi.stubGlobal('fetch', f);
+    const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', stream: false });
+    expect(f).toHaveBeenCalledTimes(1);
+    expect(s.warning).toBeUndefined();
+    expect(s.blocks.filter((b) => b.kind !== 'line')).toHaveLength(3);
   });
 
   it('temperature는 보내지 않는다 (Gemini 3은 낮추면 같은 말을 반복할 수 있다)', async () => {

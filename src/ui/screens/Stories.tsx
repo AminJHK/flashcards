@@ -59,7 +59,8 @@ export function Stories() {
   const count = (s: string) => lex.entries.filter((e) => e.status === s).length;
   const familiar = count('known') + count('learning');
   const byId = new Map(progress.map((p) => [p.storyId, p]));
-  const audio = job.status === 'done' && audioJob.storyId === job.storyId ? audioJob : undefined;
+  // 기기 음성으로 읽기를 켰으면 AI 음성 준비 상태는 보여 주지 않는다
+  const audio = job.status === 'done' && audioJob.storyId === job.storyId && !settings.storyDeviceVoice ? audioJob : undefined;
   // 방금 만든 이야기 알림: 그 이야기를 읽기 시작하면 사라진다
   const freshStory = job.status === 'done' && job.storyId ? stories.find((x) => x.id === job.storyId) : undefined;
   const freshP = freshStory ? byId.get(freshStory.id) : undefined;

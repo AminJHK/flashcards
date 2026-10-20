@@ -203,9 +203,9 @@ function cleanOptions(v: unknown): string[] | undefined {
  * - 틀린 질문(정답 번호가 없음, 빈칸 문장이 이야기에 없음, 짝 맞추기 단어가 이야기에 없음 등)은 빼고 problems에 적는다.
  * - fatal이면 쓸 수 없는 결과 (줄이나 질문이 너무 적음).
  */
-export function parseDraft(raw: unknown): { draft?: StoryDraft; problems: string[]; fatal: boolean } {
+export function parseDraft(raw: unknown): { draft?: StoryDraft; problems: string[]; blocking: string[]; fatal: boolean } {
   const problems: string[] = [];
-  if (!raw || typeof raw !== 'object') return { problems: ['이야기 형식이 아니에요'], fatal: true };
+  if (!raw || typeof raw !== 'object') return { problems: ['이야기 형식이 아니에요'], blocking: ['이야기 형식이 아니에요'], fatal: true };
   const r = raw as Record<string, unknown>;
   const chars: StoryCharacter[] = (Array.isArray(r.characters) ? r.characters : [])
     .map((c, i) => ({ id: str((c as Record<string, unknown>)?.id) || `c${i}`, name: str((c as Record<string, unknown>)?.name), color: i % 6 }))
@@ -266,10 +266,13 @@ export function parseDraft(raw: unknown): { draft?: StoryDraft; problems: string
   const lines = checked.filter((b) => b.kind === 'line').length;
   const questions = checked.length - lines;
   const words = lineTexts.reduce((n, t) => n + tokenize(t).length, 0);
-  if (lines < 6) problems.push(`줄이 너무 적어요 (${lines}줄)`);
-  if (questions < 3) problems.push(`쓸 수 있는 질문이 너무 적어요 (${questions}개)`);
-  if (chars.length < 2) problems.push('등장인물이 2명보다 적어요');
-  if (words < 80 || words > 260) problems.push(`길이가 맞지 않아요 (${words}단어, 120~180단어 필요)`);
+  // 여기까지는 질문 하나를 빼면 되는 작은 문제. 아래는 이야기 전체를 다시 써야 하는 문제 (blocking)
+  const blocking: string[] = [];
+  if (lines < 6) blocking.push(`줄이 너무 적어요 (${lines}줄)`);
+  if (questions < 3) blocking.push(`쓸 수 있는 질문이 너무 적어요 (${questions}개)`);
+  if (chars.length < 2) blocking.push('등장인물이 2명보다 적어요');
+  if (words < 80 || words > 260) blocking.push(`길이가 맞지 않아요 (${words}단어, 120~180단어 필요)`);
+  problems.push(...blocking);
   const glossary: GlossEntry[] = (Array.isArray(r.glossary) ? r.glossary : [])
     .map((g) => {
       const x = (g ?? {}) as Record<string, unknown>;
@@ -288,6 +291,7 @@ export function parseDraft(raw: unknown): { draft?: StoryDraft; problems: string
       glossary,
     },
     problems,
+    blocking,
     fatal,
   };
 }
