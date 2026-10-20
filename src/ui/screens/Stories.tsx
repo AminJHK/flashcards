@@ -12,7 +12,7 @@ import { ScreenSync } from '../components/ScreenSync';
 import { ask } from '../confirm';
 import { useSettings } from '../hooks';
 import { go } from '../router';
-import { markStorySeen, startStoryJob, useStoryJob } from '../storyJob';
+import { markStorySeen, startStoryJob, useStoryAudioJob, useStoryJob } from '../storyJob';
 import { useLexicon } from '../useLexicon';
 
 const DIFF_OPTIONS = (Object.keys(DIFFICULTIES) as StoryDifficulty[]).map((k) => [k, `${DIFFICULTIES[k].label} ${Math.round(DIFFICULTIES[k].known * 100)}%`] as const);
@@ -49,6 +49,7 @@ export function Stories() {
   const [topic, setTopic] = useState('free');
   const [menu, setMenu] = useState<Story>();
   const job = useStoryJob();
+  const audioJob = useStoryAudioJob();
   const step = job.status === 'running' ? job.step : undefined;
   const error = job.status === 'error' ? job.error : undefined;
   useEffect(() => markStorySeen(), [job.unseen]);
@@ -58,7 +59,7 @@ export function Stories() {
   const count = (s: string) => lex.entries.filter((e) => e.status === s).length;
   const familiar = count('known') + count('learning');
   const byId = new Map(progress.map((p) => [p.storyId, p]));
-  const audio = job.status === 'done' ? job.audio : undefined;
+  const audio = job.status === 'done' && audioJob.storyId === job.storyId ? audioJob : undefined;
   // 방금 만든 이야기 알림: 그 이야기를 읽기 시작하면 사라진다
   const freshStory = job.status === 'done' && job.storyId ? stories.find((x) => x.id === job.storyId) : undefined;
   const freshP = freshStory ? byId.get(freshStory.id) : undefined;

@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { play, setPlaybackRate, stopAll, type PlayResult } from '../../adapters/speech/speech';
+import { play, preparedStoryLines, setPlaybackRate, stopAll, type PlayResult } from '../../adapters/speech/speech';
 import { GEMINI_VOICES } from '../../adapters/gemini/tts';
 import { db } from '../../adapters/storage/db';
 import { addNote, saveSettings } from '../../adapters/storage/repo';
@@ -16,6 +16,8 @@ import { useNotes, useSettings } from '../hooks';
 import { go } from '../router';
 import { useToast } from '../toast';
 import { storyDeckId, useLexicon } from '../useLexicon';
+import { startStoryAudio, useStoryAudioJob } from '../storyJob';
+import type { Settings } from '../../core/model/types';
 
 const STATUS_TEXT = { known: '아는 단어', learning: '배우는 중', deckNew: '덱에 있어요 · 아직 안 배움' } as const;
 
@@ -307,6 +309,7 @@ export function StoryReader({ id }: { id: string }) {
         </button>
       </div>
       {!!audioStatus && (!result || listening) && <div className="story-playback-status" role="status" aria-live="polite">{audioStatus}</div>}
+      <StoryAudioBar story={story} settings={settings} />
       {listening ? (
         <StoryListening
           story={story}
@@ -429,6 +432,36 @@ export function StoryReader({ id }: { id: string }) {
         />
       )}
     </>
+  );
+}
+
+/**
+ * AI 음성이 다 준비되지 않은 이야기 (한도·앱 닫기로 중간에 멈춤): 몇 문장이 준비됐는지와 "나머지 한 번에 만들기".
+ * 누르지 않으면 예전처럼 줄에 다다를 때 하나씩 만든다. 다 준비됐거나 Gemini 음성이 꺼져 있으면 안 보인다.
+ */
+function StoryAudioBar({ story, settings }: { story: Story; settings: Settings | undefined }) {
+  const job = useStoryAudioJob();
+  const mine = job.storyId === story.id;
+  const running = mine && job.running;
+  // 저장된 음성 표(db.audio)를 읽으므로 새 음성이 저장될 때마다 다시 센다
+  const ready = useLiveQuery(() => preparedStoryLines(story, settings), [story, settings]);
+  const total = story.blocks.filter((b) => b.kind === 'line').length;
+  if (ready === undefined || (!running && ready >= total)) return null;
+  return (
+    <div className="story-audio-bar">
+      <div className="story-audio-bar-line" role="status" aria-live="polite">
+        <span>{running ? `AI 음성 만드는 중… ${ready}/${total}문장` : `AI 음성 ${ready}/${total}문장 준비됨`}</span>
+        {!running && (
+          <button type="button" className="btn btn-plain story-audio-make" disabled={job.running} onClick={() => startStoryAudio(story)}>
+            {job.running ? '다른 이야기 음성을 만드는 중' : '나머지 한 번에 만들기'}
+          </button>
+        )}
+      </div>
+      <div className="job-track" aria-hidden="true">
+        <div className="job-fill" style={{ width: `${total ? (ready / total) * 100 : 0}%` }} />
+      </div>
+      {running ? <span className="faint small">다른 화면으로 가도 계속 만들어요</span> : mine && job.note ? <span className="faint small">{job.note}</span> : null}
+    </div>
   );
 }
 

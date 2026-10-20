@@ -237,6 +237,25 @@ export async function prepareStoryAudio(
   }
 }
 
+/** 이 이야기에서 AI 음성이 이미 저장된 문장 수 (prepareStoryAudio와 같은 목소리 기준). Gemini 음성이 꺼져 있으면 undefined */
+export async function preparedStoryLines(story: import('../../core/stories/types').Story, settings: Settings | undefined): Promise<number | undefined> {
+  if (!geminiOn(settings)) return undefined;
+  const { roleOf, storyVoice } = await import('../../core/stories/voices');
+  const overrides = settings.storyVoices?.[story.id] ?? {};
+  let n = 0;
+  for (const line of story.blocks) {
+    if (line.kind !== 'line') continue;
+    const selected = { ...settings, gemini: { ...settings.gemini, voice: storyVoice(story, roleOf(story, line), overrides) } };
+    try {
+      await storyClipFor({ text: line.text, lang: story.lang, style: 'story' }, selected, settings.storyAutoModelSwitch !== false, true);
+      n++;
+    } catch {
+      /* 아직 없음 */
+    }
+  }
+  return n;
+}
+
 /** 읽기에서 다음 대사 하나만 미리 준비한다 (Gemini를 켰을 때만, 저장은 기기 안). */
 export async function prefetchSpeech(item: Speech, s: Settings | undefined, voice?: string): Promise<void> {
   if (!geminiOn(s) || !navigator.onLine) return;

@@ -419,3 +419,39 @@ test('읽기 · 받아쓰기: 빈칸 또는 문장 전체를 받아쓰고 확인
   await page.getByRole('button', { name: 'pulang 자세히 보기' }).click();
   await expect(page.getByRole('dialog', { name: 'pulang 뜻' })).toBeVisible();
 });
+
+test('읽기 · 음성: 음성 만들기가 중간에 멈춘 이야기는 준비된 문장 수와 "나머지 한 번에 만들기" 버튼을 보여 주고, 누르면 뒤에서 다 만든다', async ({ page }) => {
+  let ttsDown = true;
+  await page.route('https://generativelanguage.googleapis.com/**', async (route) => {
+    const url = route.request().url();
+    if (url.includes('/models?')) return route.fulfill({ json: { models: [{ name: 'models/gemini-flash-latest' }, { name: 'models/gemini-3.8-flash-tts' }] } });
+    if (url.endsWith('/interactions')) {
+      if (ttsDown) return route.fulfill({ status: 500, json: { error: { message: 'internal' } } });
+      return route.fulfill({ json: { steps: [{ type: 'model_output', content: [{ type: 'audio', data: btoa('RIFF' + '\\0'.repeat(4) + 'WAVE'), mime_type: 'audio/wav' }] }] } });
+    }
+    const body = { candidates: [{ content: { parts: [{ text: formatStoryText(STORY) }] } }] };
+    if (url.includes(':streamGenerateContent')) return route.fulfill({ contentType: 'text/event-stream', body: `data: ${JSON.stringify(body)}\r\n\r\n` });
+    return route.fulfill({ json: body });
+  });
+  await page.goto('/#/settings/voice');
+  await page.getByLabel('Gemini API 키').fill('FAKE-KEY');
+  await page.getByRole('button', { name: '연결' }).click();
+  await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();
+  await page.goto('/#/decks/new');
+  await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
+  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+  await page.goto('/#/read');
+  await page.getByRole('button', { name: '이야기 만들기' }).click();
+  await page.getByText(/이야기 「Bakso Malam」가 완성됐어요/).click();
+
+  // 음성 서버가 안 돼서 하나도 못 만들었다
+  await expect(page.getByText('AI 음성 0/13문장 준비됨')).toBeVisible();
+  const make = page.getByRole('button', { name: '나머지 한 번에 만들기' });
+  await expect(make).toBeVisible();
+  await page.screenshot({ path: 'test-results/shots/49-read-audio-bar.png' });
+
+  // 서버가 돌아온 뒤 누르면 다 만들고 막대는 사라진다
+  ttsDown = false;
+  await make.click();
+  await expect(page.locator('.story-audio-bar')).toHaveCount(0, { timeout: 15000 });
+});
