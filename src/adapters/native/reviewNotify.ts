@@ -80,7 +80,8 @@ export async function applyAnswers(): Promise<number> {
 /** 지금 카드 상태로 알림 계획을 만든다 */
 export async function currentPlan(now = Date.now()): Promise<Alarm[]> {
   const settings = await getSettings();
-  const prefs = { ...DEFAULT_NOTIFY_PREFS, ...settings.reviewNotify };
+  // 예전에 저장한 조용한 시간은 무시한다 (기능을 없앴다)
+  const prefs = { ...DEFAULT_NOTIFY_PREFS, ...settings.reviewNotify, quietStart: 0, quietEnd: 0 };
   const off = new Set(settings.reviewNotify?.offDecks ?? []);
   const cards = (await db.cards.toArray()).filter((c) => !c.hidden && !c.suspended && c.phase !== 'new' && !off.has(c.deckId));
   const short = cards.filter(isShortReview);

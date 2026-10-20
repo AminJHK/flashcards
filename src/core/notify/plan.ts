@@ -5,7 +5,7 @@ import type { Card, Millis } from '../model/types';
  * 복습 알림 계획 (안드로이드 앱, 사용자 요청 2026-10-20).
  * - 짧은 복습(직전 복습에서 하루가 안 되는 간격: 1분·10분 뒤 등)은 카드마다 그 시각에 알림 → 알림에서 바로 답한다.
  * - 며칠 간격의 복습은 카드가 쌓이면 한 번에 알린다 (pileMin장 이상, 최소 pileGapH시간 간격, 하루 pileMaxPerDay번까지).
- * - 조용한 시간(quietStart~quietEnd, 휴대폰 시각)에는 울리지 않고 끝나는 시각으로 미룬다.
+ * - 조용한 시간(quietStart~quietEnd)은 계산에는 있지만 앱에서는 쓰지 않는다 (시작=끝 = 없음).
  * 계산은 앱이 하고(FSRS-7이 정한 due), 휴대폰은 받은 시각에 울리기만 한다. 답하면 앱이 다시 계산해서 새 계획을 보낸다.
  */
 export interface NotifyPrefs {
@@ -17,7 +17,8 @@ export interface NotifyPrefs {
   pileMaxPerDay: number;
 }
 
-export const DEFAULT_NOTIFY_PREFS: NotifyPrefs = { quietStart: 22, quietEnd: 8, pileMin: 10, pileGapH: 3, pileMaxPerDay: 4 };
+/** 조용한 시간은 쓰지 않는다 (시작=끝). 사용자: 알림을 받기 싫은 때는 알아서 하겠다 (2026-10-20) */
+export const DEFAULT_NOTIFY_PREFS: NotifyPrefs = { quietStart: 0, quietEnd: 0, pileMin: 10, pileGapH: 3, pileMaxPerDay: 4 };
 
 export interface CardAlarm {
   id: string;

@@ -191,7 +191,6 @@ function ReviewNotifySettings({ s }: { s: SettingsT }) {
   // 덱 고르기: 끈 덱만 적어 둔다 (새로 추가한 덱은 켜진 채로)
   const off = n.offDecks ?? [];
   const toggleDeck = (id: string, on: boolean) => void set({ offDecks: on ? off.filter((x) => x !== id) : [...new Set([...off, id])] });
-  const hour = (h: number) => (h === 0 ? '자정' : h < 12 ? `오전 ${h}시` : h === 12 ? '낮 12시' : `오후 ${h - 12}시`);
   return (
     <>
       <span className="section-label" style={{ paddingTop: 8 }}>
@@ -230,12 +229,6 @@ function ReviewNotifySettings({ s }: { s: SettingsT }) {
                 <Switch label={`${d.name} 알림`} checked={!off.includes(d.id)} onChange={(v) => toggleDeck(d.id, v)} />
               </Row>
             ))}
-            <Row title="조용한 시간 시작" desc="이 시각부터는 울리지 않고, 끝나는 시각에 모아서 알려요">
-              <Stepper label="조용한 시간 시작" value={n.quietStart} min={0} max={23} format={hour} onChange={(v) => set({ quietStart: v })} />
-            </Row>
-            <Row title="조용한 시간 끝">
-              <Stepper label="조용한 시간 끝" value={n.quietEnd} min={0} max={23} format={hour} onChange={(v) => set({ quietEnd: v })} />
-            </Row>
             <Row title="쌓임 알림" desc="며칠 간격 카드가 이만큼 쌓이면 알려요 (최소 3시간 간격, 하루 4번까지)">
               <Stepper label="쌓임 알림 기준" value={n.pileMin} min={5} max={100} step={5} format={(v) => `${v}장`} onChange={(v) => set({ pileMin: v })} />
             </Row>

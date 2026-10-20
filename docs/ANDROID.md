@@ -47,7 +47,7 @@
 - 계산은 전부 앱(웹 코드)이 한다: `src/core/notify/plan.ts`(`planAlarms`)가 카드의 due(FSRS-7)로 알림 계획을 만든다.
   - 짧은 복습(직전 복습~다음 복습이 하루 미만)은 카드마다 그 시각에 카드 알림 (최대 30개). 듣기 카드는 빼고 쌓임에 센다.
   - 며칠 간격 카드는 `pileMin`(기본 10)장 이상 쌓이면 알림. 앱을 닫은 뒤 3시간부터, 3시간 간격, 하루 4번까지, 7일 앞까지.
-  - 조용한 시간(기본 22~8시, 휴대폰 시각)은 끝나는 시각으로 미룬다.
+  - 조용한 시간은 없앴다 (사용자: 알아서 하겠다, 방해 금지 모드). 계산(`outOfQuiet`)은 남아 있지만 앱은 늘 시작=끝(없음)으로 보낸다.
   - 덱마다 끌 수 있다 (`reviewNotify.offDecks`, 끈 덱만 적어 둬서 새로 추가한 덱은 켜진 채로).
 - `src/adapters/native/reviewNotify.ts` + `src/ui/useReviewNotify.ts`: 앱 화면이 보이면 알림을 모두 끄고(`clear`), 앱을 내리면 계획을 보낸다(`schedule`). 설정 › 복습 › 복습 알림(`Settings.reviewNotify`, 기본 꺼짐).
 - 휴대폰 쪽 (`android/.../`):

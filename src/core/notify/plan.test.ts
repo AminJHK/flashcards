@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { Card } from '../model/types';
 import { DEFAULT_NOTIFY_PREFS, notifyText, outOfQuiet, planAlarms } from './plan';
 
+// 조용한 시간 계산 확인용 (앱 기본은 조용한 시간 없음)
+const QUIET = { ...DEFAULT_NOTIFY_PREFS, quietStart: 22, quietEnd: 8 };
+
 const MIN = 60_000;
 const HOUR = 60 * MIN;
 const DAY = 24 * HOUR;
@@ -27,19 +30,20 @@ describe('복습 알림 계획', () => {
     expect(alarms[0]).toMatchObject({ cardId: b.id, front: '단어', back: '뜻' });
   });
 
-  it('조용한 시간(밤 10시~아침 8시)에는 아침 8시로 미룬다', () => {
+  it('기본은 조용한 시간이 없고, 정하면(밤 10시~아침 8시) 아침 8시로 미룬다', () => {
+    expect(outOfQuiet(Date.UTC(2026, 9, 20, 23, 30), DEFAULT_NOTIFY_PREFS, 0)).toBe(Date.UTC(2026, 9, 20, 23, 30));
     const night = Date.UTC(2026, 9, 20, 23, 30);
-    expect(outOfQuiet(night, DEFAULT_NOTIFY_PREFS, 0)).toBe(Date.UTC(2026, 9, 21, 8));
-    expect(outOfQuiet(Date.UTC(2026, 9, 21, 3), DEFAULT_NOTIFY_PREFS, 0)).toBe(Date.UTC(2026, 9, 21, 8));
-    expect(outOfQuiet(NOW, DEFAULT_NOTIFY_PREFS, 0)).toBe(NOW);
+    expect(outOfQuiet(night, QUIET, 0)).toBe(Date.UTC(2026, 9, 21, 8));
+    expect(outOfQuiet(Date.UTC(2026, 9, 21, 3), QUIET, 0)).toBe(Date.UTC(2026, 9, 21, 8));
+    expect(outOfQuiet(NOW, QUIET, 0)).toBe(NOW);
     // 시드니(UTC+11)의 밤 11시 = UTC 12시
-    expect(outOfQuiet(Date.UTC(2026, 9, 20, 12), DEFAULT_NOTIFY_PREFS, 660)).toBe(Date.UTC(2026, 9, 20, 21));
+    expect(outOfQuiet(Date.UTC(2026, 9, 20, 12), QUIET, 660)).toBe(Date.UTC(2026, 9, 20, 21));
   });
 
-  it('며칠 간격 카드는 10장 이상 쌓이면 한 번에, 앱을 막 닫았을 때는 3시간 뒤부터, 3시간 간격, 하루 4번까지', () => {
+  it('며칠 간격 카드는 10장 이상 쌓이면 한 번에, 앱을 막 닫았을 때는 3시간 뒤부터, 3시간 간격, 하루 4번까지 (조용한 시간을 정했을 때)', () => {
     const long = (due: number) => card({ phase: 'review', lastReviewAt: due - 5 * DAY, due });
     const cards = [...Array.from({ length: 12 }, () => long(NOW - HOUR)), ...Array.from({ length: 5 }, () => long(NOW + 5 * HOUR))];
-    const piles = planAlarms({ cards, textFor: text, now: NOW, tzOffsetMin: 0 }).filter((x) => x.kind === 'pile');
+    const piles = planAlarms({ cards, textFor: text, now: NOW, tzOffsetMin: 0, prefs: QUIET }).filter((x) => x.kind === 'pile');
     expect(piles[0]).toMatchObject({ at: NOW + 3 * HOUR, count: 12 });
     expect(piles[1]).toMatchObject({ at: NOW + 6 * HOUR, count: 17 });
     // 21시 다음은 조용한 시간 → 아침 8시
