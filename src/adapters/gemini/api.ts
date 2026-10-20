@@ -21,6 +21,9 @@ export class GeminiError extends Error {
   noStart?: boolean;
 }
 
+/** fetch 자체가 실패했을 때 (인터넷이 없거나 서버가 연결을 끊음) */
+export const OFFLINE_TEXT = '인터넷에 연결되어 있지 않아요';
+
 async function call(path: string, key: string, init: RequestInit = {}, timeoutMs = 20_000): Promise<unknown> {
   let res: Response;
   try {
@@ -30,7 +33,7 @@ async function call(path: string, key: string, init: RequestInit = {}, timeoutMs
       timeoutMs,
     );
   } catch (e) {
-    throw new GeminiError(e instanceof TimeoutError ? e.message : '인터넷에 연결되어 있지 않아요', 'network');
+    throw new GeminiError(e instanceof TimeoutError ? e.message : OFFLINE_TEXT, 'network');
   }
   if (res.ok) return res.json();
   throw await errorFrom(res);
@@ -147,7 +150,7 @@ export async function generateStream(
       });
     } catch (e) {
       if (reason) throw timedOut('');
-      throw new GeminiError(e instanceof Error && /abort/i.test(e.name) ? '요청이 취소됐어요' : '인터넷에 연결되어 있지 않아요', 'network');
+      throw new GeminiError(e instanceof Error && /abort/i.test(e.name) ? '요청이 취소됐어요' : OFFLINE_TEXT, 'network');
     }
     if (!res.ok) throw await errorFrom(res);
     let text = '';

@@ -3,7 +3,7 @@ import { nameSet, parseDraft, revisionPrompt, STORY_TOPICS, storyTexts, systemPr
 import type { Coverage, Story } from '../../core/stories/types';
 import { parseStoryText } from '../../core/stories/textFormat';
 import { measureCoverage, meetsTarget, type Lexicon } from '../../core/stories/vocab';
-import { GeminiError, generate, generateStream, type StreamResult } from './api';
+import { GeminiError, generate, generateStream, OFFLINE_TEXT, type StreamResult } from './api';
 
 /** 이야기(글) 모델 (선호 순서). 'latest' 별칭이라 새 모델을 따라간다. */
 export const STORY_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
@@ -97,19 +97,28 @@ async function ask(
           busy--;
           continue;
         }
-        if (e instanceof GeminiError && e.kind === 'busy' && busy < BUSY_WAITS.length) {
+        // 진짜로 인터넷이 끊겼으면 기다리지 않는다
+        if (e instanceof GeminiError && e.kind === 'network' && offline()) throw e;
+        // 연결이 끊긴 것(Failed to fetch 등)도 붐빌 때처럼 기다렸다 다시: Gemini가 붐비면 오류 답 대신 연결을 끊기도 한다
+        if (e instanceof GeminiError && (e.kind === 'busy' || e.kind === 'network') && busy < BUSY_WAITS.length) {
           hooks.onBusy?.();
           await sleep(BUSY_WAITS[busy]!);
           continue;
         }
-        // 모델이 없거나 한도·붐빔·빈 답이면 다음 모델로
-        if (!(e instanceof GeminiError) || (e.kind !== 'model' && e.kind !== 'quota' && e.kind !== 'empty' && e.kind !== 'busy')) throw e;
+        // 모델이 없거나 한도·붐빔·빈 답·끊김이면 다음 모델로
+        if (!(e instanceof GeminiError) || (e.kind !== 'model' && e.kind !== 'quota' && e.kind !== 'empty' && e.kind !== 'busy' && e.kind !== 'network')) throw e;
         break;
       }
     }
   }
+  // 인터넷은 되는데 연결만 끊겼으면 "인터넷 없음"이라고 하지 않는다
+  if (last instanceof GeminiError && last.kind === 'network' && last.message === OFFLINE_TEXT && !offline()) {
+    throw new GeminiError('Gemini 서버와 연결이 자꾸 끊겨요. 인터넷은 연결돼 있으니 서버가 붐비는 것 같아요. 몇 분 뒤에 다시 시도해 주세요', 'network');
+  }
   throw last;
 }
+
+const offline = () => typeof navigator !== 'undefined' && navigator.onLine === false;
 
 /**
  * 생각하는 시간(thinking)을 줄이면 훨씬 빠르다. 모델 세대마다 받는 설정이 달라서 차례로 시도하고,

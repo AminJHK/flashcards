@@ -89,7 +89,7 @@ describe('AI 이야기 만들기', () => {
   it('고쳐 쓰다가 연결이 끊겨도, 앞에서 받은 이야기는 버리지 않는다', async () => {
     const f = vi.fn().mockResolvedValueOnce(reply(story(['bakso', 'sate', 'kerupuk', 'es', 'teh', 'jeruk', 'soto', 'mie']))).mockRejectedValue(new TypeError('Failed to fetch'));
     vi.stubGlobal('fetch', f);
-    const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', stream: false });
+    const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', stream: false, sleep: async () => {} });
     expect(s.title).toBe('Pagi');
     expect(s.attempts).toBe(1);
     expect(s.warning).toMatch(/목표는 아는 단어 95%/);
@@ -124,6 +124,32 @@ describe('서버가 붐빌 때 (503)', () => {
     const s = await createStory({ lex, plan: plan(), topicKey: 'free', key: 'K', stream: false, sleep: async () => {} });
     expect(f).toHaveBeenCalledTimes(4); // 첫 모델 3번 + lite 1번
     expect(s.model).toBe('gemini-flash-lite-latest');
+  });
+
+  it('붐빌 때 서버가 연결을 끊어도(Failed to fetch) 바로 포기하지 않고 기다렸다 다시, 그다음 모델로 넘어간다', async () => {
+    const f = vi.fn().mockImplementation(async (url: string) => {
+      if (String(url).includes('flash-lite')) return reply(story([]));
+      throw new TypeError('Failed to fetch');
+    });
+    vi.stubGlobal('fetch', f);
+    const waits: number[] = [];
+    const s = await createStory({ lex, plan: plan(), topicKey: 'free', key: 'K', stream: false, sleep: async (ms) => void waits.push(ms) });
+    expect(f).toHaveBeenCalledTimes(4); // 첫 모델 3번 + lite 1번
+    expect(waits).toEqual([2000, 6000]);
+    expect(s.model).toBe('gemini-flash-lite-latest');
+  });
+
+  it('인터넷은 되는데 연결만 계속 끊기면 "인터넷 없음" 대신 서버 문제라고 알려 준다', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(createStory({ lex, plan: plan(), topicKey: 'free', key: 'K', stream: false, sleep: async () => {} })).rejects.toThrow(/Gemini 서버와 연결이 자꾸 끊겨요/);
+  });
+
+  it('정말 인터넷이 끊겼으면 기다리지 않고 바로 알려 준다', async () => {
+    vi.stubGlobal('navigator', { onLine: false });
+    const f = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+    vi.stubGlobal('fetch', f);
+    await expect(createStory({ lex, plan: plan(), topicKey: 'free', key: 'K', stream: false, sleep: async () => {} })).rejects.toThrow('인터넷에 연결되어 있지 않아요');
+    expect(f).toHaveBeenCalledTimes(1);
   });
 
   it('모든 모델이 붐비면 쉬운 한국어로 알려준다 (영어 원문을 그대로 보이지 않는다)', async () => {
