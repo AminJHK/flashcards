@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { play, preparedStoryLines, setPlaybackRate, stopAll, type PlayResult } from '../../adapters/speech/speech';
+import { play, preparedStoryLines, setPlaybackRate, stopAll, storyAudioDiagnostics, type PlayResult } from '../../adapters/speech/speech';
 import { GEMINI_VOICES } from '../../adapters/gemini/tts';
 import { db } from '../../adapters/storage/db';
 import { addNote, saveSettings } from '../../adapters/storage/repo';
@@ -547,9 +547,22 @@ function StoryAudioSheet({ story, rate, voices, onRate, onVoice, onPreview, onCl
           </div>
         </section>
         </>)}
+        <AudioDiagnostics story={story} />
         <button type="button" className="btn btn-primary story-audio-done" onClick={onClose}>완료</button>
       </div>
     </div>
+  );
+}
+
+/** 음성 확인용 정보 (작은 글씨). 음성이 없어졌다고 할 때 화면을 찍어 보내 달라고 한다 */
+function AudioDiagnostics({ story }: { story: Story }) {
+  const d = useLiveQuery(() => storyAudioDiagnostics(story), [story]);
+  if (!d) return null;
+  const day = (t: number) => new Date(t).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+  return (
+    <p className="story-audio-hint" style={{ overflowWrap: 'anywhere' }}>
+      확인용 · 이 폰의 AI 음성 {d.total}개{d.oldest ? ` (${day(d.oldest)}부터)` : ''} · 이 이야기 문장 음성 {d.matching}개{d.sample ? ` · ${d.sample}` : ''} · 이야기 만든 날 {day(story.createdAt)}
+    </p>
   );
 }
 

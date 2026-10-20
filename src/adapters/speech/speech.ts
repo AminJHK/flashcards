@@ -274,6 +274,21 @@ export async function preparedStoryLines(story: import('../../core/stories/types
   return n;
 }
 
+/**
+ * 음성 확인용 (이야기 음성 창 맨 아래): 이 폰에 저장된 AI 음성 수·가장 오래된 날, 이 이야기 문장으로 저장된 음성 수와 그 이름표 예시.
+ * "음성이 없어졌다"가 정말 지워진 것인지(전체가 적거나 오래된 것이 없음), 이름표가 달라 못 찾는 것인지 알아보려고 둔다.
+ */
+export async function storyAudioDiagnostics(story: import('../../core/stories/types').Story): Promise<{ total: number; oldest?: number; matching: number; sample?: string }> {
+  const total = await db.audio.count();
+  const oldest = (await db.audio.orderBy('createdAt').first())?.createdAt;
+  const texts = story.blocks.flatMap((b) => (b.kind === 'line' ? [b.text] : []));
+  const keys = (await db.audio.toCollection().primaryKeys()) as string[];
+  const hits = keys.filter((k) => texts.some((t) => k.includes(`|${t}`)));
+  // 이름표 예시는 문장을 빼고 버전|모델|목소리|언어만
+  const sample = hits[0]?.split('|').slice(0, 4).join('|');
+  return { total, oldest, matching: hits.length, sample };
+}
+
 /** 읽기에서 다음 대사 하나만 미리 준비한다 (Gemini를 켰을 때만, 저장은 기기 안). */
 export async function prefetchSpeech(item: Speech, s: Settings | undefined, voice?: string): Promise<void> {
   if (!geminiOn(s) || !navigator.onLine) return;
