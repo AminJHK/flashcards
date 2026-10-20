@@ -26,7 +26,8 @@ describe('repo', () => {
     const note = await repo.addNote(deck.id, 'zh-word', { hanzi: '书', meaning: '책' }, d);
     const card = (await d.cards.where('noteId').equals(note.id).toArray()).find((c) => c.templateId === 'forward')!;
     const logId = await repo.recordReview(card.id, 3, 1200, d);
-    expect((await d.cards.get(card.id))!.phase).toBe('learning');
+    // FSRS-7(기본)은 새 카드에 '알았음'이면 단계를 건너뛰고 바로 복습으로 갈 수 있다
+    expect((await d.cards.get(card.id))!.phase).not.toBe('new');
     await repo.undoReview(logId, d);
     const after = (await d.cards.get(card.id))!;
     expect(after.phase).toBe('new');
@@ -209,3 +210,15 @@ describe('repo', () => {
   });
 });
 
+
+describe('FSRS-7로 옮기기', () => {
+  it('FSRS-6을 쓰던 기기는 한 번만 FSRS-7로 옮기고, 설정에서 직접 고른 알고리즘은 그대로 둔다', async () => {
+    await repo.saveSettings({ schedulerId: 'fsrs-6' }, d);
+    expect(await repo.migrateToFsrs7(d)).toBe(true);
+    expect((await repo.getSettings(d)).schedulerId).toBe('fsrs-7');
+    expect(await repo.migrateToFsrs7(d)).toBe(false);
+    await repo.chooseScheduler('fsrs-6', d);
+    expect(await repo.migrateToFsrs7(d)).toBe(false);
+    expect((await repo.getSettings(d)).schedulerId).toBe('fsrs-6');
+  });
+});

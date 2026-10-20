@@ -60,7 +60,7 @@ export function cardsForNote(note: Note, existing: readonly Card[], deck: Deck, 
       reps: 0,
       lapses: 0,
     };
-    changed.push(withState(base, scheduler.initial(now), scheduler.id));
+    changed.push(withState(base, scheduler.initial(now, base.id), scheduler.id));
   });
   return changed;
 }

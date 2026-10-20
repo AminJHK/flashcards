@@ -2,7 +2,7 @@ import { ScreenSync } from '../components/ScreenSync';
 import { useEffect, useState } from 'react';
 import type { AccentKey, FontScale, Settings as SettingsT, ThemePref } from '../../core/model/types';
 import { requestPersistence } from '../../adapters/files/share';
-import { saveSettings } from '../../adapters/storage/repo';
+import { chooseScheduler, saveSettings } from '../../adapters/storage/repo';
 import { onVoicesChanged, speak, SYSTEM_DEFAULT_VOICE, ttsSupported, voicesFor } from '../../adapters/tts/webSpeech';
 import { daysSince, runBackup, runRestore, runStudyExport } from '../backup';
 import { Row, Segmented, Stepper, Switch } from '../components/Controls';
@@ -115,6 +115,7 @@ function SettingsHub({ s }: { s: SettingsT }) {
 
 function StudySettings({ s }: { s: SettingsT }) {
   const scheduler = useScheduler(s);
+  const toast = useToast();
   const set = (patch: Partial<SettingsT>) => saveSettings(patch);
   return (
     <div className="group">
@@ -147,10 +148,22 @@ function StudySettings({ s }: { s: SettingsT }) {
       <Row title="하루 시작" desc="이 시각에 '오늘'이 바뀌어요">
         <Stepper label="하루 시작 시각" value={s.dayStartHour} min={0} max={8} format={(v) => (v === 0 ? '자정' : `새벽 ${v}시`)} onChange={(v) => set({ dayStartHour: v })} />
       </Row>
-      <Row title="알고리즘" desc="바꿔도 복습 기록으로 다시 계산해요.">
-        <span className="faint" style={{ fontSize: 15 }}>
-          {scheduler.label}
-        </span>
+      <Row col title="알고리즘" desc="복습 날짜를 계산하는 방법이에요. 바꾸면 지금까지의 복습 기록으로 다시 계산해서 기록은 그대로예요. FSRS-7은 최신 방법(시험판)이에요.">
+        <Segmented<string>
+          label="알고리즘"
+          options={[
+            ['fsrs-7', 'FSRS-7'],
+            ['fsrs-6', 'FSRS-6'],
+          ]}
+          value={scheduler.id}
+          onChange={(v) => {
+            if (v === scheduler.id) return;
+            void chooseScheduler(v).then(
+              () => toast(`${v === 'fsrs-7' ? 'FSRS-7로' : 'FSRS-6으로'} 바꾸고 다시 계산했어요`),
+              () => toast('바꾸지 못했어요. 다시 시도해 주세요'),
+            );
+          }}
+        />
       </Row>
     </div>
   );

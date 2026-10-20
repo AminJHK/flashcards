@@ -244,7 +244,7 @@ export async function restoreNote(note: Note, cards: Card[], d: FlashcardsDB = d
 async function freshCard(card: Card, sched: Scheduler, d: FlashcardsDB): Promise<Card> {
   if (card.schedulerId === sched.id) return card;
   const logs = await d.reviewLogs.where('cardId').equals(card.id).toArray();
-  return withState(card, rebuildFromLogs(card.createdAt, logs, sched), sched.id);
+  return withState(card, rebuildFromLogs(card.createdAt, logs, sched, card.id), sched.id);
 }
 
 /** 답을 기록한다. 반환값은 되돌리기에 쓰는 로그 id. */
@@ -288,7 +288,22 @@ async function rebuildCard(cardId: Id, d: FlashcardsDB): Promise<void> {
   if (!card) return;
   const sched = schedulerFor(await getSettings(d));
   const logs = await d.reviewLogs.where('cardId').equals(cardId).toArray();
-  await d.cards.put(withState(card, rebuildFromLogs(card.createdAt, logs, sched), sched.id));
+  await d.cards.put(withState(card, rebuildFromLogs(card.createdAt, logs, sched, card.id), sched.id));
+}
+
+/** 알고리즘을 바꾸고 모든 카드를 복습 기록으로 다시 계산한다 */
+export async function chooseScheduler(schedulerId: string, d: FlashcardsDB = db): Promise<void> {
+  await saveSettings({ schedulerId, schedulerChosen: true }, d);
+  await rebuildAll(d);
+}
+
+/** FSRS-6을 쓰던 기기는 한 번 FSRS-7로 옮긴다 (사용자가 설정에서 직접 고른 적이 없을 때만). 옮겼으면 true */
+export async function migrateToFsrs7(d: FlashcardsDB = db): Promise<boolean> {
+  const s = await getSettings(d);
+  if (s.schedulerChosen || s.schedulerId !== 'fsrs-6') return false;
+  await saveSettings({ schedulerId: 'fsrs-7' }, d);
+  await rebuildAll(d);
+  return true;
 }
 
 /** 모든 카드를 로그로 다시 계산한다 (알고리즘을 바꾸거나 백업을 가져온 뒤). */
@@ -299,7 +314,7 @@ export async function rebuildAll(d: FlashcardsDB = db): Promise<void> {
     const byCard = new Map<Id, ReviewLog[]>();
     for (const l of logs) byCard.set(l.cardId, [...(byCard.get(l.cardId) ?? []), l]);
     const cards = await d.cards.toArray();
-    await d.cards.bulkPut(cards.map((c) => withState(c, rebuildFromLogs(c.createdAt, byCard.get(c.id) ?? [], sched), sched.id)));
+    await d.cards.bulkPut(cards.map((c) => withState(c, rebuildFromLogs(c.createdAt, byCard.get(c.id) ?? [], sched, c.id), sched.id)));
   });
 }
 

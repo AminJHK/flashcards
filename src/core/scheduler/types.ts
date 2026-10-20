@@ -28,7 +28,8 @@ export interface Scheduler {
   /** 로그에 남기는 상세 버전. 예: 'fsrs-6@ts-fsrs-5.4.2' */
   version: string;
   label: string;
-  initial(createdAt: Millis): SchedState;
+  /** cardId: 퍼즈 씨앗용 (같은 기록이면 카드마다 다르게, 그래도 항상 같은 결과) */
+  initial(createdAt: Millis, cardId?: string): SchedState;
   apply(state: SchedState, rating: Rating, at: Millis): SchedState;
   /** 버튼별 다음 복습 시각 */
   preview(state: SchedState, at: Millis): Record<Rating, Millis>;

@@ -6,18 +6,18 @@ import type { SchedState, Scheduler } from './types';
  * - void 로그가 가리키는 복습은 없었던 것으로 친다
  * - reset 로그 이후는 새 카드로 다시 시작한다
  */
-export function rebuildFromLogs(createdAt: Millis, logs: readonly ReviewLog[], scheduler: Scheduler): SchedState {
+export function rebuildFromLogs(createdAt: Millis, logs: readonly ReviewLog[], scheduler: Scheduler, cardId?: string): SchedState {
   const voided = new Set(logs.filter((l) => l.kind === 'void').map((l) => (l as { voidsId: string }).voidsId));
   const ordered = logs
     .filter((l) => l.kind !== 'void' && !voided.has(l.id))
     .slice()
     .sort((a, b) => a.at - b.at || (a.id < b.id ? -1 : 1));
 
-  let state = scheduler.initial(createdAt);
+  let state = scheduler.initial(createdAt, cardId);
   let firstReviewAt: Millis | undefined;
   for (const log of ordered) {
     if (log.kind === 'reset') {
-      state = scheduler.initial(log.at);
+      state = scheduler.initial(log.at, cardId);
       firstReviewAt = undefined;
     } else if (log.kind === 'review') {
       state = scheduler.apply(state, log.rating, log.at);

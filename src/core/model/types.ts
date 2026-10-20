@@ -107,6 +107,8 @@ export interface Settings {
   id: 'settings';
   desiredRetention: number;
   schedulerId: string;
+  /** 사용자가 설정에서 알고리즘을 직접 골랐는지. 고른 적 없으면 FSRS-6 → FSRS-7로 한 번 옮긴다 (2026-10-20) */
+  schedulerChosen?: boolean;
   /** 최적화한 FSRS 파라미터. 없으면 기본값 */
   fsrsParams?: number[];
   dayStartHour: number;
@@ -203,7 +205,7 @@ export interface AudioClip {
 export const DEFAULT_SETTINGS: Settings = {
   id: 'settings',
   desiredRetention: 0.9,
-  schedulerId: 'fsrs-6',
+  schedulerId: 'fsrs-7',
   dayStartHour: 4,
   learnAheadMin: 0,
   buttons: 2,
