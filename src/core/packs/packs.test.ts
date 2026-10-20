@@ -184,3 +184,16 @@ describe('인도네시아어 aja 연습', () => {
   });
 });
 
+describe('헷갈리는 말: 데려가다 묶음', () => {
+  const pack = PACKS.find((p) => p.id === 'indonesian-colloquial')!;
+  it('bawa · ajak · anter · jemput의 한국어 뜻이 서로 겹치지 않고, 참고에 서로를 비교한다', () => {
+    const of = (w: string) => pack.notes.find((n) => n.fields.word === w)!.fields;
+    const group = ['bawa', 'ajak', 'anter', 'jemput'];
+    for (const w of group) {
+      expect(of(w).meaning, w).not.toContain('데려가다');
+      for (const other of group.filter((x) => x !== w)) expect(of(w).note, `${w} → ${other}`).toContain(other);
+    }
+    expect(new Set(group.map((w) => of(w).meaning)).size).toBe(group.length);
+  });
+});
+
