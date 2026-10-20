@@ -36,6 +36,11 @@
 - 안드로이드 앱의 WebView는 화면 맨 위(상태표시줄 밑)까지 펼쳐진다(`viewport-fit=cover` + Capacitor 8 `SystemBars`). 그래서 `.app`에 `padding-top: var(--safe-top)`(= `env(safe-area-inset-top)`)을 둔다. 브라우저·PWA에서는 0이다. 웹 배포만으로 적용된다.
 - 상태표시줄을 아예 숨기고 싶으면 `capacitor.config.ts`의 `plugins.SystemBars.hidden: true` (새 APK 필요, 시계·배터리가 안 보임).
 
+## 음성 엔진 목록 (2026-10-20)
+
+- 실제 폰(갤럭시 폴드)에서 엔진 목록에 Google만 나왔다. `<queries>`(TTS_SERVICE)는 있다. 삼성 One UI 7(안드로이드 15)부터 **삼성 TTS는 삼성 앱에서만 쓸 수 있게 막혀** 있다는 보고가 있다 (삼성 인터넷에서는 됐던 이유). 앱에서 고칠 방법이 없어 설정 설명에 적었다.
+- 목소리 이름(`id-id-x-ide-local` …)은 `voiceChoices`(nativeTts.ts)가 "목소리 1, 2 …"로 바꾼다: -local/-network는 하나로 묶고 저장된 판(local)을 먼저 고르며, `…-language`(엔진 기본과 같음)는 뺀다. 예전에 고른 이름은 `members`로 찾는다.
+
 ## 알려진 한계 · 할 일
 
 - **Google 로그인(Drive 동기화·백업):** Google은 앱 안 브라우저(WebView)의 로그인 창을 막는다 → 앱에서는 `NativeGooglePlugin`(play-services-auth의 `AuthorizationClient`)으로 drive.file·openid·email 권한 토큰을 받는다 (`auth.ts`의 `nativeToken`). 한 번 허용하면 창 없이 새 토큰을 받으므로 자동 동기화도 된다 (`silentToken`).

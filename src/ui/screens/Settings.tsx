@@ -18,7 +18,7 @@ import { DriveSettings } from './DriveSettings';
 import { GeminiSettings, VoiceTest } from './GeminiSettings';
 import { fullscreenSupported } from '../../adapters/display/fullscreen';
 import { isNativeApp } from '../../adapters/native/platform';
-import { nativeEngines, nativeVoices, type NativeEngine, type NativeVoice } from '../../adapters/tts/nativeTts';
+import { nativeEngines, nativeVoices, voiceChoices, type NativeEngine, type NativeVoice } from '../../adapters/tts/nativeTts';
 import { speakDevice } from '../../adapters/tts/device';
 
 const SAMPLE: Record<string, string> = {
@@ -441,7 +441,7 @@ function NativeVoiceSettings({ s, langs }: { s: SettingsT; langs: string[] }) {
   return (
     <>
       <div className="group">
-        <Row title="음성 엔진" desc="삼성, 구글처럼 휴대폰에 설치된 엔진 중에서 골라요. 휴대폰 설정의 기본 엔진과 상관없어요.">
+        <Row title="음성 엔진" desc="휴대폰에 설치된 엔진 중에서 골라요. 삼성 음성 엔진은 삼성 앱(삼성 인터넷 등)에서만 쓸 수 있게 막혀 있어서 이 앱 목록에는 안 나와요.">
           <select className="select" aria-label="음성 엔진" value={engine ?? ''} onChange={(e) => set({ engine: e.target.value, voices: {} })}>
             {(engines?.engines ?? []).map((e) => (
               <option key={e.name} value={e.name}>
@@ -451,13 +451,14 @@ function NativeVoiceSettings({ s, langs }: { s: SettingsT; langs: string[] }) {
           </select>
         </Row>
         {langs.map((lang) => {
-          const list = voices[lang] ?? [];
+          const list = voiceChoices(voices[lang] ?? []);
+          const saved = n.voices?.[lang];
           return (
             <Row key={lang} title={langName(lang)}>
               <select
                 className="select"
                 aria-label={`${langName(lang)} 음성`}
-                value={list.some((v) => v.name === n.voices?.[lang]) ? n.voices![lang] : ''}
+                value={list.find((v) => saved && v.members.includes(saved))?.name ?? ''}
                 onChange={(e) => {
                   const { [lang]: _old, ...rest } = n.voices ?? {};
                   set({ voices: e.target.value ? { ...rest, [lang]: e.target.value } : rest });
@@ -466,8 +467,7 @@ function NativeVoiceSettings({ s, langs }: { s: SettingsT; langs: string[] }) {
                 <option value="">엔진 기본 목소리</option>
                 {list.map((v) => (
                   <option key={v.name} value={v.name}>
-                    {v.name}
-                    {v.network ? ' (인터넷)' : ''}
+                    {v.label}
                   </option>
                 ))}
               </select>

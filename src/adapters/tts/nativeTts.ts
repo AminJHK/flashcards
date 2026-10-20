@@ -21,6 +21,35 @@ export interface NativeSpeakOptions {
   pitch?: number;
 }
 
+/** 화면에 보여 줄 목소리: 같은 목소리의 "폰에 저장"·"인터넷" 판을 하나로 묶은 것 */
+export interface VoiceChoice {
+  /** 고르면 저장할 이름 (폰에 저장된 판이 있으면 그것: 인터넷 없이도 읽는다) */
+  name: string;
+  label: string;
+  /** 같은 목소리로 보는 이름들 (예전에 고른 이름도 이걸로 찾는다) */
+  members: string[];
+}
+
+/**
+ * 엔진이 주는 목소리 이름(id-id-x-ide-local, id-id-x-ide-network …)은 알아보기 어려워서 "목소리 1, 2 …"로 보여 준다.
+ * -local/-network만 다른 것은 같은 목소리로 묶고, 엔진 기본과 같은 "…-language"는 뺀다 (맨 위 "엔진 기본 목소리"와 같음).
+ */
+export function voiceChoices(voices: readonly NativeVoice[]): VoiceChoice[] {
+  const groups = new Map<string, NativeVoice[]>();
+  for (const v of voices) {
+    if (/-language$/i.test(v.name)) continue;
+    const base = v.name.replace(/-(local|network)$/i, '');
+    groups.set(base, [...(groups.get(base) ?? []), v]);
+  }
+  return [...groups.keys()]
+    .sort()
+    .map((base, i) => {
+      const list = groups.get(base)!;
+      const pick = list.find((v) => !v.network) ?? list[0]!;
+      return { name: pick.name, label: `목소리 ${i + 1}${pick.network ? ' · 인터넷 필요' : ''}`, members: list.map((v) => v.name) };
+    });
+}
+
 interface NativeTtsPlugin {
   getEngines(): Promise<{ engines: NativeEngine[]; defaultEngine: string }>;
   getVoices(o: { engine?: string; lang: string }): Promise<{ voices: NativeVoice[] }>;
