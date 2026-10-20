@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Settings as SettingsData } from '../core/model/types';
 import { requestPersistence } from '../adapters/files/share';
-import { dropStaleClips } from '../adapters/speech/speech';
 import { enterFullscreen, exitFullscreen } from '../adapters/display/fullscreen';
 import { TabBar } from './components/TabBar';
 import { useSettings } from './hooks';
@@ -92,7 +91,6 @@ export function App() {
 
   useEffect(() => {
     void requestPersistence();
-    void dropStaleClips().catch(() => {});
   }, []);
 
   const [a, b, c, ...rest] = route;

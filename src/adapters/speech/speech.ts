@@ -36,12 +36,11 @@ export function clipKey(item: Speech, s: Settings & { gemini: NonNullable<Settin
   return `${version}|${s.gemini.ttsModel}|${s.gemini.voice}|${item.lang}|${item.text}${item.style ? `|style:${item.style}` : ''}`;
 }
 
-/** 예전 방식으로 만든 음성 파일(설명까지 읽어 버린 것 포함)을 지운다. */
-export async function dropStaleClips(): Promise<void> {
-  const keys = (await db.audio.toCollection().primaryKeys()) as string[];
-  const stale = keys.filter((k) => (!k.startsWith(`${CLIP_VERSION}|`) && !k.startsWith(`${MODERN_CLIP_VERSION}|`) && !k.startsWith(`${LEGACY_STORY_VERSION}|`)) || k.startsWith('v2|gemini-3.8-'));
-  if (stale.length) await db.audio.bulkDelete(stale);
-}
+/*
+ * 저장된 음성은 앱이 저절로 지우지 않는다. 예전에는 버전을 올릴 때 옛 버전 음성을 앱을 열 때마다 지웠는데(dropStaleClips),
+ * 사용자의 폰이 새 버전을 늦게 받은 사이(10월 16~18일)에 만든 이야기 음성이 모두 지워졌다 (2026-10-20 사용자 신고, 되살릴 수 없음).
+ * 버전을 바꿔야 하면 예전 음성도 찾게 하고(savedStoryClipKey), 정말 못 쓰는 음성을 지워야 하면 사용자에게 먼저 물을 것.
+ */
 
 /** 미리 만들기와 재생이 겹쳐도 같은 문장에 API를 두 번 호출하지 않는다. */
 const inFlight = new Map<string, Promise<Blob>>();
