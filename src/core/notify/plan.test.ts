@@ -58,14 +58,14 @@ describe('복습 알림 계획', () => {
     expect(planAlarms({ cards, textFor: text, now: NOW, tzOffsetMin: 0 })).toEqual([]);
   });
 
-  it('알림 글자: 앞면은 단어, 뒷면은 앞면과 다른 글자만. 듣기 카드는 알림으로 하지 않는다', () => {
+  it('알림 글자: 앞면은 단어, 뒷면은 한국어 뜻만 (예문·영어 뜻 빼고). 듣기 카드는 알림으로 하지 않는다', () => {
     expect(
       notifyText({
         front: [{ kind: 'word', text: 'aku', size: 'front', lang: 'id-ID' }],
         back: [{ kind: 'word', text: 'aku', size: 'back', lang: 'id-ID' }, { kind: 'divider' }, { kind: 'meaning', text: '나', size: 'back' }, { kind: 'gloss', text: 'I, me', lang: 'en-US' }],
         tts: { front: [], back: [] },
       }),
-    ).toEqual({ front: 'aku', back: '나\nI, me' });
+    ).toEqual({ front: 'aku', back: '나' });
     expect(notifyText({ front: [{ kind: 'listen', text: 'aku', lang: 'id-ID' }], back: [], tts: { front: [], back: [] } })).toBeUndefined();
   });
 });

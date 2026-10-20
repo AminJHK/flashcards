@@ -72,10 +72,10 @@ export function outOfQuiet(t: Millis, p: NotifyPrefs, tz: number): Millis {
 
 const TEXT_KINDS = new Set<Block['kind']>(['hanzi', 'word', 'meaning', 'sentence', 'prompt', 'pinyin', 'gloss']);
 
-function textOf(blocks: readonly Block[], skip: ReadonlySet<string> = new Set()): string[] {
+function textOf(blocks: readonly Block[], skip: ReadonlySet<string> = new Set(), kinds: ReadonlySet<Block['kind']> = TEXT_KINDS): string[] {
   const out: string[] = [];
   for (const b of blocks) {
-    if (!TEXT_KINDS.has(b.kind) || !('text' in b)) continue;
+    if (!kinds.has(b.kind) || !('text' in b)) continue;
     const t = b.text.trim();
     if (t && !skip.has(t) && !out.includes(t)) out.push(t);
   }
@@ -89,8 +89,11 @@ export function notifyText(view: CardView): { front: string; back: string } | un
   if (view.front.some((b) => b.kind === 'listen')) return undefined;
   const front = textOf(view.front);
   if (!front.length) return undefined;
-  const back = textOf(view.back, new Set(front));
-  return { front: clip(front.join(' · '), 120), back: clip(back.join('\n'), 400) || '(뒷면 없음)' };
+  // 뒷면은 한국어 뜻만 (사용자: 작은 알림에 예문까지 나오면 복잡하다). 뜻이 앞면이면(역방향 카드) 단어만
+  const skip = new Set(front);
+  const meaning = textOf(view.back, skip, new Set<Block['kind']>(['meaning']));
+  const back = meaning.length ? meaning : textOf(view.back, skip, new Set<Block['kind']>(['word', 'hanzi', 'pinyin']));
+  return { front: clip(front.join(' · '), 120), back: clip(back.join(' · '), 200) || '(뒷면 없음)' };
 }
 
 export function planAlarms(input: {

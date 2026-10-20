@@ -37,6 +37,8 @@ final class ReviewAlarms {
     private static final String KEY_ANSWERS = "answers";
     private static final String CH_CARD = "review_card";
     private static final String CH_PILE = "review_pile";
+    /** 뜻을 본 뒤의 알림: 화면 위에 펼쳐진 채로 뜨게(버튼이 바로 보이게) 중요도 높음, 소리·진동 없음 */
+    private static final String CH_ANSWER = "review_answer";
     /** 알림 tag 앞부분 (우리 알림만 골라 지울 때) */
     private static final String TAG = "review:";
 
@@ -147,8 +149,13 @@ final class ReviewAlarms {
         card.setDescription("1분·10분 뒤처럼 짧은 간격으로 다시 볼 카드. 알림에서 바로 답해요.");
         NotificationChannel pile = new NotificationChannel(CH_PILE, "복습 카드 쌓임", NotificationManager.IMPORTANCE_DEFAULT);
         pile.setDescription("며칠 간격 복습 카드가 쌓였을 때");
+        NotificationChannel answer = new NotificationChannel(CH_ANSWER, "짧은 복습 (뜻 보기 뒤 답하기)", NotificationManager.IMPORTANCE_HIGH);
+        answer.setDescription("뜻을 본 뒤 다시·어려움·알았음 버튼이 바로 보이게 화면 위에 떠요. 소리는 나지 않아요.");
+        answer.setSound(null, null);
+        answer.enableVibration(false);
         nm.createNotificationChannel(card);
         nm.createNotificationChannel(pile);
+        nm.createNotificationChannel(answer);
     }
 
     private static PendingIntent openApp(Context c) {
@@ -179,13 +186,14 @@ final class ReviewAlarms {
             // 카드 알림은 눌러도 앱을 열지 않는다 (사용자: 답하려다 자꾸 앱으로 들어가진다). 글씨를 누르면 뜻 보기와 같다
             String front = alarm.optString("front");
             PendingIntent reveal = action(c, ACTION_REVEAL, alarm, 0);
-            b = new NotificationCompat.Builder(c, CH_CARD).setContentTitle(front).setContentIntent(reveal).setCategory(NotificationCompat.CATEGORY_REMINDER).setAutoCancel(false);
+            b = new NotificationCompat.Builder(c, revealed ? CH_ANSWER : CH_CARD).setContentTitle(front).setContentIntent(reveal).setCategory(NotificationCompat.CATEGORY_REMINDER).setAutoCancel(false);
             if (revealed) {
+                // 같은 알림을 고치면 접힌 채로 남아서 화살표를 눌러야 버튼이 보였다 → 지우고 새로 띄워 화면 위에 펼쳐진 채로 뜨게 한다
+                nm.cancel(TAG + id, 1);
                 String back = alarm.optString("back");
                 b.setContentText(back)
                     .setStyle(new NotificationCompat.BigTextStyle().bigText(back))
-                    .setOnlyAlertOnce(true)
-                    .setSilent(true)
+                    .setDefaults(0)
                     .addAction(0, "다시", action(c, ACTION_ANSWER, alarm, 1))
                     .addAction(0, "어려움", action(c, ACTION_ANSWER, alarm, 2))
                     .addAction(0, "알았음", action(c, ACTION_ANSWER, alarm, 3));
