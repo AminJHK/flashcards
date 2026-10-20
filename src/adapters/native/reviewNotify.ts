@@ -101,10 +101,41 @@ export async function currentPlan(now = Date.now()): Promise<Alarm[]> {
   return planAlarms({ cards, textFor, now, tzOffsetMin: -new Date(now).getTimezoneOffset(), prefs });
 }
 
+/** 마지막으로 보낸 계획 (설정 화면의 확인용 줄). 이 기기에만 */
+export interface LastSchedule {
+  at: number;
+  count: number;
+  next?: number;
+  error?: string;
+}
+const LAST_KEY = 'reviewNotifyLast';
+export function lastSchedule(): LastSchedule | undefined {
+  try {
+    const v = localStorage.getItem(LAST_KEY);
+    return v ? (JSON.parse(v) as LastSchedule) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+function remember(v: LastSchedule): void {
+  try {
+    localStorage.setItem(LAST_KEY, JSON.stringify(v));
+  } catch {
+    /* 확인용일 뿐 */
+  }
+}
+
 /** 알림 예약 (알림을 꺼 두었으면 모두 지운다) */
 export async function scheduleAlarms(): Promise<void> {
   const s = await getSettings();
-  await send(s.reviewNotify?.enabled ? await currentPlan() : []);
+  const plan = s.reviewNotify?.enabled ? await currentPlan() : [];
+  try {
+    await send(plan);
+    remember({ at: Date.now(), count: plan.length, next: plan[0]?.at });
+  } catch (e) {
+    remember({ at: Date.now(), count: plan.length, next: plan[0]?.at, error: e instanceof Error ? e.message : String(e) });
+    throw e;
+  }
 }
 
 /** 앱 화면이 보이는 동안: 예약과 떠 있는 복습 알림을 모두 끈다 */

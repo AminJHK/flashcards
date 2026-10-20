@@ -20,7 +20,7 @@ import { fullscreenSupported } from '../../adapters/display/fullscreen';
 import { isNativeApp } from '../../adapters/native/platform';
 import { nativeEngines, nativeVoices, voiceChoices, type NativeEngine, type NativeVoice } from '../../adapters/tts/nativeTts';
 import { speakDevice } from '../../adapters/tts/device';
-import { notifyPermissions, openExactAlarmSettings, requestNotifyPermission, scheduleAlarms } from '../../adapters/native/reviewNotify';
+import { lastSchedule, notifyPermissions, openExactAlarmSettings, requestNotifyPermission, scheduleAlarms } from '../../adapters/native/reviewNotify';
 import { DEFAULT_NOTIFY_PREFS } from '../../core/notify/plan';
 
 const SAMPLE: Record<string, string> = {
@@ -229,6 +229,7 @@ function ReviewNotifySettings({ s }: { s: SettingsT }) {
                 <Switch label={`${d.name} 알림`} checked={!off.includes(d.id)} onChange={(v) => toggleDeck(d.id, v)} />
               </Row>
             ))}
+            <ScheduleCheck />
             <Row title="쌓임 알림" desc="며칠 간격 카드가 이만큼 쌓이면 알려요 (최소 3시간 간격, 하루 4번까지)">
               <Stepper label="쌓임 알림 기준" value={n.pileMin} min={5} max={100} step={5} format={(v) => `${v}장`} onChange={(v) => set({ pileMin: v })} />
             </Row>
@@ -237,6 +238,24 @@ function ReviewNotifySettings({ s }: { s: SettingsT }) {
       </div>
     </>
   );
+}
+
+/** 알림이 실제로 예약됐는지 확인용 (알림이 안 올 때 캡처를 받는다) */
+function ScheduleCheck() {
+  const [last, setLast] = useState(lastSchedule());
+  useEffect(() => {
+    const t = setInterval(() => setLast(lastSchedule()), 2000);
+    return () => clearInterval(t);
+  }, []);
+  const time = (t: number) => new Date(t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const desc = !last
+    ? '아직 예약한 적이 없어요'
+    : last.error
+      ? `예약하지 못했어요: ${last.error}`
+      : last.count
+        ? `알림 ${last.count}개 예약됨 · 다음 ${time(last.next!)} (${time(last.at)}에 예약)`
+        : `지금은 예약할 알림이 없어요 (${time(last.at)}에 확인)`;
+  return <Row title="다음 알림" desc={desc} />;
 }
 
 function DisplaySettings({ s }: { s: SettingsT }) {

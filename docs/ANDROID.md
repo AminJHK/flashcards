@@ -49,7 +49,7 @@
   - 며칠 간격 카드는 `pileMin`(기본 10)장 이상 쌓이면 알림. 앱을 닫은 뒤 3시간부터, 3시간 간격, 하루 4번까지, 7일 앞까지.
   - 조용한 시간은 없앴다 (사용자: 알아서 하겠다, 방해 금지 모드). 계산(`outOfQuiet`)은 남아 있지만 앱은 늘 시작=끝(없음)으로 보낸다.
   - 덱마다 끌 수 있다 (`reviewNotify.offDecks`, 끈 덱만 적어 둬서 새로 추가한 덱은 켜진 채로).
-- `src/adapters/native/reviewNotify.ts` + `src/ui/useReviewNotify.ts`: 앱 화면이 보이면 알림을 모두 끄고(`clear`), 앱을 내리면 계획을 보낸다(`schedule`). 설정 › 복습 › 복습 알림(`Settings.reviewNotify`, 기본 꺼짐).
+- `src/adapters/native/reviewNotify.ts` + `src/ui/useReviewNotify.ts`: 복습 기록·설정이 바뀔 때마다(liveQuery, 0.8초 뒤) 계획을 다시 보낸다(`schedule`). 처음에는 앱을 내릴 때(visibilitychange)만 보냈는데 실제 폰에서 알림이 안 왔다 → 앱 안 WebView는 그 신호가 안 올 수 있어서 기다리지 않는다. 앱 화면이 보이는 동안 울릴 알림은 ReviewReceiver가 띄우지 않는다 (`appVisible`). 설정의 "다음 알림" 줄이 마지막으로 보낸 계획(개수·다음 시각·오류)을 보여 준다 (localStorage, 확인용). 설정 › 복습 › 복습 알림(`Settings.reviewNotify`, 기본 꺼짐).
 - 휴대폰 쪽 (`android/.../`):
   - `ReviewAlarms.java`: 계획 저장(SharedPreferences), AlarmManager 예약(`setExactAndAllowWhileIdle`, "알람 및 리마인더" 허락이 없으면 `setAndAllowWhileIdle`), 알림 띄우기(카드: 앞면+[뜻 보기] → 뒷면+[다시][어려움][알았음], 쌓임: 장수), 답 저장(누른 시각, id).
   - `ReviewReceiver.java`: FIRE(앱 화면이 보이면 안 띄움)·REVEAL·ANSWER·BOOT_COMPLETED/MY_PACKAGE_REPLACED(다시 예약).
