@@ -81,7 +81,8 @@ export async function applyAnswers(): Promise<number> {
 export async function currentPlan(now = Date.now()): Promise<Alarm[]> {
   const settings = await getSettings();
   const prefs = { ...DEFAULT_NOTIFY_PREFS, ...settings.reviewNotify };
-  const cards = (await db.cards.toArray()).filter((c) => !c.hidden && !c.suspended && c.phase !== 'new');
+  const off = new Set(settings.reviewNotify?.offDecks ?? []);
+  const cards = (await db.cards.toArray()).filter((c) => !c.hidden && !c.suspended && c.phase !== 'new' && !off.has(c.deckId));
   const short = cards.filter(isShortReview);
   const [notes, decks] = await Promise.all([db.notes.bulkGet([...new Set(short.map((c) => c.noteId))]), db.decks.toArray()]);
   const noteById = new Map(notes.flatMap((n) => (n ? [[n.id, n] as const] : [])));

@@ -145,7 +145,8 @@ export interface Settings {
   devicePitch?: number;
   /** 안드로이드 앱의 음성 엔진 설정 (이 기기에만) */
   /** 안드로이드 앱의 복습 알림 (core/notify/plan.ts). 기본은 꺼짐 (알림 허락이 필요해서) */
-  reviewNotify?: { enabled: boolean } & Partial<NotifyPrefs>;
+  /** offDecks: 알림을 끈 덱 id (새로 추가한 덱은 켜진 채로 시작) */
+  reviewNotify?: { enabled: boolean; offDecks?: string[] } & Partial<NotifyPrefs>;
   nativeTts?: {
     /** 엔진 패키지 이름 (예: com.samsung.SMT). 없으면 휴대폰 기본 엔진 */
     engine?: string;
