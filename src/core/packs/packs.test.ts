@@ -211,3 +211,23 @@ describe('헷갈리는 말: 가져가다·가져오다·주다·받다 묶음', 
   });
 });
 
+describe('헷갈리는 말: 분명·확실·진짜 묶음', () => {
+  const pack = PACKS.find((p) => p.id === 'indonesian-colloquial')!;
+  const meaning = (w: string) => pack.notes.find((n) => n.fields.word === w)!.fields.meaning ?? '';
+  const note = (w: string) => pack.notes.find((n) => n.fields.word === w)!.fields.note ?? '';
+  const only = (group: string[], text: string) => group.filter((w) => meaning(w).includes(text));
+  it('분명·확신·물론·진짜 같은 한국어 뜻이 한 단어에만 있고, 참고에 서로를 비교한다', () => {
+    const cert = ['jelas', 'pasti', 'yakin', 'tentu', 'pastiin'];
+    expect(new Set(cert.map(meaning)).size).toBe(cert.length);
+    expect(only(cert, '분명')).toEqual(['jelas']);
+    expect(only(cert, '확신')).toEqual(['yakin']);
+    expect(only(cert, '물론')).toEqual(['tentu']);
+    for (const w of cert) for (const o of cert.filter((x) => x !== w)) expect(note(w), `${w} → ${o}`).toContain(o);
+    const real = ['bener', 'beneran', 'asli', 'sungguh', 'sumpah', 'banget', 'sebenernya'];
+    expect(new Set(real.map(meaning)).size).toBe(real.length);
+    expect(only(real, '진짜')).toEqual(['beneran']);
+    expect(only(real, '정말')).toEqual(['sungguh']);
+    for (const w of real) for (const o of real.filter((x) => x !== w)) expect(note(w), `${w} → ${o}`).toContain(o);
+  });
+});
+
