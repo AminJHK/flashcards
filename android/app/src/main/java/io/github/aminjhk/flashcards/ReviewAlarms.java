@@ -176,8 +176,10 @@ final class ReviewAlarms {
                 .setContentText("눌러서 복습하기")
                 .setContentIntent(openApp(c));
         } else {
+            // 카드 알림은 눌러도 앱을 열지 않는다 (사용자: 답하려다 자꾸 앱으로 들어가진다). 글씨를 누르면 뜻 보기와 같다
             String front = alarm.optString("front");
-            b = new NotificationCompat.Builder(c, CH_CARD).setContentTitle(front).setContentIntent(openApp(c)).setCategory(NotificationCompat.CATEGORY_REMINDER);
+            PendingIntent reveal = action(c, ACTION_REVEAL, alarm, 0);
+            b = new NotificationCompat.Builder(c, CH_CARD).setContentTitle(front).setContentIntent(reveal).setCategory(NotificationCompat.CATEGORY_REMINDER).setAutoCancel(false);
             if (revealed) {
                 String back = alarm.optString("back");
                 b.setContentText(back)
@@ -188,10 +190,12 @@ final class ReviewAlarms {
                     .addAction(0, "어려움", action(c, ACTION_ANSWER, alarm, 2))
                     .addAction(0, "알았음", action(c, ACTION_ANSWER, alarm, 3));
             } else {
-                b.setContentText("무슨 뜻일까요? 떠올려 보고 뜻 보기를 눌러요").addAction(0, "뜻 보기", action(c, ACTION_REVEAL, alarm, 0));
+                String ask = "무슨 뜻일까요? 떠올려 보고 눌러서 뜻을 봐요";
+                b.setContentText(ask).setStyle(new NotificationCompat.BigTextStyle().bigText(ask)).addAction(0, "뜻 보기", reveal);
             }
         }
-        b.setSmallIcon(R.drawable.ic_stat_review).setAutoCancel(true).setPriority(NotificationCompat.PRIORITY_HIGH).setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+        if ("pile".equals(alarm.optString("kind"))) b.setAutoCancel(true);
+        b.setSmallIcon(R.drawable.ic_stat_review).setPriority(NotificationCompat.PRIORITY_HIGH).setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
         try {
             nm.notify(TAG + id, 1, b.build());
         } catch (SecurityException ignored) {

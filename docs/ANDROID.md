@@ -52,6 +52,7 @@
 - `src/adapters/native/reviewNotify.ts` + `src/ui/useReviewNotify.ts`: 복습 기록·설정이 바뀔 때마다(liveQuery, 0.8초 뒤) 계획을 다시 보낸다(`schedule`). 처음에는 앱을 내릴 때(visibilitychange)만 보냈는데 실제 폰에서 알림이 안 왔다 → 앱 안 WebView는 그 신호가 안 올 수 있어서 기다리지 않는다. 앱 화면이 보이는 동안 울릴 알림은 ReviewReceiver가 띄우지 않는다 (`appVisible`). 설정의 "다음 알림" 줄이 마지막으로 보낸 계획(개수·다음 시각·오류)을 보여 준다 (localStorage, 확인용). 설정 › 복습 › 복습 알림(`Settings.reviewNotify`, 기본 꺼짐).
 - 휴대폰 쪽 (`android/.../`):
   - `ReviewAlarms.java`: 계획 저장(SharedPreferences), AlarmManager 예약(`setExactAndAllowWhileIdle`, "알람 및 리마인더" 허락이 없으면 `setAndAllowWhileIdle`), 알림 띄우기(카드: 앞면+[뜻 보기] → 뒷면+[다시][어려움][알았음], 쌓임: 장수), 답 저장(누른 시각, id).
+  - 카드 알림은 눌러도 앱을 열지 않는다 (글씨를 누르면 뜻 보기, 뜻이 나온 뒤에는 버튼으로만 답). 처음 버전은 글씨를 누르면 앱이 열려서 사용자가 답하려다 자꾸 앱으로 들어갔다. 쌓임 알림만 누르면 앱을 연다.
   - `ReviewReceiver.java`: FIRE(앱 화면이 보이면 안 띄움)·REVEAL·ANSWER·BOOT_COMPLETED/MY_PACKAGE_REPLACED(다시 예약).
   - 답하면 바로 앱을 깨운다: 앱이 켜져 있으면 `ReviewNotifyPlugin.notifyAnswers()` → 웹의 'answers' 소식, 꺼져 있으면 `HeadlessRunner.java`가 화면 없는 WebView로 같은 주소를 열고 `window.FlashcardsHeadless`를 넣는다 → `src/headless.ts`(main.tsx가 화면을 그리지 않음)가 `applyAnswers`(같은 `recordReview`, 누른 시각) → 새 계획 → `done()`. 9초 안에 못 끝내면 답은 남아 있다가 다음에 앱이 켜질 때 들어간다.
   - 누른 시각이 이미 있는 기록보다 앞이면 `recordReview`가 로그로 다시 계산한다 (순서 보장).
