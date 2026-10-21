@@ -23,8 +23,15 @@ public class ReviewReceiver extends BroadcastReceiver {
         switch (action) {
             case ReviewAlarms.ACTION_FIRE: {
                 if (ReviewNotifyPlugin.appVisible) return;
-                JSONObject alarm = ReviewAlarms.find(c, intent.getStringExtra(ReviewAlarms.EXTRA_ID));
-                if (alarm != null) ReviewAlarms.show(c, alarm, false);
+                String id = intent.getStringExtra(ReviewAlarms.EXTRA_ID);
+                JSONObject alarm = id == null ? null : ReviewAlarms.find(c, id);
+                if (alarm == null) return;
+                if ("card".equals(alarm.optString("kind"))) {
+                    // 카드 알림은 한 번에 하나만: 다른 카드가 떠 있으면 기다렸다가, 그 카드에 답하면 바로 띄운다.
+                    // 같은 카드가 이미 떠 있으면 다시 울리지 않는다
+                    if (ReviewAlarms.shownIds(c).contains(id) || ReviewAlarms.cardShown(c)) return;
+                }
+                ReviewAlarms.show(c, alarm, false);
                 return;
             }
             case ReviewAlarms.ACTION_REVEAL: {
@@ -41,10 +48,20 @@ public class ReviewReceiver extends BroadcastReceiver {
                 }
                 if (alarm == null || alarm.optString("cardId").isEmpty()) return;
                 ReviewAlarms.queueAnswer(c, alarm.optString("cardId"), intent.getIntExtra(ReviewAlarms.EXTRA_RATING, 3), System.currentTimeMillis());
+                // 기다리던 다음 카드를 바로 띄운다 (앱이 다시 계산하기를 기다리지 않는다)
+                JSONObject next = ReviewAlarms.nextDueCard(c, id);
+                if (next != null && !ReviewNotifyPlugin.appVisible) ReviewAlarms.show(c, next, false);
                 // 앱이 뒤에 켜져 있으면 바로 알리고, 꺼져 있으면 화면 없이 앱을 켜서 처리한다
                 if (ReviewNotifyPlugin.notifyAnswers()) return;
-                PendingResult pending = goAsync();
-                HeadlessRunner.run(c, pending::finish);
+                HeadlessJobService.start(c);
+                return;
+            }
+            case ReviewAlarms.ACTION_DISMISS: {
+                // 답하지 않고 밀어서 지운 카드는 계획에서 빼고(앱이 다음에 다시 계산한다), 기다리던 카드를 띄운다
+                String id = intent.getStringExtra(ReviewAlarms.EXTRA_ID);
+                if (id != null) ReviewAlarms.remove(c, id);
+                JSONObject next = ReviewAlarms.nextDueCard(c, id);
+                if (next != null && !ReviewNotifyPlugin.appVisible && !ReviewAlarms.cardShown(c)) ReviewAlarms.show(c, next, false);
                 return;
             }
             case Intent.ACTION_BOOT_COMPLETED:

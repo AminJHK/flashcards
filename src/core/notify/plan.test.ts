@@ -19,15 +19,15 @@ function card(extra: Partial<Card>): Card {
 const text = () => ({ front: '단어', back: '뜻' });
 
 describe('복습 알림 계획', () => {
-  it('짧은 복습은 한 번에 하나만: 가장 이른 카드를 알리고(이미 지났으면 바로), 기다리는 장수를 뒷면에 적는다', () => {
+  it('짧은 복습은 카드마다 그 시각에 미리 예약하고(한 번에 하나씩 보여 주는 건 휴대폰), 이미 지난 것은 바로', () => {
     const a = card({ lastReviewAt: NOW - MIN, due: NOW + MIN });
     const b = card({ lastReviewAt: NOW - 20 * MIN, due: NOW - 10 * MIN });
-    const later = planAlarms({ cards: [a], textFor: text, now: NOW, tzOffsetMin: 0 });
-    expect(later).toEqual([{ id: `card:${a.id}`, kind: 'card', at: NOW + MIN, cardId: a.id, front: '단어', back: '뜻' }]);
-    const c = card({ lastReviewAt: NOW - 30 * MIN, due: NOW - 5 * MIN });
-    const alarms = planAlarms({ cards: [a, b, c], textFor: text, now: NOW, tzOffsetMin: 0 });
-    expect(alarms).toHaveLength(1);
-    expect(alarms[0]).toMatchObject({ cardId: b.id, at: NOW + 5_000, back: '뜻\n남은 짧은 복습 1장' });
+    const alarms = planAlarms({ cards: [a, b], textFor: text, now: NOW, tzOffsetMin: 0 });
+    expect(alarms.map((x) => [x.kind, x.at - NOW])).toEqual([
+      ['card', 5_000],
+      ['card', MIN],
+    ]);
+    expect(alarms[0]).toMatchObject({ cardId: b.id, front: '단어', back: '뜻' });
   });
 
   it('기본은 조용한 시간이 없고, 정하면(밤 10시~아침 8시) 아침 8시로 미룬다', () => {

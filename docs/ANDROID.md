@@ -45,7 +45,7 @@
 
 - 사용자 요청: 1분·10분 뒤 같은 짧은 복습을 앱에 들어가지 않고 알림에서 바로 답하고 싶다. 정확한 시간에. 답은 3버튼(다시·어려움·알았음).
 - 계산은 전부 앱(웹 코드)이 한다: `src/core/notify/plan.ts`(`planAlarms`)가 카드의 due(FSRS-7)로 알림 계획을 만든다.
-  - 짧은 복습(직전 복습~다음 복습이 하루 미만)은 **가장 이른 카드 하나만** 그 시각에 카드 알림 (사용자: 10개 넘게 쌓이면 지저분하다). 답하면 앱이 다시 계산해서 다음 카드를 알린다. 뒷면에 "남은 짧은 복습 N장"(그 시각까지 due인 다른 카드). 예전 계획의 떠 있는 카드 알림은 `scheduleAll`이 지운다. 듣기 카드는 빼고 쌓임에 센다.
+  - 짧은 복습(직전 복습~다음 복습이 하루 미만)은 카드마다 그 시각에 **미리 예약**(최대 30개). 휴대폰이 **한 번에 하나만** 보여 준다: 다른 카드 알림이 떠 있으면 FIRE를 건너뛰고, 답하거나 밀어서 지우면(`ACTION_DISMISS`) 기다리던 가장 이른 카드를 바로 띄운다 (`nextDueCard`). "남은 짧은 복습 N장"도 휴대폰이 센다. 이미 떠 있는 알림은 다시 예약하지 않는다(소리가 다시 나지 않게). 한때 웹 계획에서 카드를 하나만 보냈더니, 답한 뒤 앱을 못 깨우면 다음 알림이 아예 없어서 "알람이 안 와"가 됐다 (2026-10-21).
   - 며칠 간격 카드는 `pileMin`(기본 10)장 이상 쌓이면 알림. 앱을 닫은 뒤 3시간부터, 3시간 간격, 하루 4번까지, 7일 앞까지.
   - 조용한 시간은 없앴다 (사용자: 알아서 하겠다, 방해 금지 모드). 계산(`outOfQuiet`)은 남아 있지만 앱은 늘 시작=끝(없음)으로 보낸다.
   - 덱마다 끌 수 있다 (`reviewNotify.offDecks`, 끈 덱만 적어 둬서 새로 추가한 덱은 켜진 채로).
@@ -57,7 +57,9 @@
   - `ReviewReceiver.java`: FIRE(앱 화면이 보이면 안 띄움)·REVEAL·ANSWER·BOOT_COMPLETED/MY_PACKAGE_REPLACED(다시 예약).
   - 답하면 바로 앱을 깨운다: 앱이 켜져 있으면 `ReviewNotifyPlugin.notifyAnswers()` → 웹의 'answers' 소식, 꺼져 있으면 `HeadlessRunner.java`가 화면 없는 WebView로 같은 주소를 열고 `window.FlashcardsHeadless`를 넣는다 → `src/headless.ts`(main.tsx가 화면을 그리지 않음)가 `applyAnswers`(같은 `recordReview`, 누른 시각) → 새 계획 → `done()`. 9초 안에 못 끝내면 답은 남아 있다가 다음에 앱이 켜질 때 들어간다.
   - 누른 시각이 이미 있는 기록보다 앞이면 `recordReview`가 로그로 다시 계산한다 (순서 보장).
-- 권한: POST_NOTIFICATIONS(켤 때 묻는다), SCHEDULE_EXACT_ALARM(설정의 "허용하기" → 시스템 화면), RECEIVE_BOOT_COMPLETED.
+- 권한: POST_NOTIFICATIONS(켤 때 묻는다), 정확한 시각은 안드로이드 13+ `USE_EXACT_ALARM`(설치하면 바로 허락, 스토어 밖 앱이라 가능)·12는 `SCHEDULE_EXACT_ALARM`, RECEIVE_BOOT_COMPLETED. 정확한 시각 허락이 없으면 `setAndAllowWhileIdle`이라 절전 중에 한참 밀린다.
+- 앱이 꺼져 있을 때 답 처리는 `HeadlessJobService`(JobScheduler, 12+는 expedited)에서 `HeadlessRunner`를 돌린다 (60초). 예전에는 BroadcastReceiver의 goAsync 안에서 9초 제한이었다.
+- 삼성 폰은 배터리 설정이 "제한 없음"이 아니면 알람을 막을 수 있다 (사용자 안내).
 - 실제 기기에서 아직 확인 못 함: 정확한 시각, 화면 없는 WebView가 9초 안에 끝나는지, 잠금 화면 버튼.
 
 ## 알려진 한계 · 할 일

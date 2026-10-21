@@ -28,6 +28,8 @@ final class ReviewAlarms {
     static final String ACTION_FIRE = "io.github.aminjhk.flashcards.REVIEW_FIRE";
     static final String ACTION_REVEAL = "io.github.aminjhk.flashcards.REVIEW_REVEAL";
     static final String ACTION_ANSWER = "io.github.aminjhk.flashcards.REVIEW_ANSWER";
+    /** 카드 알림을 밀어서 지움 → 기다리던 다음 카드를 띄운다 */
+    static final String ACTION_DISMISS = "io.github.aminjhk.flashcards.REVIEW_DISMISS";
     static final String EXTRA_ID = "id";
     static final String EXTRA_RATING = "rating";
     static final String EXTRA_ALARM = "alarm";
@@ -90,9 +92,12 @@ final class ReviewAlarms {
         if (am == null) return;
         boolean exact = canExact(c);
         long now = System.currentTimeMillis();
+        java.util.Set<String> shown = shownIds(c);
         for (int i = 0; i < alarms.length(); i++) {
             JSONObject o = alarms.optJSONObject(i);
             if (o == null) continue;
+            // 이미 떠 있는 알림은 다시 울리지 않는다 (앱을 열었다 닫을 때마다 소리가 다시 났다)
+            if (shown.contains(o.optString("id"))) continue;
             long at = Math.max(o.optLong("at"), now + 1000);
             PendingIntent pi = fireIntent(c, o.optString("id"));
             if (exact) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
@@ -134,6 +139,49 @@ final class ReviewAlarms {
             String tag = n.getTag();
             if (tag != null && tag.startsWith(TAG) && !ids.contains(tag.substring(TAG.length()))) nm.cancel(tag, n.getId());
         }
+    }
+
+    /** 지금 떠 있는 우리 알림의 id들 */
+    static java.util.Set<String> shownIds(Context c) {
+        java.util.Set<String> out = new java.util.HashSet<>();
+        NotificationManager nm = c.getSystemService(NotificationManager.class);
+        if (nm == null) return out;
+        for (StatusBarNotification n : nm.getActiveNotifications()) {
+            String tag = n.getTag();
+            if (tag != null && tag.startsWith(TAG)) out.add(tag.substring(TAG.length()));
+        }
+        return out;
+    }
+
+    /** 카드 알림이 이미 하나 떠 있는지 (한 번에 하나만 보여 준다) */
+    static boolean cardShown(Context c) {
+        for (String id : shownIds(c)) if (id.startsWith("card:")) return true;
+        return false;
+    }
+
+    /** 때가 됐는데 아직 못 보여 준 카드 알림 중 가장 이른 것 (다른 카드에 답한 뒤 바로 띄운다) */
+    static synchronized JSONObject nextDueCard(Context c, String exceptId) {
+        JSONArray a = load(c);
+        long now = System.currentTimeMillis();
+        JSONObject best = null;
+        for (int i = 0; i < a.length(); i++) {
+            JSONObject o = a.optJSONObject(i);
+            if (o == null || !"card".equals(o.optString("kind")) || o.optString("id").equals(exceptId) || o.optLong("at") > now + 1000) continue;
+            if (best == null || o.optLong("at") < best.optLong("at")) best = o;
+        }
+        return best;
+    }
+
+    /** 이 카드 말고 때가 된 카드 수 ("남은 짧은 복습 N장") */
+    static synchronized int waiting(Context c, String exceptId) {
+        JSONArray a = load(c);
+        long now = System.currentTimeMillis();
+        int n = 0;
+        for (int i = 0; i < a.length(); i++) {
+            JSONObject o = a.optJSONObject(i);
+            if (o != null && "card".equals(o.optString("kind")) && !o.optString("id").equals(exceptId) && o.optLong("at") <= now + 1000) n++;
+        }
+        return n;
     }
 
     static void cancelShown(Context c, String id) {
@@ -187,10 +235,13 @@ final class ReviewAlarms {
             String front = alarm.optString("front");
             PendingIntent reveal = action(c, ACTION_REVEAL, alarm, 0);
             b = new NotificationCompat.Builder(c, revealed ? CH_ANSWER : CH_CARD).setContentTitle(front).setContentIntent(reveal).setCategory(NotificationCompat.CATEGORY_REMINDER).setAutoCancel(false);
+            b.setDeleteIntent(action(c, ACTION_DISMISS, alarm, 0));
+            int left = waiting(c, id);
+            if (left > 0) b.setSubText("남은 짧은 복습 " + left + "장");
             if (revealed) {
                 // 같은 알림을 고치면 접힌 채로 남아서 화살표를 눌러야 버튼이 보였다 → 지우고 새로 띄워 화면 위에 펼쳐진 채로 뜨게 한다
                 nm.cancel(TAG + id, 1);
-                String back = alarm.optString("back");
+                String back = alarm.optString("back") + (left > 0 ? "\n남은 짧은 복습 " + left + "장" : "");
                 b.setContentText(back)
                     .setStyle(new NotificationCompat.BigTextStyle().bigText(back))
                     .setDefaults(0)

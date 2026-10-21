@@ -19,7 +19,7 @@ import org.json.JSONException;
  * 오래 걸리면(TIMEOUT_MS) 그냥 끝낸다: 넣지 못한 답은 남아 있다가 다음에 앱이 켜질 때 들어간다.
  */
 final class HeadlessRunner {
-    private static final long TIMEOUT_MS = 9000;
+    private static final long TIMEOUT_MS = 60000;
 
     private HeadlessRunner() {}
 
