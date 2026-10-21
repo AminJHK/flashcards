@@ -3,7 +3,7 @@ import type { Card, Millis } from '../model/types';
 
 /**
  * 복습 알림 계획 (안드로이드 앱, 사용자 요청 2026-10-20).
- * - 짧은 복습(직전 복습에서 하루가 안 되는 간격: 1분·10분 뒤 등)은 카드마다 그 시각에 알림 → 알림에서 바로 답한다.
+ * - 짧은 복습(직전 복습에서 하루가 안 되는 간격: 1분·10분 뒤 등)은 가장 이른 카드 하나만 그 시각에 알림 → 알림에서 바로 답하면 다음 카드.
  * - 며칠 간격의 복습은 카드가 쌓이면 한 번에 알린다 (pileMin장 이상, 최소 pileGapH시간 간격, 하루 pileMaxPerDay번까지).
  * - 조용한 시간(quietStart~quietEnd)은 계산에는 있지만 앱에서는 쓰지 않는다 (시작=끝 = 없음).
  * 계산은 앱이 하고(FSRS-7이 정한 due), 휴대폰은 받은 시각에 울리기만 한다. 답하면 앱이 다시 계산해서 새 계획을 보낸다.
@@ -39,8 +39,6 @@ export type Alarm = CardAlarm | PileAlarm;
 const MIN = 60_000;
 const HOUR = 60 * MIN;
 const DAY = 24 * HOUR;
-/** 카드 알림은 많아도 이만큼만 (가장 이른 것부터) */
-const MAX_CARD_ALARMS = 30;
 /** 쌓임 알림은 며칠 앞까지 */
 const PILE_DAYS = 7;
 
@@ -111,16 +109,20 @@ export function planAlarms(input: {
   const short = input.cards
     .filter((c) => isShortReview(c) && c.due < now + DAY)
     .sort((a, b) => a.due - b.due);
-  let cardCount = 0;
-  for (const c of short) {
-    const text = cardCount < MAX_CARD_ALARMS ? input.textFor(c) : undefined;
-    if (!text) {
-      pile.push(c.due);
-      continue;
-    }
-    cardCount++;
+  // 카드 알림은 한 번에 하나만 (사용자: 10개 넘게 쌓이면 지저분하다). 가장 이른 카드 하나를 알리고,
+  // 그 카드에 답하면 앱이 다시 계산해서 다음 카드를 알린다. 뒷면에 지금 기다리는 장수를 같이 적는다
+  const withText = short.flatMap((c) => {
+    const text = input.textFor(c);
+    if (!text) pile.push(c.due);
+    return text ? [{ c, text }] : [];
+  });
+  const first = withText[0];
+  if (first) {
     // 이미 지난 카드는 바로(몇 초 뒤) 알린다
-    alarms.push({ id: `card:${c.id}`, kind: 'card', at: outOfQuiet(Math.max(c.due, now + 5_000), p, tz), cardId: c.id, ...text });
+    const at = outOfQuiet(Math.max(first.c.due, now + 5_000), p, tz);
+    const waiting = withText.filter((x) => x !== first && x.c.due <= at).length;
+    const back = waiting ? `${first.text.back}\n남은 짧은 복습 ${waiting}장` : first.text.back;
+    alarms.push({ id: `card:${first.c.id}`, kind: 'card', at, cardId: first.c.id, front: first.text.front, back });
   }
   for (const c of input.cards) {
     if (c.hidden || c.suspended || c.phase === 'new' || isShortReview(c)) continue;
