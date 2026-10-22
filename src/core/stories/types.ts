@@ -87,6 +87,8 @@ export interface Coverage {
   familiar: number;
   deckNewWords: string[];
   outsideWords: string[];
+  /** deckNew 중 이번 이야기에서 소개하려고 고른 새 단어(NEW WORDS)의 수. 목표 비율 검사에서 빼고 센다 */
+  introduced?: number;
 }
 
 export interface Story {

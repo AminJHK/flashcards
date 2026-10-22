@@ -7,7 +7,7 @@ import { formatStoryText } from '../../core/stories/textFormat';
 import { buildLexicon } from '../../core/stories/vocab';
 import { FlashcardsDB } from '../storage/db';
 import { deleteStory, getProgress, listStories, restartStory, saveProgress, saveStory } from '../storage/stories';
-import { createStory, looksLooping, MAX_ATTEMPTS, resetThinkingMemory, STREAM_TIMING } from './story';
+import { createStory, looksLooping, MAX_REVISIONS, resetThinkingMemory, STREAM_TIMING } from './story';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -71,11 +71,11 @@ describe('AI 이야기 만들기', () => {
     expect(JSON.parse(f.mock.calls[0]![1].body).contents[0].parts[0].text).toContain('KNOWN WORDS: aku, kamu');
   });
 
-  it(`끝까지 목표를 못 맞추면 ${MAX_ATTEMPTS}번에서 멈추고, 가장 나은 결과를 이유와 함께 돌려준다`, async () => {
+  it(`목표를 못 맞추면 고쳐 쓰기는 ${MAX_REVISIONS}번만 하고, 가장 나은 결과를 이유와 함께 돌려준다`, async () => {
     const f = vi.fn().mockImplementation(async () => reply(story(['satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh'])));
     vi.stubGlobal('fetch', f);
     const s = await createStory({ lex, plan: planStory(lex, 'easy'), topicKey: 'free', key: 'K', stream: false });
-    expect(f).toHaveBeenCalledTimes(MAX_ATTEMPTS);
+    expect(f).toHaveBeenCalledTimes(1 + MAX_REVISIONS);
     expect(s.warning).toMatch(/목표는 아는 단어 98%였는데 실제로는 93%예요/);
   });
 

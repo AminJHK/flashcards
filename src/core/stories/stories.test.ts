@@ -67,6 +67,11 @@ describe('비율 목표 (단어 등장 횟수 기준)', () => {
     const c = measureCoverage(['aku mau makan nasi nasi nasi'], lex, new Set());
     expect(meetsTarget(c, 0.95, false)).toBe(false);
     expect(meetsTarget(c, 0.95, true)).toBe(true);
+    // 이번 이야기에서 소개하라고 고른 새 단어는 목표 비율에서 빼고 센다 (넣으라고 해 놓고 세면 맞출 수 없다)
+    const withNew = measureCoverage(['aku mau makan nasi nasi nasi'], lex, new Set(), new Set(['nasi']));
+    expect(withNew.introduced).toBe(3);
+    expect(withNew.deckNewWords).toEqual([]);
+    expect(meetsTarget(withNew, 0.95, false)).toBe(true);
     expect(meetsTarget(measureCoverage(['aku mau makan bakso'], lex, new Set()), 0.95, true)).toBe(false);
   });
 });

@@ -147,7 +147,7 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
       : '',
     plan.fallback
       ? `- The learner knows few words yet. If a sentence is impossible with KNOWN WORDS, you may use DECK WORDS. Words outside all lists must stay under ${unknownPct}% of word occurrences.`
-      : `- Words that are not KNOWN WORDS (including the new words) must stay under ${unknownPct}% of word occurrences.`,
+      : `- Apart from the NEW WORDS, words that are not KNOWN WORDS must stay under ${unknownPct}% of word occurrences.`,
     '- GLOSS lines: only for words or expressions that are in none of the lists below (the app already knows the meanings of listed words). Usually 0 to 8. Multi-word entries are fine for expressions like "nggak apa-apa".',
     '',
     `KNOWN WORDS: ${plan.familiar.map(form).join(', ')}`,

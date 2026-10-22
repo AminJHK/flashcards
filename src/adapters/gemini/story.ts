@@ -2,15 +2,17 @@ import { newId } from '../../core/model/ids';
 import { nameSet, parseDraft, revisionPrompt, STORY_TOPICS, storyTexts, systemPrompt, userPrompt, type StoryDraft, type StoryPlan } from '../../core/stories/plan';
 import type { Coverage, Story } from '../../core/stories/types';
 import { parseStoryText } from '../../core/stories/textFormat';
-import { measureCoverage, meetsTarget, type Lexicon } from '../../core/stories/vocab';
+import { measureCoverage, meetsTarget, norm, type Lexicon } from '../../core/stories/vocab';
 import { GeminiError, generate, generateStream, OFFLINE_TEXT, type StreamResult } from './api';
 
 /** 이야기(글) 모델 (선호 순서). 'latest' 별칭이라 새 모델을 따라간다. */
 export const STORY_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
-/** 처음 + 고쳐 달라는 요청 2번까지 */
+/** 처음 + 다시 요청 2번까지 (답이 깨졌을 때) */
 export const MAX_ATTEMPTS = 3;
+/** 아는 단어 비율 때문에 고쳐 달라고 하는 건 한 번만 (한 번 더 쓰면 시간이 두 배, 사용자 요청 2026-10-22) */
+export const MAX_REVISIONS = 1;
 /** 아는 단어 비율이 목표보다 이만큼 이내로 모자라면 다시 쓰지 않는다 (속도가 더 중요) */
-export const NEAR_TARGET = 0.02;
+export const NEAR_TARGET = 0.03;
 
 /** pct: 0~1. 쓰는 중에는 지금까지 받은 글자 수로 어림한 값 (실제 길이는 이야기마다 달라서 어림이다) */
 export type StoryStep = { attempt: number; stage: 'writing' | 'checking' | 'revising' | 'retrying' | 'waiting'; pct?: number };
@@ -167,6 +169,8 @@ export async function createStory(opts: {
   /** 시도마다 왜 못 썼는지 (실패하면 화면에 그대로 보여 줘서 원인을 알 수 있게) */
   const notes: string[] = [];
   let retry = false;
+  let revisions = 0;
+  const planned = new Set(plan.newWords.map((e) => norm(e.word)));
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     attempts = attempt;
     const stage: StoryStep['stage'] = attempt === 1 ? 'writing' : retry ? 'retrying' : 'revising';
@@ -209,7 +213,7 @@ export async function createStory(opts: {
     const parsed = parseDraft(raw);
     let coverage: Coverage | undefined;
     if (parsed.draft && !parsed.fatal) {
-      coverage = measureCoverage(storyTexts(parsed.draft.blocks), lex, nameSet(parsed.draft.characters, parsed.draft.properNouns));
+      coverage = measureCoverage(storyTexts(parsed.draft.blocks), lex, nameSet(parsed.draft.characters, parsed.draft.properNouns), planned);
       // 질문 하나가 틀린 정도(그 질문만 뺌)는 다시 쓰게 하지 않는다: 한 번 더 쓰면 시간이 두 배 걸린다
       const ok = meetsTarget(coverage, plan.knownTarget, plan.fallback) && parsed.blocking.length === 0;
       const cand: Candidate = { draft: parsed.draft, coverage, ok, problems: parsed.blocking };
@@ -221,6 +225,9 @@ export async function createStory(opts: {
         // 끊긴 답을 살려 쓴 것: 다시 고쳐 달라고 해도 또 끊기기 쉬우니 여기서 멈춘다
         break;
       }
+      // 고쳐 쓰기는 한 번만: 그래도 모자라면 가장 나은 것을 쓴다 (경고만 보여 준다)
+      if (revisions >= MAX_REVISIONS) break;
+      revisions++;
     } else {
       notes.push(`${attempt}번째: ${parsed.problems.join(', ') || '쓸 수 없는 답'}${complete ? '' : ', 끝(END)까지 안 옴'} [${why}]`);
     }

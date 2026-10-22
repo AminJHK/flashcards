@@ -210,8 +210,9 @@ export function analyzeText(text: string, lex: Lexicon, names: ReadonlySet<strin
   return out;
 }
 
-export function measureCoverage(texts: readonly string[], lex: Lexicon, names: ReadonlySet<string>): Coverage {
-  const c: Coverage = { tokens: 0, known: 0, learning: 0, deckNew: 0, outside: 0, names: 0, familiar: 1, deckNewWords: [], outsideWords: [] };
+/** planned: 이번 이야기에서 소개하려고 고른 새 단어 (norm). 이 단어들은 introduced로 따로 센다 */
+export function measureCoverage(texts: readonly string[], lex: Lexicon, names: ReadonlySet<string>, planned: ReadonlySet<string> = new Set()): Coverage {
+  const c: Coverage = { tokens: 0, known: 0, learning: 0, deckNew: 0, outside: 0, names: 0, familiar: 1, deckNewWords: [], outsideWords: [], introduced: 0 };
   const dn = new Set<string>();
   const out = new Set<string>();
   for (const text of texts) {
@@ -224,7 +225,10 @@ export function measureCoverage(texts: readonly string[], lex: Lexicon, names: R
       // 어조 말은 내용어가 아니고 이야기에 꼭 섞어 쓰게 하는 말이라, 아직 안 배운 말이어도 비율에서는 아는 말로 센다
       const cls = s.entry?.kind === 'particle' ? 'known' : s.cls;
       c[cls] += s.words;
-      if (cls === 'deckNew') dn.add(s.entry!.word);
+      if (cls === 'deckNew') {
+        if (planned.has(norm(s.entry!.word))) c.introduced! += s.words;
+        else dn.add(s.entry!.word);
+      }
       if (s.cls === 'outside') out.add(norm(s.text));
     }
   }
@@ -236,13 +240,15 @@ export function measureCoverage(texts: readonly string[], lex: Lexicon, names: R
 
 /**
  * 목표를 지켰는지. 보통은 (덱의 새 단어 + 덱 밖 단어)가 허용치 이하여야 한다.
+ * 이번 이야기에서 소개하라고 고른 새 단어(introduced)는 빼고 센다: 넣으라고 해 놓고 세면
+ * (예: 쉬움 98%에 새 단어 2개 × 2번 = 160단어 중 2.5%) 목표를 맞출 수 없어서 매번 다시 쓰게 됐다 (2026-10-22).
  * 아는 단어가 적은 초반(fallback)에는 덱의 새 단어는 어쩔 수 없을 때 쓸 수 있고, 덱 밖 단어만 허용치로 센다.
  */
 export function meetsTarget(c: Coverage, knownTarget: number, fallback: boolean): boolean {
   if (!c.tokens) return false;
   const allow = 1 - knownTarget + 1e-9;
   if (fallback) return c.outside / c.tokens <= allow;
-  return (c.deckNew + c.outside) / c.tokens <= allow;
+  return (c.deckNew - (c.introduced ?? 0) + c.outside) / c.tokens <= allow;
 }
 
 /** 목표에서 벗어난 단어 (고쳐 달라고 할 때 알려 준다) */
