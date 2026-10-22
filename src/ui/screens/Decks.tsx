@@ -1,7 +1,7 @@
 import { ScreenSync } from '../components/ScreenSync';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
-import { CARD_TYPES, getCardType, hasCardType } from '../../core/cardTypes/registry';
+import { getCardType, hasCardType } from '../../core/cardTypes/registry';
 import type { CardType } from '../../core/cardTypes/types';
 import type { AutoplaySide, DeckSettings } from '../../core/model/types';
 import { db } from '../../adapters/storage/db';
@@ -526,9 +526,7 @@ export function DeckDetail({ id }: { id: string }) {
       </div>
 
       <div className="group">
-        <Row col title="새 단어의 카드 종류" desc={`${defaultType.description} 새로 추가하는 단어에만 적용돼요. 이미 있는 단어는 그대로예요.`}>
-          <Segmented wrap label="카드 종류" options={CARD_TYPES.map((t) => [t.id, t.shortName] as const)} value={s.defaultTypeId} onChange={(v) => set({ defaultTypeId: v })} />
-        </Row>
+        {/* 새 단어의 카드 종류는 덱 화면에서 고르지 않는다 (사용자: 추가 화면과 중복). 추가 화면에서 고른 종류를 덱이 기억한다 */}
         {optional && (
           <Row title="정방향 카드" desc={`${type.id === 'basic' ? `${langName(s.langs.front)} 단어 보고 ${langName(s.langs.back)} 뜻 떠올리기` : forward.label}. 끄면 숨겨져요 (복습 기록은 그대로).`}>
             <Switch

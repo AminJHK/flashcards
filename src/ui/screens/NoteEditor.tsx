@@ -5,7 +5,7 @@ import { missingRequired, resolveLang, type CardType, type DeriveDeps, type Fiel
 import type { Deck, Note } from '../../core/model/types';
 import { loadPinyin } from '../../adapters/pinyin/pinyin';
 import { db } from '../../adapters/storage/db';
-import { addNote, deleteNote, restoreNote, updateNote } from '../../adapters/storage/repo';
+import { addNote, deleteNote, restoreNote, updateDeck, updateNote } from '../../adapters/storage/repo';
 import { play, prefetchNote } from '../../adapters/speech/speech';
 import { Segmented } from '../components/Controls';
 import { Icon } from '../components/Icon';
@@ -195,7 +195,18 @@ function Editor(props: Props & { decks: Deck[]; note?: Note }) {
             </select>
           </label>
           {!editing && (
-            <Segmented large wrap label="카드 종류" options={CARD_TYPES.map((t) => [t.id, t.shortName] as const)} value={typeId} onChange={changeType} />
+            <Segmented
+              large
+              wrap
+              label="카드 종류"
+              options={CARD_TYPES.map((t) => [t.id, t.shortName] as const)}
+              value={typeId}
+              onChange={(v) => {
+                changeType(v);
+                // 고른 종류를 이 덱이 기억한다: 다음에 이 덱으로 추가하면 이 종류로 열린다 (덱 화면의 설정은 없앴다)
+                if (!editing) void updateDeck(deckId, { settings: { defaultTypeId: v } });
+              }}
+            />
           )}
         </div>
 
