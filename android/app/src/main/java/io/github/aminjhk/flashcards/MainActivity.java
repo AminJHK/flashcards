@@ -11,6 +11,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(NativeTtsPlugin.class);
         registerPlugin(NativeGooglePlugin.class);
         registerPlugin(ReviewNotifyPlugin.class);
+        registerPlugin(BackgroundJobPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

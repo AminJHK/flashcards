@@ -3,6 +3,8 @@ import type { StoryStep } from '../adapters/gemini/story';
 import { db } from '../adapters/storage/db';
 import { runAudio, runStory, type AudioState, type JobEvent, type StoryJobArgs } from '../adapters/stories/jobs';
 import { newId } from '../core/model/ids';
+import { isNativeApp } from '../adapters/native/platform';
+import { nativeJobRunning, onNativeJobEvent, startNativeJob } from '../adapters/native/backgroundJob';
 import type { Story, StoryDifficulty } from '../core/stories/types';
 import type { Lexicon } from '../core/stories/vocab';
 
@@ -127,6 +129,11 @@ export function startStoryJob(args: { lex: Lexicon; difficulty: StoryDifficulty;
   const full: StoryJobArgs = { ...args, id: newId(), startedAt: Date.now() };
   set({ status: 'running', id: full.id, startedAt: full.startedAt, step: { attempt: 1, stage: 'writing' }, error: undefined, storyId: undefined, title: undefined });
   void (async () => {
+    // 안드로이드 앱: 앱을 닫아도 계속하는 서비스에 맡긴다 (StoryJobService)
+    if (isNativeApp() && (await startNativeJob({ kind: 'story', id: full.id, startedAt: full.startedAt, difficulty: full.difficulty, topicKey: full.topicKey }))) {
+      nativeStory = true;
+      return;
+    }
     if (await toWorker({ type: 'story:start', args: full }, full.id)) return;
     // 서비스 워커가 없으면 이 화면에서 만든다
     hereStory = true;
@@ -136,9 +143,11 @@ export function startStoryJob(args: { lex: Lexicon; difficulty: StoryDifficulty;
   })();
 }
 
-/** 화면 안에서 도는 중이면 서비스 워커 상태와 맞추지 않는다 */
+/** 화면 안에서(또는 안드로이드 서비스에서) 도는 중이면 서비스 워커 상태와 맞추지 않는다 */
 let hereStory = false;
 let hereAudio = false;
+let nativeStory = false;
+let nativeAudio = false;
 let localAudio: string | undefined;
 function runAudioHere(story: Story, replace: boolean): void {
   if (audioJob.running && !replace) return;
@@ -155,6 +164,10 @@ export function startStoryAudio(story: Story, replace = false): void {
   const id = newId();
   setAudio({ storyId: story.id, done: 0, total: story.blocks.filter((b) => b.kind === 'line').length, running: true });
   void (async () => {
+    if (isNativeApp() && (await startNativeJob({ kind: 'audio', id, storyId: story.id, replace }))) {
+      nativeAudio = true;
+      return;
+    }
     if (await toWorker({ type: 'story:audio', storyId: story.id, replace, id }, id)) return;
     runAudioHere(story, true);
   })();
@@ -166,12 +179,12 @@ export function startStoryAudio(story: Story, replace = false): void {
  */
 async function reconcile(s: Extract<JobEvent, { kind: 'status' }>): Promise<void> {
   if (s.audio) setAudio(s.audio);
-  else if (audioJob.running && !hereAudio) setAudio({ ...audioJob, running: false, note: '앱을 내려 둔 사이 음성 만들기가 멈췄어요' });
+  else if (audioJob.running && !hereAudio && !nativeAudio) setAudio({ ...audioJob, running: false, note: '앱을 내려 둔 사이 음성 만들기가 멈췄어요' });
   if (s.running) {
     if (job.status !== 'running' || job.id !== s.running.id) set({ status: 'running', id: s.running.id, step: s.running.step });
     return;
   }
-  if (job.status !== 'running' || !job.id || hereStory) return;
+  if (job.status !== 'running' || !job.id || hereStory || nativeStory) return;
   const made = await db.stories.where('createdAt').aboveOrEqual(job.startedAt ?? 0).first();
   if (job.status !== 'running') return;
   if (made) set({ status: 'done', storyId: made.id, title: made.title, unseen: true, step: undefined, seq: job.seq + 1 });
@@ -181,7 +194,30 @@ async function reconcile(s: Extract<JobEvent, { kind: 'status' }>): Promise<void
 
 function askStatus(): void {
   worker()?.postMessage({ type: 'story:status' });
+  void checkNative();
 }
+
+/** 안드로이드 서비스가 일을 마쳤는데 소식을 못 받았으면 (앱이 닫혀 있었음) 저장된 것으로 맞춘다 */
+async function nativeFinished(): Promise<void> {
+  if (nativeAudio) {
+    nativeAudio = false;
+    if (audioJob.running) setAudio({ ...audioJob, running: false });
+  }
+  if (!nativeStory) return;
+  nativeStory = false;
+  if (job.status !== 'running') return;
+  const made = await db.stories.where('createdAt').aboveOrEqual(job.startedAt ?? 0).first();
+  if (job.status !== 'running') return;
+  if (made) set({ status: 'done', storyId: made.id, title: made.title, unseen: true, step: undefined, seq: job.seq + 1 });
+  else set({ status: 'error', error: '이야기를 만들지 못했어요. 다시 시도해 주세요', step: undefined, seq: job.seq + 1 });
+}
+
+async function checkNative(): Promise<void> {
+  if (!nativeStory && !nativeAudio) return;
+  if ((await nativeJobRunning()) === false) await nativeFinished();
+}
+
+if (isNativeApp()) onNativeJobEvent((e) => (e.kind === 'finished' ? void nativeFinished() : onEvent(e)));
 
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
@@ -191,6 +227,6 @@ if (typeof document !== 'undefined') {
   askStatus();
   // 화면이 보이는 동안 일하는 중이면 20초마다 물어본다: 서비스 워커를 깨워 두고, 그새 꺼져서 일을 잃었으면 알아챈다
   setInterval(() => {
-    if (document.visibilityState === 'visible' && ((job.status === 'running' && !hereStory) || (audioJob.running && !hereAudio))) askStatus();
+    if (document.visibilityState === 'visible' && ((job.status === 'running' && !hereStory) || (audioJob.running && !hereAudio) || nativeStory || nativeAudio)) askStatus();
   }, 20_000);
 }

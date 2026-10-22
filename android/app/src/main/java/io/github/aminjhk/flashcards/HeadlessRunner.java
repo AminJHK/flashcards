@@ -2,6 +2,7 @@ package io.github.aminjhk.flashcards;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.webkit.JavascriptInterface;
@@ -23,8 +24,20 @@ final class HeadlessRunner {
 
     private HeadlessRunner() {}
 
-    @SuppressLint("SetJavaScriptEnabled")
+    /** 화면 없는 앱이 보내는 소식 (이야기 만들기 진행 등) */
+    interface Events {
+        void on(String json);
+    }
+
     static void run(Context context, Runnable finish) {
+        run(context, null, null, TIMEOUT_MS, finish);
+    }
+
+    /**
+     * task: 웹 쪽이 할 일 (없으면 알림 답 처리). events: 웹 쪽 소식을 받을 곳. timeoutMs가 지나면 끝낸다.
+     */
+    @SuppressLint("SetJavaScriptEnabled")
+    static void run(Context context, String task, Events events, long timeoutMs, Runnable finish) {
         Context c = context.getApplicationContext();
         Handler main = new Handler(Looper.getMainLooper());
         main.post(() -> {
@@ -39,6 +52,8 @@ final class HeadlessRunner {
             s.setJavaScriptEnabled(true);
             s.setDomStorageEnabled(true);
             s.setDatabaseEnabled(true);
+            // 화면에 안 보여도 우선순위를 낮추지 않는다 (뒤에서 오래 일할 때 멈추지 않게)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) wv.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, false);
             final boolean[] ended = { false };
             Runnable end = () -> {
                 if (ended[0]) return;
@@ -46,21 +61,36 @@ final class HeadlessRunner {
                 wv.destroy();
                 finish.run();
             };
-            wv.addJavascriptInterface(new Bridge(c, () -> main.post(end)), "FlashcardsHeadless");
+            wv.addJavascriptInterface(new Bridge(c, task, events, () -> main.post(end)), "FlashcardsHeadless");
             String url = CapConfig.loadDefault(c).getServerUrl();
             wv.loadUrl(url != null ? url : "https://aminjhk.github.io/flashcards/");
-            main.postDelayed(end, TIMEOUT_MS);
+            main.postDelayed(end, timeoutMs);
         });
     }
 
     /** 웹 쪽 adapters/native/reviewNotify.ts의 HeadlessBridge */
     static final class Bridge {
         private final Context c;
+        private final String task;
+        private final Events events;
         private final Runnable done;
 
-        Bridge(Context c, Runnable done) {
+        Bridge(Context c, String task, Events events, Runnable done) {
             this.c = c;
+            this.task = task;
+            this.events = events;
             this.done = done;
+        }
+
+        /** 할 일 (없으면 빈 글자: 알림 답 처리) */
+        @JavascriptInterface
+        public String task() {
+            return task == null ? "" : task;
+        }
+
+        @JavascriptInterface
+        public void event(String json) {
+            if (events != null) events.on(json);
         }
 
         @JavascriptInterface

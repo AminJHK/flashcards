@@ -14,6 +14,7 @@ import { useSettings } from '../hooks';
 import { go } from '../router';
 import { markStorySeen, startStoryJob, useStoryAudioJob, useStoryJob } from '../storyJob';
 import { useLexicon } from '../useLexicon';
+import { isNativeApp } from '../../adapters/native/platform';
 
 const DIFF_OPTIONS = (Object.keys(DIFFICULTIES) as StoryDifficulty[]).map((k) => [k, `${DIFFICULTIES[k].label} ${Math.round(DIFFICULTIES[k].known * 100)}%`] as const);
 const STEP_TEXT: Record<StoryStep['stage'], string> = { writing: '이야기를 쓰는 중…', checking: '아는 단어 비율을 확인하는 중…', revising: '모르는 단어를 줄여 다시 쓰는 중…', retrying: '답이 제대로 안 와서 다시 쓰는 중…', waiting: 'Gemini 서버가 붐벼서 잠시 기다리는 중…' };
@@ -94,7 +95,7 @@ export function Stories() {
         ) : step ? (
           <>
             <StoryProgress step={step} />
-            <span className="faint small">다른 화면으로 가도 뒤에서 계속 만들어요. 다 되면 알려 드려요. (앱을 닫으면 멈춰요)</span>
+            <span className="faint small">{isNativeApp() ? '앱을 닫거나 다른 앱을 써도 계속 만들어요. 다 되면 알림으로 알려 드려요.' : '다른 화면으로 가도 뒤에서 계속 만들어요. 다 되면 알려 드려요. (앱을 닫으면 멈춰요)'}</span>
           </>
         ) : (
           <>

@@ -62,6 +62,14 @@
 - 삼성 폰은 배터리 설정이 "제한 없음"이 아니면 알람을 막을 수 있다 (사용자 안내).
 - 실제 기기에서 아직 확인 못 함: 정확한 시각, 화면 없는 WebView가 9초 안에 끝나는지, 잠금 화면 버튼.
 
+## 앱을 닫아도 이야기·음성 만들기 (2026-10-22)
+
+- 사용자: 안드로이드 앱에서 이야기·음성을 만드는 동안 앱을 닫고 다른 일을 하고 싶다.
+- `StoryJobService.java`: 포그라운드 서비스(dataSync, 알림 표시줄에 진행 상황). `HeadlessRunner`로 화면 없는 WebView를 켜고(렌더러 우선순위 IMPORTANT, 20분 제한) `task()`로 할 일(`{kind:'story'|'audio', …}`)을 넘긴다.
+- 웹 쪽 `src/headless.ts`: task가 있으면 DB로 어휘를 만들고(`buildLexicon`) `runStory`·`runAudio`(adapters/stories/jobs.ts, 웹·서비스 워커와 같은 코드)로 만들어 저장. 진행 소식(JobEvent)은 `event(json)` → 서비스가 알림을 고치고 `BackgroundJobPlugin`으로 앱 화면에 넘긴다. 끝나면 "완성" 알림(누르면 앱).
+- `src/ui/storyJob.ts`: 안드로이드 앱이면 먼저 서비스에 맡기고(`startNativeJob`), 안 되면(예전 APK) 서비스 워커·화면 안으로. 'finished' 소식이나 화면이 다시 보일 때 서비스가 끝나 있으면 저장된 이야기로 완성/실패를 맞춘다.
+- 권한: FOREGROUND_SERVICE, FOREGROUND_SERVICE_DATA_SYNC.
+
 ## 알려진 한계 · 할 일
 
 - **Google 로그인(Drive 동기화·백업):** Google은 앱 안 브라우저(WebView)의 로그인 창을 막는다 → 앱에서는 `NativeGooglePlugin`(play-services-auth의 `AuthorizationClient`)으로 drive.file·openid·email 권한 토큰을 받는다 (`auth.ts`의 `nativeToken`). 한 번 허용하면 창 없이 새 토큰을 받으므로 자동 동기화도 된다 (`silentToken`).
