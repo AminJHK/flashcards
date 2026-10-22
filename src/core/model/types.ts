@@ -126,6 +126,8 @@ export interface Settings {
   storyAutoplay?: boolean;
   /** 이야기 "듣고 읽기": 새 문장은 글자를 가리고 소리만 먼저 들려준다 (누르면 글자) */
   storyListenFirst?: boolean;
+  /** 이야기 다시 듣기 화면에서 한국어 해석을 보일지. 기본 true */
+  storyReplayKo?: boolean;
   /** 이야기 받아쓰기: 새 문장마다 듣고 받아쓴 뒤 확인해야 다음으로 (빈칸 1~2개 또는 문장 전체) */
   storyDictation?: boolean;
   storyDictationStyle?: 'blank' | 'full';

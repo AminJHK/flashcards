@@ -212,6 +212,15 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await expect(page.getByText(/저장된 AI 음성만 재사용해요/)).toBeVisible();
   await expect(page.getByRole('button', { name: '1번째 문장 다시 듣기', exact: true })).toBeVisible();
   await page.screenshot({ path: 'test-results/shots/47-story-relisten.png' });
+  // 다시 듣기에서도 단어를 누르면 뜻, 해석은 켜고 끌 수 있다
+  await page.locator('.story-listening-line').nth(1).getByRole('button', { name: 'makan', exact: true }).click();
+  await expect(page.getByRole('tooltip')).toContainText('먹다');
+  await expect(page.getByText('번역 1', { exact: true })).toBeVisible();
+  await page.getByRole('switch', { name: '해석 보기' }).click();
+  await expect(page.getByText('번역 1', { exact: true })).toHaveCount(0);
+  await page.screenshot({ path: 'test-results/shots/47b-story-relisten-no-ko.png' });
+  await page.getByRole('switch', { name: '해석 보기' }).click();
+  await expect(page.getByText('번역 1', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '결과로' }).click();
   await expect(page.getByText('질문 3개 중 2개 맞힘')).toBeVisible();
   await page.getByRole('button', { name: '이야기 다시 듣기' }).click();

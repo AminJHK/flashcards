@@ -319,6 +319,13 @@ export function StoryReader({ id }: { id: string }) {
       {listening ? (
         <StoryListening
           story={story}
+          lex={lex}
+          names={names}
+          tipKey={tip?.key}
+          tipLine={tip?.line}
+          onTip={(line, t) => setTip((cur) => (cur?.line === line && cur.key === t.key ? undefined : { ...t, line }))}
+          showKo={settings?.storyReplayKo !== false}
+          onShowKo={(v) => void saveSettings({ storyReplayKo: v })}
           activeLine={replayLine}
           playingAll={playingAll}
           onPlayAll={() => { void replayAll(); }}
@@ -971,8 +978,16 @@ function WordSheet({ picked, story, lex, onClose }: { picked: Picked; story: Sto
 }
 
 /** Completed stories can be replayed without resetting answers or generating new Gemini clips. */
-function StoryListening({ story, activeLine, playingAll, onPlayAll, onStop, onPlayLine, onBack }: {
+/** 다시 듣기: 문장마다 듣기, 단어를 누르면 뜻 (읽을 때와 같은 말풍선), 해석 보이기/숨기기 */
+function StoryListening({ story, lex, names, tipKey, tipLine, onTip, showKo, onShowKo, activeLine, playingAll, onPlayAll, onStop, onPlayLine, onBack }: {
   story: Story;
+  lex: Lexicon;
+  names: Set<string>;
+  tipKey?: string;
+  tipLine?: StoryLine;
+  onTip: (line: StoryLine, t: Omit<Tip, 'line'>) => void;
+  showKo: boolean;
+  onShowKo: (v: boolean) => void;
   activeLine?: number;
   playingAll: boolean;
   onPlayAll: () => void;
@@ -996,6 +1011,10 @@ function StoryListening({ story, activeLine, playingAll, onPlayAll, onStop, onPl
         </button>
         <button type="button" className="btn btn-plain" onClick={onBack}>결과로</button>
       </div>
+      <div className="story-listening-ko">
+        <span>해석 보기</span>
+        <Switch label="해석 보기" checked={showKo} onChange={onShowKo} />
+      </div>
       <div className="story-listening-lines">
         {lines.map((line, i) => {
           const actor = story.characters.find((c) => c.id === line.speaker);
@@ -1003,8 +1022,10 @@ function StoryListening({ story, activeLine, playingAll, onPlayAll, onStop, onPl
             <div className={`story-listening-line${activeLine === i ? ' active' : ''}`} key={i}>
               <div className="story-listening-line-body">
                 <span className="story-sheet-eyebrow">{actor?.name ?? '나레이션'}</span>
-                <p>{line.text}</p>
-                {line.ko && <span className="story-listening-translation">{line.ko}</span>}
+                <p>
+                  <Tokens line={line} story={story} lex={lex} names={names} tipKey={tipLine === line ? tipKey : undefined} onTip={(t) => onTip(line, t)} />
+                </p>
+                {showKo && line.ko && <span className="story-listening-translation">{line.ko}</span>}
               </div>
               <button type="button" className="story-sheet-audio story-listening-play" onClick={() => onPlayLine(i)} aria-label={`${i + 1}번째 문장 다시 듣기`}>
                 <Icon name="speaker" size={20} />
