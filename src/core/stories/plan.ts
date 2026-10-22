@@ -56,6 +56,12 @@ function shuffle<T>(items: readonly T[], rng: () => number): T[] {
  * 새 단어는 최근에 소개하지 않은 것을 덱 순서대로, 복습 단어는 약한 단어 중에서 섞어서, 어려운 단어는 따로(FOCUS) 고른다.
  * topicKey가 있으면 상황 씨앗도 하나 고른다.
  */
+/**
+ * AI에게 보내는 아는 단어 목록의 최대 개수. 예전엔 450개였다 (답이 되풀이되며 멈추던 때 응급조치로 줄임,
+ * 진짜 원인은 JSON 형식이었고 줄 형식으로 바꾼 뒤엔 필요 없음). 1500단어는 Gemini에게 몇천 토큰이라 무료 한도·속도에 영향이 거의 없다.
+ */
+export const KNOWN_LIST_MAX = 1500;
+
 export function planStory(lex: Lexicon, difficulty: StoryDifficulty, history: StoryHistory = NO_HISTORY, topicKey?: string, rng: () => number = Math.random): StoryPlan {
   const allParticles = lex.entries.filter((e) => e.kind === 'particle');
   // 어조 말 덱에 있는 말은 단어 목록에서 뺀다 (구어체 덱에 같은 말이 있어도 어조 말로만 다룬다)
@@ -83,7 +89,7 @@ export function planStory(lex: Lexicon, difficulty: StoryDifficulty, history: St
   return {
     difficulty,
     knownTarget: DIFFICULTIES[difficulty].known,
-    familiar: familiar.slice(0, 450),
+    familiar: familiar.slice(0, KNOWN_LIST_MAX),
     reinforce,
     focus,
     seed: topicKey ? pickSeed(topicKey, history.seeds, rng) : undefined,

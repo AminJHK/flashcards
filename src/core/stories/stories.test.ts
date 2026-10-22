@@ -136,6 +136,13 @@ describe('이야기 계획과 요청문', () => {
     expect(raw.blocks).toHaveLength(1);
   });
 
+  it('배운 단어가 많아도(600개) 모두 아는 단어 목록으로 보낸다', () => {
+    const lex = lexOf(Array.from({ length: 600 }, (_, i) => word(`kata${i}`)));
+    const plan = planStory(lex, 'normal');
+    expect(plan.familiar).toHaveLength(600);
+    expect(userPrompt(plan, 'food')).toContain('kata599');
+  });
+
   it('단어가 너무 적으면 만들지 않고 이유를 알려준다', () => {
     expect(() => planStory(lexOf([word('aku')]), 'normal')).toThrow(/너무 적어요/);
   });
