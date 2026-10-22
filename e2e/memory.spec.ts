@@ -21,8 +21,8 @@ test('덱별 기억 상태: 덱 목록·덱 화면·복습 기록에 막대와 �
   await page.getByRole('button', { name: /여행 스페인어/ }).click();
   const panel = page.locator('.mem-panel');
   await expect(panel.getByText('지금 기억할 확률')).toBeVisible();
-  // FSRS-7: 새 카드에 '알았음'이면 바로 복습 단계(자라는 중)로, '다시'는 배우는 중
-  await expect(panel.getByRole('img')).toHaveAttribute('aria-label', /새 카드 510장, 배우는 중 1장, 자라는 중 3장/);
+  // FSRS-7: 새 카드에 '알았음'이면 바로 복습 단계(안정도 며칠 → 막 외움)로, '다시'는 배우는 중
+  await expect(panel.getByRole('img')).toHaveAttribute('aria-label', /새 카드 510장, 배우는 중 1장, 막 외움 3장, 자라는 중 0장, 탄탄함 0장, 완전히 앎 0장/);
   await page.screenshot({ path: 'test-results/shots/16-deck-memory.png' });
 
   await page.goto('/#/stats');

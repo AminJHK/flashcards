@@ -2,40 +2,60 @@ import type { Card, Millis } from '../model/types';
 import { stateOf } from '../scheduler/queue';
 import type { Scheduler } from '../scheduler/types';
 
-/** 이 간격(일) 이상이면 "탄탄함" (Anki의 mature 기준과 같다) */
-export const SOLID_DAYS = 21;
+/**
+ * 복습 단계 카드를 FSRS 안정도(기억이 90% 남아 있는 기간, 일)로 나누는 경계.
+ * 1주 미만 young, 1주~1달 growing, 1달~6달 solid, 6달 이상 mastered (사용자 요청 2026-10-22)
+ */
+export const STABILITY_DAYS = { growing: 7, solid: 30, mastered: 180 } as const;
 
 /**
- * 덱 하나의 기억 상태. 카드를 기억의 단단함 순서로 네 칸에 나눈다.
+ * 덱 하나의 기억 상태. 카드를 기억의 단단함 순서로 여섯 칸에 나눈다.
  * - fresh: 아직 안 본 새 카드
  * - learning: 오늘 배우는 중 (짧은 간격으로 다시 보는 단계, 틀려서 다시 배우는 카드 포함)
- * - growing: 복습 간격이 21일 미만
- * - solid: 복습 간격이 21일 이상
+ * - young: 막 외움 (안정도 1주 미만)
+ * - growing: 자라는 중 (1주~1달)
+ * - solid: 탄탄함 (1달~6달)
+ * - mastered: 완전히 앎 (6달 이상)
  * recall: 본 적 있는 카드를 지금 떠올릴 확률의 평균 (0~1). 본 카드가 없으면 undefined.
  */
 export interface MemoryBreakdown {
   fresh: number;
   learning: number;
+  young: number;
   growing: number;
   solid: number;
+  mastered: number;
   total: number;
   recall?: number;
 }
 
-export const EMPTY_MEMORY: MemoryBreakdown = { fresh: 0, learning: 0, growing: 0, solid: 0, total: 0 };
+export const EMPTY_MEMORY: MemoryBreakdown = { fresh: 0, learning: 0, young: 0, growing: 0, solid: 0, mastered: 0, total: 0 };
 
 const DAY = 86_400_000;
 
-export type MemoryLevel = 'fresh' | 'learning' | 'growing' | 'solid';
+export type MemoryLevel = 'fresh' | 'learning' | 'young' | 'growing' | 'solid' | 'mastered';
 
 /** 약한 것 → 단단한 것 순서 */
-export const LEVELS: readonly MemoryLevel[] = ['fresh', 'learning', 'growing', 'solid'];
+export const LEVELS: readonly MemoryLevel[] = ['fresh', 'learning', 'young', 'growing', 'solid', 'mastered'];
+
+/** 기억이 단단한 단계 (어려운 단어 표시가 사라지고, 덱 목록의 "탄탄"에 센다) */
+export const isSolid = (l: MemoryLevel): boolean => l === 'solid' || l === 'mastered';
+
+/** 카드의 안정도(일). FSRS-6·7 모두 memory.stability에 둔다. 없으면 복습 간격으로 대신한다. */
+export function stabilityDays(c: Card): number {
+  const s = (c.memory as { stability?: unknown } | undefined)?.stability;
+  return typeof s === 'number' && Number.isFinite(s) ? s : (c.due - (c.lastReviewAt ?? c.due)) / DAY;
+}
 
 /** 카드 한 장의 단계 */
 export function cardLevel(c: Card): MemoryLevel {
   if (c.phase === 'new') return 'fresh';
   if (c.phase === 'learning') return 'learning';
-  return c.due - (c.lastReviewAt ?? c.due) >= SOLID_DAYS * DAY ? 'solid' : 'growing';
+  const s = stabilityDays(c);
+  if (s >= STABILITY_DAYS.mastered) return 'mastered';
+  if (s >= STABILITY_DAYS.solid) return 'solid';
+  if (s >= STABILITY_DAYS.growing) return 'growing';
+  return 'young';
 }
 
 /** 단어(노트) 하나의 기억 상태. 카드가 여러 장(정방향·역방향)이면 가장 약한 카드를 기준으로 한다. */
@@ -94,9 +114,9 @@ export function memoryByDeck(cards: readonly Card[], scheduler: Scheduler, now: 
  */
 export const HARD_LAPSES = 4;
 
-/** 어려운 단어인지. 기억이 탄탄해지면(가장 약한 카드도 21일 이상) 표시가 사라진다. */
+/** 어려운 단어인지. 기억이 탄탄해지면(가장 약한 카드도 안정도 1달 이상) 표시가 사라진다. */
 export function isHard(m: Pick<WordMemory, 'level' | 'lapses'> | undefined): boolean {
-  return !!m && m.lapses >= HARD_LAPSES && m.level !== 'solid' && m.level !== 'fresh';
+  return !!m && m.lapses >= HARD_LAPSES && !isSolid(m.level) && m.level !== 'fresh';
 }
 
 /** 카드들 중 어려운 단어의 noteId → 잊은 횟수. 기억 확률이 필요 없어서 scheduler 없이 센다. */

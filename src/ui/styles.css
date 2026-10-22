@@ -1544,12 +1544,18 @@ textarea.input-sentence {
   background: var(--surface2);
 }
 .mem-1 {
-  background: color-mix(in srgb, var(--accent) 40%, var(--surface2));
+  background: color-mix(in srgb, var(--accent) 25%, var(--surface2));
 }
 .mem-2 {
-  background: color-mix(in srgb, var(--accent) 70%, var(--surface2));
+  background: color-mix(in srgb, var(--accent) 45%, var(--surface2));
 }
 .mem-3 {
+  background: color-mix(in srgb, var(--accent) 65%, var(--surface2));
+}
+.mem-4 {
+  background: color-mix(in srgb, var(--accent) 85%, var(--surface2));
+}
+.mem-5 {
   background: var(--accent);
 }
 
@@ -1718,12 +1724,12 @@ textarea.input-sentence {
   display: flex;
   align-items: flex-end;
   gap: 2px;
-  height: 18px;
+  height: 19px;
 }
 
 .word-bars i {
   display: block;
-  width: 6px;
+  width: 5px;
   border-radius: 2px;
 }
 

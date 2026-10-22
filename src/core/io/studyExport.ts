@@ -8,7 +8,7 @@ import type { Scheduler } from '../scheduler/types';
  * 백업 파일(JSON)은 id로 서로 이어져 있어 읽기 어려워서, 단어 하나에 한 줄인 CSV로 만든다.
  * 사용자가 직접 파일을 저장하거나 보낸다. 앱이 어디로 보내지는 않는다 (공개 저장소에도 넣지 않는다).
  */
-const LEVEL_TEXT = { fresh: '새 카드', learning: '배우는 중', growing: '익히는 중', solid: '탄탄함' } as const;
+const LEVEL_TEXT = { fresh: '새 카드', learning: '배우는 중', young: '막 외움', growing: '자라는 중', solid: '탄탄함', mastered: '완전히 앎' } as const;
 
 const HEADER = ['덱', '카드 종류', '단어(앞면)', '뜻(뒷면)', '상태', '지금 떠올릴 확률(%)', '복습 횟수', '틀린 횟수', '어려운 단어', '마지막 복습', '다음 복습', '최근 답(오래된→최근)', '태그'];
 

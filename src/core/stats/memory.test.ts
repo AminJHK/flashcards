@@ -4,7 +4,7 @@ import type { Card } from '../model/types';
 import { createFsrs6 } from '../scheduler/fsrs6';
 import { applyReview } from '../scheduler/queue';
 import { DAY, MIN, T0, deck } from '../testUtil';
-import { HARD_LAPSES, hardWords, isHard, memoryBreakdown, memoryByDeck, wordMemory } from './memory';
+import { cardLevel, HARD_LAPSES, hardWords, isHard, isSolid, memoryBreakdown, memoryByDeck, wordMemory } from './memory';
 
 const sched = createFsrs6({ desiredRetention: 0.9 });
 const d = deck('d');
@@ -22,22 +22,29 @@ function reviewed(c: Card, n: number): { card: Card; at: number } {
 }
 
 describe('기억 상태', () => {
-  it('새 카드, 배우는 중, 자라는 중, 탄탄함으로 나눈다', () => {
+  it('새 카드, 배우는 중, 그리고 복습 카드는 안정도로 막 외움·자라는 중·탄탄함·완전히 앎으로 나눈다', () => {
     const fresh = word(1);
     const learning = applyReview(word(2), 1, T0, sched); // 틀림 → 배우는 중
-    const growing = reviewed(word(3), 3).card; // 며칠 간격
-    const solid = reviewed(word(4), 8).card; // 몇 달 간격
-    expect(solid.due - solid.lastReviewAt!).toBeGreaterThanOrEqual(21 * DAY);
-    expect(growing.due - growing.lastReviewAt!).toBeLessThan(21 * DAY);
-    const m = memoryBreakdown([fresh, learning, growing, solid], sched, T0);
-    expect([m.fresh, m.learning, m.growing, m.solid, m.total]).toEqual([1, 1, 1, 1, 4]);
+    const base = reviewed(word(3), 3).card;
+    expect(base.phase).toBe('review');
+    const withS = (stability: number, i: number): Card => ({ ...base, id: `s${i}`, memory: { ...base.memory, stability } });
+    const cards = [fresh, learning, withS(2, 1), withS(6.9, 2), withS(7, 3), withS(29, 4), withS(30, 5), withS(179, 6), withS(180, 7), withS(900, 8)];
+    expect(cards.map(cardLevel)).toEqual(['fresh', 'learning', 'young', 'young', 'growing', 'growing', 'solid', 'solid', 'mastered', 'mastered']);
+    const m = memoryBreakdown(cards, sched, T0);
+    expect([m.fresh, m.learning, m.young, m.growing, m.solid, m.mastered, m.total]).toEqual([1, 1, 2, 2, 2, 2, 10]);
     expect(m.recall).toBeGreaterThan(0);
     expect(m.recall).toBeLessThanOrEqual(1);
   });
 
   it('숨긴 카드와 보류한 카드는 세지 않고, 본 카드가 없으면 기억 확률이 없다', () => {
     const m = memoryBreakdown([word(1), { ...word(2), hidden: true }, { ...word(3), suspended: true }], sched, T0);
-    expect(m).toEqual({ fresh: 1, learning: 0, growing: 0, solid: 0, total: 1 });
+    expect(m).toEqual({ fresh: 1, learning: 0, young: 0, growing: 0, solid: 0, mastered: 0, total: 1 });
+  });
+
+  it('안정도가 없으면 복습 간격으로 단계를 정한다', () => {
+    const base = reviewed(word(1), 3).card;
+    const noS = { ...base, memory: undefined, lastReviewAt: T0, due: T0 + 40 * DAY };
+    expect(cardLevel(noS)).toBe('solid');
   });
 
   it('시간이 지나면 기억 확률이 내려간다', () => {
@@ -54,7 +61,8 @@ describe('기억 상태', () => {
     expect(m.level).toBe('learning');
     expect(m.lapses).toBe(weak.lapses + solid.lapses);
     expect(m.due).toBe(Math.min(solid.due, weak.due));
-    expect(wordMemory([solid, { ...weak, hidden: true }], sched, T0 + MIN)!.level).toBe('solid');
+    expect(wordMemory([solid, { ...weak, hidden: true }], sched, T0 + MIN)!.level).toBe(cardLevel(solid));
+    expect(isSolid(cardLevel(solid))).toBe(true);
     expect(wordMemory([word(3)], sched, T0)).toEqual({ level: 'fresh', lapses: 0 });
     expect(wordMemory([{ ...word(4), hidden: true }], sched, T0)).toBeUndefined();
   });
@@ -94,6 +102,8 @@ describe('어려운 단어', () => {
 
   it('기억이 탄탄해지거나 숨긴 카드는 어려운 단어가 아니다', () => {
     expect(isHard({ level: 'solid', lapses: 9 })).toBe(false);
+    expect(isHard({ level: 'mastered', lapses: 9 })).toBe(false);
+    expect(isHard({ level: 'young', lapses: HARD_LAPSES })).toBe(true);
     expect(isHard({ level: 'growing', lapses: HARD_LAPSES })).toBe(true);
     expect(isHard(undefined)).toBe(false);
     const hard = forgot(word(1), HARD_LAPSES);

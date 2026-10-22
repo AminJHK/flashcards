@@ -62,7 +62,7 @@ export function Stats() {
               ))}
           </div>
           <span className="faint small" style={{ padding: '0 4px', lineHeight: 1.6 }}>
-            탄탄함은 다음 복습까지 3주 이상 남은 카드예요. 기억할 확률은 FSRS가 계산한, 지금 시험을 보면 맞힐 확률의 평균이에요.
+            단계는 FSRS가 계산한 기억의 안정도(잊지 않고 버티는 기간)로 나눠요: 막 외움 1주 미만, 자라는 중 1주~1달, 탄탄함 1달~6달, 완전히 앎 6달 이상. 기억할 확률은 FSRS가 계산한, 지금 시험을 보면 맞힐 확률의 평균이에요.
           </span>
         </>
       )}

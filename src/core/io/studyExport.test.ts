@@ -24,7 +24,7 @@ describe('AI에게 보여 줄 학습 기록 (CSV)', () => {
     const csv = studyCsv({ decks, notes: [note('a', 'jemput', '데리러 가다, "마중"'), note('b', 'baru', '새로운')], cards: [card('c1', 'a', {}), card('c2', 'b', { phase: 'new', isNew: true, lastReviewAt: undefined, lapses: 0 })], reviewLogs }, sched, NOW);
     const lines = csv.trim().split('\n');
     expect(lines[0]).toBe('덱,카드 종류,단어(앞면),뜻(뒷면),상태,지금 떠올릴 확률(%),복습 횟수,틀린 횟수,어려운 단어,마지막 복습,다음 복습,최근 답(오래된→최근),태그');
-    expect(lines[1]).toMatch(/^테스트 덱,[^,]+,jemput,"데리러 가다, ""마중""",익히는 중,73,2,5,예,2026-10-19,2026-10-23,다시 알았음,t1$/);
+    expect(lines[1]).toMatch(/^테스트 덱,[^,]+,jemput,"데리러 가다, ""마중""",막 외움,73,2,5,예,2026-10-19,2026-10-23,다시 알았음,t1$/);
     expect(lines[2]).toMatch(/,baru,새로운,새 카드,,0,0,,,,,t1$/);
     expect(studyFileName(NOW)).toBe('flashcards-study-20261020.csv');
   });
