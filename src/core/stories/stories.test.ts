@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Card, Note } from '../model/types';
 import type { Scheduler } from '../scheduler/types';
-import { nameSet, parseDraft, planStory, revisionPrompt, storyTexts, userPrompt } from './plan';
+import { nameSet, parseDraft, planStory, revisionPrompt, storyTexts, usedWords, userPrompt } from './plan';
+import { parseStoryText } from './textFormat';
 import { analyzeText, buildLexicon, KNOWN_RECALL, measureCoverage, meetsTarget } from './vocab';
 
 const NOW = 1_000_000_000;
@@ -110,9 +111,29 @@ describe('이야기 계획과 요청문', () => {
     expect(again.seed!.id).not.toBe(plan.seed!.id);
     const p = userPrompt(plan, 'food');
     expect(p).toContain('FOCUS WORDS: ');
-    expect(p).toContain('Use every FOCUS WORD at least twice');
+    // 단어 넣기보다 이야기가 먼저: 몇 번 넣으라는 조건이 없고, 줄거리를 먼저 짠다
+    expect(p).not.toMatch(/at least twice|3 or more|every FOCUS WORD/);
+    expect(p).toContain('There is no minimum');
+    expect(p).toContain('MOST IMPORTANT: a natural, fun and logically consistent story');
+    expect(p).toContain('PLAN: <English planning note>');
     expect(p).toContain(`Situation (start from this idea`);
     expect(p).toContain(plan.seed!.en);
+  });
+
+  it('기록에는 고른 단어 중 이야기에 실제로 나온 것만 남는다 (빠진 단어는 다음 이야기 후보)', () => {
+    const lex = lexOf([word('makan'), word('minum'), word('tidur')]);
+    const [makan, minum, tidur] = ['makan', 'minum', 'tidur'].map((w) => lex.entries.find((e) => e.word === w)!);
+    const blocks = [
+      { kind: 'line' as const, speaker: 'a', text: 'Aku makannya nanti.', ko: '' },
+      { kind: 'line' as const, speaker: 'b', text: 'Tidur dulu!', ko: '' },
+    ];
+    expect(usedWords([makan!, minum!, tidur!], blocks, lex, new Set())).toEqual(['makan', 'tidur']);
+  });
+
+  it('줄거리(PLAN) 줄은 이야기에 들어가지 않는다', () => {
+    const { raw } = parseStoryText('PLAN: Budi wants coffee; it is morning.\nTITLE: Kopi\nLINE: a | Mau kopi? | 커피?\nEND');
+    expect(raw.title).toBe('Kopi');
+    expect(raw.blocks).toHaveLength(1);
   });
 
   it('단어가 너무 적으면 만들지 않고 이유를 알려준다', () => {

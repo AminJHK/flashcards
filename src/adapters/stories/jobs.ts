@@ -3,9 +3,9 @@ import { prepareStoryAudio } from '../speech/speech';
 import { db } from '../storage/db';
 import { getSettings } from '../storage/repo';
 import { saveStory } from '../storage/stories';
-import { planStory, type StoryHistory } from '../../core/stories/plan';
+import { nameSet, planStory, usedWords, type StoryHistory } from '../../core/stories/plan';
 import type { Story, StoryDifficulty } from '../../core/stories/types';
-import type { Lexicon } from '../../core/stories/vocab';
+import type { Lexicon, VocabEntry } from '../../core/stories/vocab';
 
 /**
  * 이야기 만들기·이야기 음성 만들기의 실제 일. 화면(ui/storyJob.ts)과 서비스 워커(sw.ts)가 같이 쓴다.
@@ -52,7 +52,10 @@ export async function runStory(args: StoryJobArgs, emit: (e: JobEvent) => void):
     };
     const plan = planStory(args.lex, args.difficulty, history, args.topicKey);
     const made = await createStory({ lex: args.lex, plan, topicKey: args.topicKey, key: args.key, onStep: (step) => emit({ kind: 'step', id: args.id, step }) });
-    const story: Story = { ...made, plan: { newWords: plan.newWords.map((e) => e.word), reinforce: [...plan.focus, ...plan.reinforce].map((e) => e.word), seed: plan.seed?.id } };
+    // 실제로 나온 단어만 기록한다: 빠진 단어는 다음 이야기 후보로 남는다
+    const names = nameSet(made.characters, made.properNouns);
+    const used = (es: VocabEntry[]) => usedWords(es, made.blocks, args.lex, names);
+    const story: Story = { ...made, plan: { newWords: used(plan.newWords), reinforce: used([...plan.focus, ...plan.reinforce]), seed: plan.seed?.id } };
     await saveStory(story);
     emit({ kind: 'done', id: args.id, storyId: story.id, title: story.title });
     return story;

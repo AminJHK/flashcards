@@ -1,7 +1,7 @@
 import { DIFFICULTIES, type Coverage, type GlossEntry, type StoryBlock, type StoryCharacter, type StoryDifficulty, type StoryQuestion } from './types';
 import { chunkSegments } from './chunks';
 import { pickSeed, type StorySeed } from './seeds';
-import { FALLBACK_MIN_FAMILIAR, norm, offendingWords, tokenize, type Lexicon, type VocabEntry } from './vocab';
+import { analyzeText, FALLBACK_MIN_FAMILIAR, norm, offendingWords, tokenize, type Lexicon, type VocabEntry } from './vocab';
 
 /** 이야기 하나를 만들 때 AI에게 줄 단어 목록 */
 export interface StoryPlan {
@@ -120,16 +120,20 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
   const unknownPct = Math.round((1 - plan.knownTarget) * 100);
   const lines = [
     `Topic: ${topic}.`,
+    'MOST IMPORTANT: a natural, fun and logically consistent story. Story quality comes before vocabulary: never force a listed word into a line where a native speaker would not say it. Prefer what a Jakarta native would really say in that moment.',
     'Story: 2 or 3 recurring characters with Indonesian first names, a clear beginning, middle and ending, and a small surprise, joke or twist. Avoid a generic "vocabulary demo" plot.',
+    'Consistency: keep the time of day, the place and the order of events consistent. Characters only know what they saw or were told, and every action has a clear reason. A change of place or a twist is fine, but it must be set up earlier and make sense inside the story.',
+    'First plan, then write: before TITLE, write 3 to 5 PLAN lines in English (the learner does not see them): the characters and what each one wants and knows; where and when it happens; cause → main event → result; how the twist is set up. Then write the story so it follows the PLAN exactly.',
     plan.seed ? `Situation (start from this idea and adapt it to the topic; do not build the plot around finding objects on the floor): ${plan.seed.en}.` : '',
     'Length: 120 to 180 Indonesian words in total across narration and dialogue, in 10 to 18 short lines. Use narration sparingly.',
     '',
     'VOCABULARY RULES (very important, they are checked automatically by counting every word occurrence):',
     `- Build the story from the KNOWN WORDS below. At least ${Math.round(plan.knownTarget * 100)}% of all word occurrences must be KNOWN WORDS (character names do not count).`,
     '- You may use the forms in brackets, e.g. "nyari(=mencari)" means both nyari and mencari are known. Adding -nya, -lah, -kah, -ku or -mu to a known word is fine. Other affixes (me-, ber-, di-, -kan, -i) make a NEW word.',
-    `- Introduce the NEW WORDS below (use each one at least twice so the reader can guess it). Apart from them, avoid any word that is not listed.`,
-    plan.reinforce.length ? '- Also use 3 or more of the REVIEW WORDS (the learner is still learning them).' : '',
-    plan.focus.length ? '- Use every FOCUS WORD at least twice, in different lines, in a way that makes its meaning clear from the situation.' : '',
+    `- NEW WORDS: use the ones that fit the story naturally, once or twice each, where the situation makes the meaning guessable. Leave out any new word that would make a line unnatural (it comes back in a later story). Apart from them, avoid any word that is not listed.`,
+    plan.focus.length || plan.reinforce.length
+      ? `- ${[plan.focus.length ? 'FOCUS WORDS (hard for the learner, prefer these)' : '', plan.reinforce.length ? 'REVIEW WORDS (still being learned)' : ''].filter(Boolean).join(' and ')}: use the ones that fit naturally, once or twice each. There is no minimum; it is fine to leave some out.`
+      : '',
     plan.particles.length || plan.newParticle
       ? '- PARTICLES are short spoken particles (sih, dong, deh, kok, kan, lho …). Use them naturally in the dialogue lines only (never in narration), where a native speaker really would say them: ' +
         [plan.particles.length ? 'use 1 to 3 of the PARTICLE WORDS, preferring the first ones' : '', plan.newParticle ? 'use the NEW PARTICLE at least twice in different lines so the reader can feel its meaning' : ''].filter(Boolean).join(', and ') +
@@ -156,6 +160,7 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     'Every question except MATCH needs a short Korean explanation.',
     '',
     'FORMAT (one item per line, in story order; answer numbers start at 1; speaker is a character id or narrator):',
+    'PLAN: <English planning note>',
     'TITLE: <Indonesian title>',
     'TITLE_KO: <Korean title>',
     'CHARACTER: a | <name>',
@@ -346,11 +351,22 @@ export function revisionPrompt(plan: StoryPlan, coverage: Coverage | undefined, 
     parts.push(
       `Measured: ${Math.round(coverage.familiar * 100)}% of ${coverage.tokens} word occurrences are known words; the target is ${Math.round(plan.knownTarget * 100)}%.`,
       words.length ? `Replace these words with KNOWN WORDS where possible (keep at most the planned new words): ${words.join(', ')}.` : '',
+      'When you replace words, rewrite the whole sentence so it still sounds natural. You may drop listed words that do not fit.',
     );
   }
   if (problems.length) parts.push(`Fix these problems (they are written in Korean): ${problems.join(' / ')}`);
-  parts.push('Keep the same characters and plot if they are fine.');
+  parts.push('Keep the same characters and plot if they are fine, and keep the story logically consistent (time, place, who knows what, cause and result).');
   return parts.filter(Boolean).join('\n');
+}
+
+/**
+ * 고른 단어 중 이야기에 실제로 나온 것만 (기록용). AI가 어울리지 않아 뺀 단어는 기록하지 않아서
+ * 다음 이야기에서 쉬지 않고 다시 후보가 된다.
+ */
+export function usedWords(entries: readonly VocabEntry[], blocks: readonly StoryBlock[], lex: Lexicon, names: ReadonlySet<string>): string[] {
+  const found = new Set<string>();
+  for (const t of storyTexts(blocks)) for (const sp of analyzeText(t, lex, names)) if (sp.entry) found.add(norm(sp.entry.word));
+  return entries.filter((e) => found.has(norm(e.word))).map((e) => e.word);
 }
 
 /** 이야기 안의 모든 인도네시아어 줄 */
