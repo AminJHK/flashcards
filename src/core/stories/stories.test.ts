@@ -121,6 +121,7 @@ describe('이야기 계획과 요청문', () => {
     expect(p).toContain('There is no minimum');
     expect(p).toContain('MOST IMPORTANT: a natural, fun and logically consistent story');
     expect(p).toContain('PLAN: <English planning note>');
+    expect(p).toContain('Never leave the key thing of the plot unnamed');
     expect(p).toContain(`Situation (start from this idea`);
     expect(p).toContain(plan.seed!.en);
   });
