@@ -30,7 +30,7 @@ async function runTask(task: NativeTask): Promise<void> {
     return;
   }
   const [notes, cards] = await Promise.all([db.notes.toArray(), db.cards.toArray()]);
-  const lex = buildLexicon(notes, cards, schedulerFor(settings), Date.now());
+  const lex = buildLexicon(notes, cards, schedulerFor(settings), Date.now(), settings.knownWords);
   const story = await runStory({ id: task.id, startedAt: task.startedAt, lex, difficulty: task.difficulty as never, topicKey: task.topicKey, key }, emit);
   if (story) await runAudio(story, (audio) => emit({ kind: 'audio', audio }));
 }

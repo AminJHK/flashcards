@@ -1,6 +1,7 @@
 import type { Card, Millis, Note } from '../model/types';
 import { isHard, wordMemory } from '../stats/memory';
 import type { Scheduler } from '../scheduler/types';
+import { BASIC_WORDS } from './basicWords';
 import type { Coverage, GlossEntry } from './types';
 
 /**
@@ -25,8 +26,12 @@ export interface VocabEntry {
   recall?: number;
   /** 여러 번 잊어버린 "어려운 단어" (core/stats/memory.ts isHard) */
   hard?: boolean;
-  /** 'particle'이면 어조 말(sih, dong …). 예문마다 노트가 있어도 말 하나로 묶인 항목이다 */
-  kind?: 'particle';
+  /**
+   * 'particle': 어조 말(sih, dong …). 예문마다 노트가 있어도 말 하나로 묶인 항목이다.
+   * 'basic': 덱에 없지만 기본 단어라 아는 단어로 친다 (basicWords.ts). 'mine': 읽기에서 사용자가 "이미 알아요"를 누른 단어.
+   * basic·mine은 노트가 없다 (noteId '').
+   */
+  kind?: 'particle' | 'basic' | 'mine';
   /** 덱 안의 순서 (작을수록 먼저 나오는 = 자주 쓰는 단어) */
   order: number;
 }
@@ -71,7 +76,11 @@ const STATUS_RANK: Record<VocabStatus, number> = { known: 3, learning: 2, deckNe
 
 export const norm = (s: string) => s.toLowerCase().normalize('NFC').trim();
 
-export function buildLexicon(notes: readonly Note[], cards: readonly Card[], scheduler: Scheduler, now: Millis): Lexicon {
+/** 덱 밖이지만 아는 단어로 치는 항목 (기본 단어, 사용자가 "이미 알아요"를 누른 단어) */
+export const isExtraWord = (e: VocabEntry): boolean => e.kind === 'basic' || e.kind === 'mine';
+
+/** myKnown: 사용자가 읽기에서 "이미 알아요"를 누른 단어 (Settings.knownWords) */
+export function buildLexicon(notes: readonly Note[], cards: readonly Card[], scheduler: Scheduler, now: Millis, myKnown: readonly string[] = []): Lexicon {
   const byNote = new Map<string, Card[]>();
   for (const c of cards) byNote.set(c.noteId, [...(byNote.get(c.noteId) ?? []), c]);
   const entries: VocabEntry[] = [];
@@ -101,6 +110,15 @@ export function buildLexicon(notes: readonly Note[], cards: readonly Card[], sch
     put(e.word, e);
     for (const s of e.standard.split('/')) put(s, e);
     if (e.root) put(e.root, e);
+  }
+  // 덱에 없는 기본 단어·내가 아는 단어: 덱에 같은 형태가 있으면 덱 쪽을 쓴다
+  const extras: [string, string, 'basic' | 'mine'][] = [...myKnown.map((w) => [w, '', 'mine'] as [string, string, 'mine']), ...BASIC_WORDS.map(([w, m]) => [w, m, 'basic'] as [string, string, 'basic'])];
+  for (const [w, meaning, kind] of extras) {
+    const f = norm(w);
+    if (!f || forms.has(f) || phrases.some((p) => p.tokens.join(' ') === f)) continue;
+    const e: VocabEntry = { noteId: '', word: f, meaning, standard: '', root: '', status: 'known', kind, order: entries.length };
+    entries.push(e);
+    put(f, e);
   }
   // 변형: 묶음 안에서 가장 잘 아는 형태를 기준으로 나머지를 채운다
   for (const group of VARIANTS) {
@@ -259,7 +277,7 @@ export function offendingWords(c: Coverage, fallback: boolean): string[] {
 /** 단어를 눌렀을 때 보여 줄 뜻: 덱의 뜻이 먼저, 없으면 생성할 때 받은 뜻 */
 export function glossFor(span: Span, glossary: readonly GlossEntry[]): { ko?: string; en?: string; root?: string; inDeck: boolean } {
   const g = findGloss(span.text, glossary);
-  if (span.entry) return { ko: span.entry.meaning, en: g?.en, root: span.entry.root || span.entry.standard || g?.root, inDeck: true };
+  if (span.entry) return { ko: span.entry.meaning || g?.ko, en: g?.en, root: span.entry.root || span.entry.standard || g?.root, inDeck: !isExtraWord(span.entry) };
   return { ko: g?.ko, en: g?.en, root: g?.root, inDeck: false };
 }
 

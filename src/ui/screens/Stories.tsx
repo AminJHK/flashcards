@@ -13,7 +13,8 @@ import { ask } from '../confirm';
 import { useSettings } from '../hooks';
 import { go } from '../router';
 import { markStorySeen, startStoryJob, useStoryAudioJob, useStoryJob } from '../storyJob';
-import { useLexicon } from '../useLexicon';
+import { setKnownWord, useLexicon } from '../useLexicon';
+import { isExtraWord } from '../../core/stories/vocab';
 import { isNativeApp } from '../../adapters/native/platform';
 
 const DIFF_OPTIONS = (Object.keys(DIFFICULTIES) as StoryDifficulty[]).map((k) => [k, `${DIFFICULTIES[k].label} ${Math.round(DIFFICULTIES[k].known * 100)}%`] as const);
@@ -49,6 +50,7 @@ export function Stories() {
   const [difficulty, setDifficulty] = useState<StoryDifficulty>('normal');
   const [topic, setTopic] = useState('free');
   const [menu, setMenu] = useState<Story>();
+  const [mineOpen, setMineOpen] = useState(false);
   const job = useStoryJob();
   const audioJob = useStoryAudioJob();
   const step = job.status === 'running' ? job.step : undefined;
@@ -57,7 +59,8 @@ export function Stories() {
 
   if (!settings || !lex || !stories || !progress) return <div className="screen" />;
   const key = settings.gemini?.apiKey;
-  const count = (s: string) => lex.entries.filter((e) => e.status === s).length;
+  // 덱의 단어만 센다 (기본 단어·덱 밖의 아는 단어는 빼고)
+  const count = (s: string) => lex.entries.filter((e) => e.status === s && !isExtraWord(e)).length;
   const familiar = count('known') + count('learning');
   const byId = new Map(progress.map((p) => [p.storyId, p]));
   // 기기 음성으로 읽기를 켰으면 AI 음성 준비 상태는 보여 주지 않는다
@@ -79,6 +82,11 @@ export function Stories() {
         <span className="muted small">
           인도네시아어 · 아는 단어 {count('known')} · 배우는 중 {count('learning')} · 아직 안 배운 덱 단어 {count('deckNew')}
         </span>
+        {(settings.knownWords?.length ?? 0) > 0 && (
+          <button type="button" className="link-btn small" onClick={() => setMineOpen(true)}>
+            덱 밖의 아는 단어 {settings.knownWords!.length}개
+          </button>
+        )}
       </div>
 
       <div className="panel story-make">
@@ -180,6 +188,30 @@ export function Stories() {
         </>
       )}
 
+      {mineOpen && (
+        <div className="dialog-backdrop story-word-backdrop" onClick={() => setMineOpen(false)}>
+          <div className="dialog story-sheet" role="dialog" aria-modal="true" aria-label="덱 밖의 아는 단어" onClick={(e) => e.stopPropagation()}>
+            <div className="story-sheet-handle" aria-hidden="true" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <strong style={{ fontSize: 18 }}>덱 밖의 아는 단어</strong>
+              <span className="muted small" style={{ lineHeight: 1.6 }}>
+                읽다가 "이미 알아요"를 누른 단어예요. 복습 카드는 없고, 이야기에서 아는 단어로 쳐요. ini·itu 같은 기본 단어 {lex.entries.filter((e) => e.kind === 'basic').length}개는 따로 넣지 않아도 아는 단어로 쳐요.
+              </span>
+            </div>
+            <div className="group" style={{ padding: '0 16px', maxHeight: '50vh', overflowY: 'auto' }}>
+              {(settings.knownWords ?? []).map((w) => (
+                <div key={w} className="row">
+                  <span className="row-title" style={{ flex: 1 }}>{w}</span>
+                  <button type="button" className="btn btn-plain" style={{ height: 36, padding: '0 14px' }} aria-label={`${w} 빼기`} onClick={() => void setKnownWord(settings, w, false)}>
+                    빼기
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button type="button" className="story-sheet-close" onClick={() => setMineOpen(false)}>닫기</button>
+          </div>
+        </div>
+      )}
       {menu && (
         <div className="dialog-backdrop story-word-backdrop" onClick={() => setMenu(undefined)}>
           <div className="dialog story-sheet" role="dialog" aria-modal="true" aria-label={`${menu.title} 메뉴`} onClick={(e) => e.stopPropagation()}>

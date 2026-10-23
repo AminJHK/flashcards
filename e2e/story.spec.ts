@@ -158,6 +158,12 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await expect(sheet).toContainText('meatball soup');
   await expect(sheet).toContainText('이야기 속 문장');
   await page.screenshot({ path: 'test-results/shots/41-read-word.png' });
+  // 덱에 없는 단어: "이미 알아요"로 복습 카드 없이 아는 단어로 치고, 다시 뺄 수 있다
+  await sheet.getByRole('button', { name: '이미 알아요' }).click();
+  await expect(sheet.getByText('이미 아는 단어로 표시했어요 · 복습 카드 없음')).toBeVisible();
+  await page.screenshot({ path: 'test-results/shots/41b-read-word-known.png' });
+  await sheet.getByRole('button', { name: '아는 단어에서 빼기' }).click();
+  await expect(sheet.getByRole('button', { name: '이미 알아요' })).toBeVisible();
   await sheet.getByRole('button', { name: '내 덱에 추가' }).click();
   await expect(page.getByText('덱에 넣었어요. 새 카드로 나와요')).toBeVisible();
   await expect(sheet.getByText('덱에 있어요 · 아직 안 배움')).toBeVisible();

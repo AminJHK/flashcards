@@ -15,7 +15,7 @@ import { Segmented, Switch } from '../components/Controls';
 import { useNotes, useSettings } from '../hooks';
 import { go } from '../router';
 import { useToast } from '../toast';
-import { storyDeckId, useLexicon } from '../useLexicon';
+import { setKnownWord, storyDeckId, useLexicon } from '../useLexicon';
 import { startStoryAudio, useStoryAudioJob } from '../storyJob';
 import type { Settings } from '../../core/model/types';
 
@@ -961,15 +961,30 @@ function WordSheet({ picked, story, lex, onClose }: { picked: Picked; story: Sto
             <span>{line.ko}</span>
           </div>
         )}
-        {entry ? (
+        {entry?.kind === 'mine' ? (
+          <>
+            <div className="story-sheet-known">
+              <Icon name="check" size={18} />
+              <span>이미 아는 단어로 표시했어요 · 복습 카드 없음</span>
+            </div>
+            <button type="button" className="btn btn-plain story-sheet-add" onClick={() => settings && void setKnownWord(settings, entry.word, false).then(() => toast('아는 단어에서 뺐어요'))}>
+              아는 단어에서 빼기
+            </button>
+          </>
+        ) : entry ? (
           <div className="story-sheet-known">
             <Icon name="check" size={18} />
-            <span>{STATUS_TEXT[entry.status]}</span>
+            <span>{entry.kind === 'basic' ? '기본 단어 · 덱에 없어도 아는 단어로 쳐요' : STATUS_TEXT[entry.status]}</span>
           </div>
         ) : (
-          <button type="button" className="btn btn-primary story-sheet-add" onClick={add} disabled={busy}>
-            {busy ? '추가하는 중…' : '내 덱에 추가'}
-          </button>
+          <div className="story-sheet-actions">
+            <button type="button" className="btn btn-primary story-sheet-add" onClick={add} disabled={busy}>
+              {busy ? '추가하는 중…' : '내 덱에 추가'}
+            </button>
+            <button type="button" className="btn btn-plain story-sheet-add" onClick={() => settings && void setKnownWord(settings, span.text, true).then(() => toast('아는 단어로 표시했어요. 복습 카드는 만들지 않아요'))}>
+              이미 알아요
+            </button>
+          </div>
         )}
         <button type="button" className="story-sheet-close" onClick={onClose}>읽기 계속하기</button>
       </div>

@@ -3,7 +3,7 @@ import type { Card, Note } from '../model/types';
 import type { Scheduler } from '../scheduler/types';
 import { nameSet, parseDraft, planStory, revisionPrompt, storyTexts, usedWords, userPrompt } from './plan';
 import { parseStoryText } from './textFormat';
-import { analyzeText, buildLexicon, KNOWN_RECALL, measureCoverage, meetsTarget } from './vocab';
+import { analyzeText, buildLexicon, isExtraWord, KNOWN_RECALL, measureCoverage, meetsTarget } from './vocab';
 
 const NOW = 1_000_000_000;
 const DAY = 86_400_000;
@@ -27,7 +27,7 @@ function lexOf(items: { note: Note; card: Card }[]) {
 describe('어휘 분류 (FSRS 상태)', () => {
   it('복습 단계 + 떠올릴 확률 90% 이상만 아는 단어, 본 적 있으면 배우는 중, 안 본 카드는 덱의 새 단어', () => {
     const lex = lexOf([word('aku'), word('kamu', {}, 'review', KNOWN_RECALL - 0.01), word('saya', {}, 'learning', 0.99), word('dia', {}, 'new')]);
-    expect(Object.fromEntries(lex.entries.map((e) => [e.word, e.status]))).toEqual({ aku: 'known', kamu: 'learning', saya: 'learning', dia: 'deckNew' });
+    expect(Object.fromEntries(lex.entries.filter((e) => !isExtraWord(e)).map((e) => [e.word, e.status]))).toEqual({ aku: 'known', kamu: 'learning', saya: 'learning', dia: 'deckNew' });
   });
 
   it('표준형·어근·구어 변형·붙는 말(-nya)·반복형을 같은 단어로 본다. 뜻이 바뀌는 접사는 다른 단어', () => {
@@ -84,7 +84,7 @@ describe('이야기 계획과 요청문', () => {
     expect(plan.newWords.map((e) => e.word)).toEqual(['baru0', 'baru1', 'baru2', 'baru3']);
     expect(plan.deckPool[0]!.word).toBe('baru4');
     const p = userPrompt(plan, 'daily life');
-    expect(p).toContain('KNOWN WORDS: kata0');
+    expect(p).toMatch(/KNOWN WORDS: .*kata0/);
     expect(p).toContain('NEW WORDS: baru0, baru1, baru2, baru3');
     expect(p).toContain('DECK WORDS (only when necessary): baru4');
     expect(p).toContain('At least 95%');
@@ -145,7 +145,7 @@ describe('이야기 계획과 요청문', () => {
   it('배운 단어가 많아도(600개) 모두 아는 단어 목록으로 보낸다', () => {
     const lex = lexOf(Array.from({ length: 600 }, (_, i) => word(`kata${i}`)));
     const plan = planStory(lex, 'normal');
-    expect(plan.familiar).toHaveLength(600);
+    expect(plan.familiar.filter((e) => !isExtraWord(e))).toHaveLength(600);
     expect(userPrompt(plan, 'food')).toContain('kata599');
   });
 

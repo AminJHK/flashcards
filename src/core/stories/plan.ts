@@ -1,7 +1,7 @@
 import { DIFFICULTIES, type Coverage, type GlossEntry, type StoryBlock, type StoryCharacter, type StoryDifficulty, type StoryQuestion } from './types';
 import { chunkSegments } from './chunks';
 import { pickSeed, type StorySeed } from './seeds';
-import { analyzeText, FALLBACK_MIN_FAMILIAR, norm, offendingWords, tokenize, type Lexicon, type VocabEntry } from './vocab';
+import { analyzeText, FALLBACK_MIN_FAMILIAR, isExtraWord, norm, offendingWords, tokenize, type Lexicon, type VocabEntry } from './vocab';
 
 /** 이야기 하나를 만들 때 AI에게 줄 단어 목록 */
 export interface StoryPlan {
@@ -67,12 +67,15 @@ export function planStory(lex: Lexicon, difficulty: StoryDifficulty, history: St
   // 어조 말 덱에 있는 말은 단어 목록에서 뺀다 (구어체 덱에 같은 말이 있어도 어조 말로만 다룬다)
   const particleWords = new Set(allParticles.map((e) => norm(e.word)));
   const words = lex.entries.filter((e) => e.kind !== 'particle' && !particleWords.has(norm(e.word)));
-  const familiar = words.filter((e) => e.status !== 'deckNew').sort((a, b) => a.order - b.order);
+  // 기본 단어·내가 아는 단어를 앞에 둔다 (목록이 길어도 잘리지 않게)
+  const familiar = words.filter((e) => e.status !== 'deckNew').sort((a, b) => Number(isExtraWord(b)) - Number(isExtraWord(a)) || a.order - b.order);
   const deckNew = words.filter((e) => e.status === 'deckNew').sort((a, b) => a.order - b.order);
   const particles = allParticles.filter((e) => e.status !== 'deckNew').sort((a, b) => (a.recall ?? 0) - (b.recall ?? 0));
   const newParticle = allParticles.filter((e) => e.status === 'deckNew').sort((a, b) => a.order - b.order)[0];
-  if (familiar.length + deckNew.length < 40) throw new StoryPlanError('인도네시아어 단어가 너무 적어요. 먼저 인도네시아어 덱을 추가해 주세요');
-  const fallback = familiar.length < FALLBACK_MIN_FAMILIAR;
+  // 기본 단어·내가 아는 단어는 덱 단어 수에 넣지 않는다 (덱이 없거나 아주 작으면 여전히 덱을 먼저 추가하게)
+  const deckFamiliar = familiar.filter((e) => !isExtraWord(e)).length;
+  if (deckFamiliar + deckNew.length < 40) throw new StoryPlanError('인도네시아어 단어가 너무 적어요. 먼저 인도네시아어 덱을 추가해 주세요');
+  const fallback = deckFamiliar < FALLBACK_MIN_FAMILIAR;
   const seen = (list: readonly string[]) => new Set(list.map(norm));
   // 새 단어: 덱의 다음 단어 24개 중 최근 이야기에서 소개하지 않은 것부터 (모자라면 소개했던 것도)
   const recentNew = seen(history.newWords);

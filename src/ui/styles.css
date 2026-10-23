@@ -2581,6 +2581,7 @@ textarea.input-sentence {
 .story-sheet-example > span:last-child { font-size: 14px; color: var(--text2); }
 .story-sheet-known { display: flex; align-items: center; gap: 8px; padding: 12px 14px; color: var(--accent); background: var(--accent-soft); border-radius: 14px; font-size: 14px; font-weight: 600; }
 .story-sheet-add { min-height: 52px; }
+.story-sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .story-sheet-close { border: none; background: transparent; color: var(--text2); min-height: 44px; font-size: 14px; font-weight: 600; }
 
 .story-row {

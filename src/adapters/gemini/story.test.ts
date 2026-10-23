@@ -4,7 +4,7 @@ import type { Card, Note } from '../../core/model/types';
 import type { Scheduler } from '../../core/scheduler/types';
 import { planStory } from '../../core/stories/plan';
 import { formatStoryText } from '../../core/stories/textFormat';
-import { buildLexicon } from '../../core/stories/vocab';
+import { buildLexicon, isExtraWord } from '../../core/stories/vocab';
 import { FlashcardsDB } from '../storage/db';
 import { deleteStory, getProgress, listStories, restartStory, saveProgress, saveStory } from '../storage/stories';
 import { createStory, looksLooping, MAX_REVISIONS, resetThinkingMemory, STREAM_TIMING } from './story';
@@ -65,14 +65,14 @@ describe('AI 이야기 만들기', () => {
     expect(s.coverage).toMatchObject({ tokens: 131, outside: 1, names: 0 });
     expect(s.coverage.familiar).toBeGreaterThan(0.99);
     expect(s.topic).toBe('food');
-    expect(s.snapshot.known).toBe(56);
+    expect(s.snapshot.known).toBe(56 + lex.entries.filter(isExtraWord).length); // 덱 56개 + 기본 단어
     // 키는 요청 헤더에만, 단어 목록은 본문에
     expect(f.mock.calls[0]![1].headers['x-goog-api-key']).toBe('K');
-    expect(JSON.parse(f.mock.calls[0]![1].body).contents[0].parts[0].text).toContain('KNOWN WORDS: aku, kamu');
+    expect(JSON.parse(f.mock.calls[0]![1].body).contents[0].parts[0].text).toMatch(/KNOWN WORDS: [^\n]*\baku\b[^\n]*\bkamu\b/);
   });
 
   it(`목표를 못 맞추면 고쳐 쓰기는 ${MAX_REVISIONS}번만 하고, 가장 나은 결과를 이유와 함께 돌려준다`, async () => {
-    const f = vi.fn().mockImplementation(async () => reply(story(['satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh'])));
+    const f = vi.fn().mockImplementation(async () => reply(story(['zorba', 'quix', 'flimb', 'vrask', 'plonk', 'gruth', 'snarv', 'blick', 'twerp', 'mungo'])));
     vi.stubGlobal('fetch', f);
     const s = await createStory({ lex, plan: planStory(lex, 'easy'), topicKey: 'free', key: 'K', stream: false });
     expect(f).toHaveBeenCalledTimes(1 + MAX_REVISIONS);
