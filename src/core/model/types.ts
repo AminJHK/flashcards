@@ -128,6 +128,8 @@ export interface Settings {
   storyListenFirst?: boolean;
   /** 이야기 다시 듣기 화면에서 한국어 해석을 보일지. 기본 true */
   storyReplayKo?: boolean;
+  /** 운전 모드(다 읽은 이야기 이어 듣기)에서 문장마다 한국어 해석도 읽을지. 기본 true */
+  listenKo?: boolean;
   /** 덱에 없지만 이미 아는 단어 (읽기에서 "이미 알아요"를 누른 것). 복습 카드는 없고, 이야기에서 아는 단어로 친다 */
   knownWords?: string[];
   /** 이야기 받아쓰기: 새 문장마다 듣고 받아쓴 뒤 확인해야 다음으로 (빈칸 1~2개 또는 문장 전체) */

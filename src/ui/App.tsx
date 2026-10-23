@@ -14,6 +14,7 @@ import { Review } from './screens/Review';
 import { Settings } from './screens/Settings';
 import { Stats } from './screens/Stats';
 import { Stories } from './screens/Stories';
+import { DriveListen } from './screens/DriveListen';
 import { StoryReader } from './screens/StoryReader';
 import { applyTheme } from './theme';
 import { ConfirmHost, ErrorBoundary } from './confirm';
@@ -117,6 +118,7 @@ export function App() {
   let screen;
   if (inReview) screen = <Review key={b ?? 'all'} deckId={b} />;
   else if (reading) screen = <StoryReader key={b} id={b!} />;
+  else if (a === 'listen') screen = <DriveListen />;
   else if (a === 'read') screen = <Stories />;
   else if (editingNote && b) screen = <NoteEditor mode="edit" noteId={b} onDone={() => go(rest.join('/') || 'decks')} />;
   else if (a === 'add') screen = <NoteEditor mode="add" />;
@@ -129,7 +131,7 @@ export function App() {
   else if (a === 'stats') screen = <Stats />;
   else screen = <Home />;
 
-  const showTabs = !inReview && !editingNote && !reading;
+  const showTabs = !inReview && !editingNote && !reading && a !== 'listen';
 
   return (
     <div className="app">

@@ -131,6 +131,8 @@ export interface StoryProgress {
   /** 블록 번호 → 받아쓰기 결과 (받아쓰기 모드에서 확인을 누른 줄) */
   dictation?: Record<number, DictationResult>;
   completedAt?: Millis;
+  /** 운전 모드로 마지막에 끝까지 들은 시각 (listenOrder.ts) */
+  lastListenedAt?: Millis;
   readCount: number;
   updatedAt: Millis;
 }

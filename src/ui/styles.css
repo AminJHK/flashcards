@@ -3027,3 +3027,94 @@ textarea.input-sentence {
   color: var(--text2);
   font-size: 12px;
 }
+
+/* 운전 모드 (다 읽은 이야기 이어 듣기) */
+.drive-start {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 72px;
+  padding: 14px 18px;
+  border: none;
+  border-radius: 18px;
+  background: var(--accent);
+  color: var(--on-accent);
+  text-align: left;
+  font-family: inherit;
+}
+.drive-start-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.drive-start-text strong {
+  font-size: 18px;
+}
+.drive-start-text span {
+  font-size: 13px;
+  opacity: 0.85;
+}
+.drive {
+  gap: 16px;
+}
+.drive-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.drive-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+.drive-now {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 18px;
+  background: var(--surface);
+  min-height: 180px;
+}
+.drive-count {
+  color: var(--text2);
+  font-size: 14px;
+}
+.drive-line {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+}
+.drive-ko {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--text2);
+}
+.drive-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.drive-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 84px;
+  border: none;
+  border-radius: 18px;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 600;
+  font-family: inherit;
+}
+.drive-main {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 20px;
+}

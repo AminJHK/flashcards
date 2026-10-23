@@ -67,6 +67,7 @@ export function Stories() {
   const basic = BASIC_WORDS.map(([w, meaning]) => ({ w, meaning, e: lookupForm(lex, w) }));
   const DECK_STATUS = { known: '덱 · 아는 단어', learning: '덱 · 배우는 중', deckNew: '덱 · 아직 안 배움' } as const;
   const byId = new Map(progress.map((p) => [p.storyId, p]));
+  const doneCount = stories.filter((x) => byId.get(x.id)?.completedAt).length;
   // 기기 음성으로 읽기를 켰으면 AI 음성 준비 상태는 보여 주지 않는다
   const audio = job.status === 'done' && audioJob.storyId === job.storyId && !settings.storyDeviceVoice ? audioJob : undefined;
   // 방금 만든 이야기 알림: 그 이야기를 읽기 시작하면 사라진다
@@ -90,6 +91,15 @@ export function Stories() {
           기본 단어 {basic.length}개 · 내가 아는 단어 {settings.knownWords?.length ?? 0}개 보기
         </button>
       </div>
+      {doneCount > 0 && (
+        <button type="button" className="drive-start" onClick={() => go('listen')}>
+          <Icon name="speaker" size={26} />
+          <span className="drive-start-text">
+            <strong>다 읽은 이야기 이어 듣기</strong>
+            <span>운전 모드 · {doneCount}개를 해석과 함께 랜덤으로</span>
+          </span>
+        </button>
+      )}
 
       <div className="panel story-make">
         {!key ? (
