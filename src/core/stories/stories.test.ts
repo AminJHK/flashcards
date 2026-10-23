@@ -3,7 +3,7 @@ import type { Card, Note } from '../model/types';
 import type { Scheduler } from '../scheduler/types';
 import { nameSet, parseDraft, planStory, revisionPrompt, storyTexts, usedWords, userPrompt } from './plan';
 import { parseStoryText } from './textFormat';
-import { analyzeText, buildLexicon, isExtraWord, KNOWN_RECALL, measureCoverage, meetsTarget } from './vocab';
+import { analyzeText, buildLexicon, isExtraWord, KNOWN_RECALL, lookupForm, measureCoverage, meetsTarget } from './vocab';
 
 const NOW = 1_000_000_000;
 const DAY = 86_400_000;
@@ -20,14 +20,25 @@ function word(w: string, f: Partial<Record<string, string>> = {}, state: 'new' |
   };
   return { note, card };
 }
-function lexOf(items: { note: Note; card: Card }[]) {
-  return buildLexicon(items.map((i) => i.note), items.map((i) => i.card), sched, NOW);
+function lexOf(items: { note: Note; card: Card }[], mine: string[] = []) {
+  return buildLexicon(items.map((i) => i.note), items.map((i) => i.card), sched, NOW, mine);
 }
 
 describe('어휘 분류 (FSRS 상태)', () => {
+  it('기본 단어는 덱에 없거나 아직 안 배웠으면 아는 단어로 치고, 배우기 시작했으면 덱 기록을 따른다. "이미 알아요" 단어도 아는 단어', () => {
+    const lex = lexOf([word('ini', {}, 'new'), word('itu', {}, 'learning', 0.5), word('bakso', {}, 'new')], ['Sate']);
+    const of = (w: string) => lookupForm(lex, w);
+    expect(of('ini')).toMatchObject({ status: 'known', kind: 'basic' }); // 덱에 있지만 아직 안 배움
+    expect(of('itu')).toMatchObject({ status: 'learning' }); // 배우는 중 → 덱 기록
+    expect(of('itu')!.kind).toBeUndefined();
+    expect(of('dari')).toMatchObject({ status: 'known', kind: 'basic', noteId: '' }); // 덱에 없음
+    expect(of('sate')).toMatchObject({ status: 'known', kind: 'mine' });
+    expect(of('bakso')).toMatchObject({ status: 'deckNew' });
+  });
+
   it('복습 단계 + 떠올릴 확률 90% 이상만 아는 단어, 본 적 있으면 배우는 중, 안 본 카드는 덱의 새 단어', () => {
-    const lex = lexOf([word('aku'), word('kamu', {}, 'review', KNOWN_RECALL - 0.01), word('saya', {}, 'learning', 0.99), word('dia', {}, 'new')]);
-    expect(Object.fromEntries(lex.entries.filter((e) => !isExtraWord(e)).map((e) => [e.word, e.status]))).toEqual({ aku: 'known', kamu: 'learning', saya: 'learning', dia: 'deckNew' });
+    const lex = lexOf([word('aku'), word('kamu', {}, 'review', KNOWN_RECALL - 0.01), word('saya', {}, 'learning', 0.99), word('bakso', {}, 'new')]);
+    expect(Object.fromEntries(lex.entries.filter((e) => !isExtraWord(e)).map((e) => [e.word, e.status]))).toEqual({ aku: 'known', kamu: 'learning', saya: 'learning', bakso: 'deckNew' });
   });
 
   it('표준형·어근·구어 변형·붙는 말(-nya)·반복형을 같은 단어로 본다. 뜻이 바뀌는 접사는 다른 단어', () => {

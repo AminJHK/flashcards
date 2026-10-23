@@ -29,7 +29,7 @@ export interface VocabEntry {
   /**
    * 'particle': 어조 말(sih, dong …). 예문마다 노트가 있어도 말 하나로 묶인 항목이다.
    * 'basic': 덱에 없지만 기본 단어라 아는 단어로 친다 (basicWords.ts). 'mine': 읽기에서 사용자가 "이미 알아요"를 누른 단어.
-   * basic·mine은 노트가 없다 (noteId '').
+   * basic·mine은 보통 노트가 없다 (noteId ''). 덱에 있지만 아직 안 배운 단어면 그 덱 항목에 붙는다 (noteId 있음).
    */
   kind?: 'particle' | 'basic' | 'mine';
   /** 덱 안의 순서 (작을수록 먼저 나오는 = 자주 쓰는 단어) */
@@ -111,11 +111,17 @@ export function buildLexicon(notes: readonly Note[], cards: readonly Card[], sch
     for (const s of e.standard.split('/')) put(s, e);
     if (e.root) put(e.root, e);
   }
-  // 덱에 없는 기본 단어·내가 아는 단어: 덱에 같은 형태가 있으면 덱 쪽을 쓴다
+  // 기본 단어·내가 아는 단어: 덱에 없으면 새 항목으로 넣는다.
+  // 덱에 있어도 아직 안 배운 단어(deckNew)면 아는 단어로 친다 (1000단어 덱에 ini·itu도 들어 있어서). 배우기 시작한 단어는 덱 기록을 따른다
   const extras: [string, string, 'basic' | 'mine'][] = [...myKnown.map((w) => [w, '', 'mine'] as [string, string, 'mine']), ...BASIC_WORDS.map(([w, m]) => [w, m, 'basic'] as [string, string, 'basic'])];
   for (const [w, meaning, kind] of extras) {
     const f = norm(w);
-    if (!f || forms.has(f) || phrases.some((p) => p.tokens.join(' ') === f)) continue;
+    if (!f || phrases.some((p) => p.tokens.join(' ') === f)) continue;
+    const old = forms.get(f);
+    if (old) {
+      if (old.status === 'deckNew' && !old.kind) Object.assign(old, { status: 'known', kind, meaning: old.meaning || meaning });
+      continue;
+    }
     const e: VocabEntry = { noteId: '', word: f, meaning, standard: '', root: '', status: 'known', kind, order: entries.length };
     entries.push(e);
     put(f, e);
@@ -277,7 +283,7 @@ export function offendingWords(c: Coverage, fallback: boolean): string[] {
 /** 단어를 눌렀을 때 보여 줄 뜻: 덱의 뜻이 먼저, 없으면 생성할 때 받은 뜻 */
 export function glossFor(span: Span, glossary: readonly GlossEntry[]): { ko?: string; en?: string; root?: string; inDeck: boolean } {
   const g = findGloss(span.text, glossary);
-  if (span.entry) return { ko: span.entry.meaning || g?.ko, en: g?.en, root: span.entry.root || span.entry.standard || g?.root, inDeck: !isExtraWord(span.entry) };
+  if (span.entry) return { ko: span.entry.meaning || g?.ko, en: g?.en, root: span.entry.root || span.entry.standard || g?.root, inDeck: !!span.entry.noteId };
   return { ko: g?.ko, en: g?.en, root: g?.root, inDeck: false };
 }
 

@@ -974,7 +974,7 @@ function WordSheet({ picked, story, lex, onClose }: { picked: Picked; story: Sto
         ) : entry ? (
           <div className="story-sheet-known">
             <Icon name="check" size={18} />
-            <span>{entry.kind === 'basic' ? '기본 단어 · 덱에 없어도 아는 단어로 쳐요' : STATUS_TEXT[entry.status]}</span>
+            <span>{entry.kind === 'basic' ? '기본 단어 · 아는 단어로 쳐요 (복습 카드 없이)' : STATUS_TEXT[entry.status]}</span>
           </div>
         ) : (
           <div className="story-sheet-actions">

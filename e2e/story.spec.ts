@@ -64,7 +64,14 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
 
   // 읽기 탭
   await page.getByRole('navigation', { name: '메인 메뉴' }).getByRole('link', { name: '읽기' }).click();
-  await expect(page.getByText(/아는 단어 0 · 배우는 중 0 · 아직 안 배운 덱 단어 1000/)).toBeVisible();
+  await expect(page.getByText(/아는 단어 0 · 배우는 중 0 · 아직 안 배운 덱 단어 \d+/)).toBeVisible();
+  // 복습 없이 아는 단어: 앱에 든 기본 단어 목록을 볼 수 있다
+  await page.getByRole('button', { name: /복습 없이 아는 단어 \d+개 보기/ }).click();
+  const known = page.getByRole('dialog', { name: '복습 없이 아는 단어' });
+  await expect(known.getByText(/기본 단어 \d+개/)).toBeVisible();
+  await expect(known.locator('.row').first()).toBeVisible();
+  await page.screenshot({ path: 'test-results/shots/39b-known-words.png' });
+  await known.getByRole('button', { name: '닫기' }).click();
   await expect(page.getByText(/꼭 필요하면 덱의 다음 단어도 섞어요/)).toBeVisible();
   await page.getByRole('group', { name: '주제' }).getByRole('button', { name: '음식' }).click();
   await page.screenshot({ path: 'test-results/shots/40-read-library.png' });
