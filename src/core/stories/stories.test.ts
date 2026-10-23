@@ -137,6 +137,19 @@ describe('이야기 계획과 요청문', () => {
     expect(p).toContain(plan.seed!.en);
   });
 
+  it('표준어·글말 단어(memberikan, jika …)는 따로 적어서, 대화에서는 구어형을 쓰라고 한다', () => {
+    const items = [...Array.from({ length: 40 }, (_, i) => word(`kata${i}`)), word('memberikan'), word('jika'), word('kasih')];
+    const lex = lexOf(items);
+    expect(lex.entries.find((e) => e.word === 'memberikan')!.spoken).toBe('kasih');
+    const p = userPrompt(planStory(lex, 'normal'), 'food');
+    const known = p.split('\n').find((l) => l.startsWith('KNOWN WORDS: '))!;
+    expect(known).toContain('kasih');
+    expect(known).not.toMatch(/\bmemberikan\b|\bjika\b/);
+    expect(p).toMatch(/WRITTEN FORMS \(known; narration only → spoken form for dialogue\): .*memberikan→kasih/);
+    expect(p).toContain('jika→kalo');
+    expect(p).toContain('dialogue lines (LINE: <character>) use spoken forms only');
+  });
+
   it('기록에는 고른 단어 중 이야기에 실제로 나온 것만 남는다 (빠진 단어는 다음 이야기 후보)', () => {
     const lex = lexOf([word('makan'), word('minum'), word('tidur')]);
     const [makan, minum, tidur] = ['makan', 'minum', 'tidur'].map((w) => lex.entries.find((e) => e.word === w)!);

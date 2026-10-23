@@ -2,6 +2,7 @@ import type { Card, Millis, Note } from '../model/types';
 import { isHard, wordMemory } from '../stats/memory';
 import type { Scheduler } from '../scheduler/types';
 import { BASIC_WORDS } from './basicWords';
+import { SPOKEN_OF } from './formalForms';
 import type { Coverage, GlossEntry } from './types';
 
 /**
@@ -34,6 +35,8 @@ export interface VocabEntry {
   kind?: 'particle' | 'basic' | 'mine';
   /** 덱 안의 순서 (작을수록 먼저 나오는 = 자주 쓰는 단어) */
   order: number;
+  /** 표준어·글말 단어면 같은 뜻의 구어형 (formalForms.ts). 이야기의 대화에서는 이 구어형을 쓴다 */
+  spoken?: string;
 }
 
 export interface Lexicon {
@@ -89,7 +92,9 @@ export function buildLexicon(notes: readonly Note[], cards: readonly Card[], sch
     const m = wordMemory(byNote.get(n.id) ?? [], scheduler, now);
     if (!m) return; // 카드가 모두 숨겨졌거나 보류됨
     const status: VocabStatus = m.level === 'fresh' ? 'deckNew' : m.level !== 'learning' && (m.recall ?? 0) >= KNOWN_RECALL ? 'known' : 'learning';
-    entries.push({ noteId: n.id, word: n.fields.word!.trim(), meaning: n.fields.meaning ?? '', standard: n.fields.standard ?? '', root: n.fields.root ?? '', status, recall: m.recall, ...(isHard(m) ? { hard: true } : {}), order: i });
+    const word = n.fields.word!.trim();
+    const spoken = SPOKEN_OF[norm(word)];
+    entries.push({ noteId: n.id, word, meaning: n.fields.meaning ?? '', standard: n.fields.standard ?? '', root: n.fields.root ?? '', status, recall: m.recall, ...(isHard(m) ? { hard: true } : {}), ...(spoken ? { spoken } : {}), order: i });
   });
   addParticles(entries, notes, byNote, scheduler, now, sorted.length);
   const forms = new Map<string, VocabEntry>();

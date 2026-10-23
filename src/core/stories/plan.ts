@@ -105,6 +105,9 @@ export function planStory(lex: Lexicon, difficulty: StoryDifficulty, history: St
 }
 
 const form = (e: VocabEntry) => (e.standard && norm(e.standard) !== norm(e.word) ? `${e.word}(=${e.standard})` : e.word);
+/** 표준어·글말 단어: 대화에서는 구어형을 쓰라고 함께 적는다 */
+const formalForm = (e: VocabEntry) => `${e.word}→${e.spoken}`;
+const listed = (es: readonly VocabEntry[]) => es.filter((e) => !e.spoken).map(form).concat(es.filter((e) => e.spoken).map((e) => `${e.word}(written; in dialogue say ${e.spoken})`));
 
 export const STORY_TOPICS: { key: string; label: string; en: string }[] = [
   { key: 'free', label: '자유', en: 'any everyday situation' },
@@ -140,7 +143,8 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     '',
     'VOCABULARY RULES (very important, they are checked automatically by counting every word occurrence):',
     `- Build the story from the KNOWN WORDS below. At least ${Math.round(plan.knownTarget * 100)}% of all word occurrences must be KNOWN WORDS (character names do not count).`,
-    '- You may use the forms in brackets, e.g. "nyari(=mencari)" means both nyari and mencari are known. Adding -nya, -lah, -kah, -ku or -mu to a known word is fine. Other affixes (me-, ber-, di-, -kan, -i) make a NEW word.',
+    '- You may use the forms in brackets, e.g. "nyari(=mencari)" means both nyari and mencari are known: the first is the spoken form for dialogue, the one after = is the standard form for narration. Adding -nya, -lah, -kah, -ku or -mu to a known word is fine. Other affixes (me-, ber-, di-, -kan, -i) make a NEW word.',
+    '- SPOKEN vs WRITTEN: dialogue lines (LINE: <character>) use spoken forms only. The WRITTEN FORMS below (kau, jika, telah, memberikan …) are known but belong in narration; in dialogue use the spoken form after the arrow.',
     `- NEW WORDS: use the ones that fit the story naturally, once or twice each, where the situation makes the meaning guessable. Leave out any new word that would make a line unnatural (it comes back in a later story). Apart from them, avoid any word that is not listed.`,
     plan.focus.length || plan.reinforce.length
       ? `- ${[plan.focus.length ? 'FOCUS WORDS (hard for the learner, prefer these)' : '', plan.reinforce.length ? 'REVIEW WORDS (still being learned)' : ''].filter(Boolean).join(' and ')}: use the ones that fit naturally, once or twice each. There is no minimum; it is fine to leave some out.`
@@ -155,12 +159,13 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
       : `- Apart from the NEW WORDS, words that are not KNOWN WORDS must stay under ${unknownPct}% of word occurrences.`,
     '- GLOSS lines: only for words or expressions that are in none of the lists below (the app already knows the meanings of listed words). Usually 0 to 8. Multi-word entries are fine for expressions like "nggak apa-apa".',
     '',
-    `KNOWN WORDS: ${plan.familiar.map(form).join(', ')}`,
-    plan.reinforce.length ? `REVIEW WORDS: ${plan.reinforce.map(form).join(', ')}` : '',
-    plan.focus.length ? `FOCUS WORDS: ${plan.focus.map(form).join(', ')}` : '',
+    `KNOWN WORDS: ${plan.familiar.filter((e) => !e.spoken).map(form).join(', ')}`,
+    plan.familiar.some((e) => e.spoken) ? `WRITTEN FORMS (known; narration only → spoken form for dialogue): ${plan.familiar.filter((e) => e.spoken).map(formalForm).join(', ')}` : '',
+    plan.reinforce.length ? `REVIEW WORDS: ${listed(plan.reinforce).join(', ')}` : '',
+    plan.focus.length ? `FOCUS WORDS: ${listed(plan.focus).join(', ')}` : '',
     plan.particles.length ? `PARTICLE WORDS (known, weakest first): ${plan.particles.map(form).join(', ')}` : '',
     plan.newParticle ? `NEW PARTICLE: ${plan.newParticle.word}` : '',
-    `NEW WORDS: ${plan.newWords.map(form).join(', ') || '(none)'}`,
+    `NEW WORDS: ${listed(plan.newWords).join(', ') || '(none)'}`,
     plan.fallback && plan.deckPool.length ? `DECK WORDS (only when necessary): ${plan.deckPool.map(form).join(', ')}` : '',
     '',
     'QUESTIONS: 4 to 6 questions in Korean, placed right after the part of the story they ask about. Use at least three types:',
