@@ -5,7 +5,7 @@ test.use({ viewport: { width: 1440, height: 900 }, hasTouch: false, isMobile: fa
 test('PC 화면: 왼쪽 메뉴 + 넓은 본문, 가로로 넘치지 않는다', async ({ page }) => {
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
-  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+  await expect(page.getByText('단어 1250개를 넣었어요')).toBeVisible();
 
   const shots: [string, string][] = [
     ['/#/', '30-pc-home'],

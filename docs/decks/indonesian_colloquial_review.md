@@ -1,6 +1,6 @@
 # 인도네시아어 구어체 덱 · 1000장 검수 메모
 
-- 카드 파일: `indonesian_colloquial_1000.csv` (UTF-8, Anki 가져오기용, 필드 순서는 요청서 그대로)
+- 카드 파일: `indonesian_colloquial.csv` (UTF-8, Anki 가져오기용, 필드 순서는 요청서 그대로)
 - 앱 안의 같은 덱: 덱 › 새 덱 › "인도네시아어 구어체 · 1000장" (`src/core/packs/indonesianColloquial.ts`)
 - 예전에 100장·500장을 받은 덱은 덱 화면의 "새 단어 받기"(또는 새 덱 화면의 "기존 덱에 넣기")로 나머지를 뒤에 이어서 받는다. 복습 기록은 그대로다.
 - 빈도 근거: OpenSubtitles2018 인도네시아어 단어 빈도표 (orgtre/top-open-subtitles-sentences, `bld/top_words/id_top_words.csv`, 3만 단어)
@@ -88,6 +88,14 @@
 - 393장은 빈도표에 그 철자 그대로 있고, 107장은 없다(대부분 ng-/ny- 구어 동사형: nyelametin, ngikutin, nolak…, 여러 단어 표현, 은어). 이런 구어 동사는 표준형(menyelamatkan 등)의 순위로 줄 세웠다.
 - 자막 빈도표라 극중 어휘(polisi, pistol, 감옥 등)가 많아서 생활 단어를 우선했다. 간호 일과 겹치는 단어(pasien, operasi, tekanan darah, darurat, sadar, kondisi, hasil, tes darah, tulang patah)를 넣었다.
 - 속어 표시: sial(가벼운 욕). dasar는 사람 앞에 붙으면 나무라는 말.
+
+## 1001~1250장 (네 번째 묶음, 2026-10-23)
+
+- 사용자 요청: "단어 250개 더". 읽기 이야기에서 아는 단어 비율을 올리려는 목적이라 **빈도표 순위가 아니라 실생활 쓸모** 순으로 직접 골랐다 (자막 빈도표는 극중 어휘와 번역투가 많다).
+- 구성: 이어 주는 말·추측·감탄(padahal, makanya, jangan-jangan, alhamdulillah 등) → 일상 동사(ngecek, nginep, ngomongin 등 구어형) → 성격·감정(ribet, cuek, gengsi, deg-degan 등) → 음식·주방 → 몸·증상·간호 단어(gejala, suntik, sesak, meriang 등) → 집·전자기기·돈 → 장소·교통·직장·명절 → 감각·상태 형용사 (이 마지막 묶음이 가장 급하지 않다).
+- 이미 있는 단어(철자·표준형 모두)와 겹치지 않게 검사했다. 한국어 뜻이 겹치지 않는지, 예문·표현에 그 단어가 들어 있는지는 `packs.test.ts`가 검사한다.
+- 뒤에 이어 붙였으므로 이미 덱을 받은 사람에게는 "새 단어 250개 받기"로 들어온다.
+- 현지인 검증은 아직 안 했다. 특히 확인하면 좋은 곳: 은어·구어 동사형(ngomel, ngambek, nyasar, ngecek), 종교 표현(alhamdulillah, astagfirullah, amin)의 쓰임, 예문 전체.
 
 ## 다음 단계 (요청서 9번)
 

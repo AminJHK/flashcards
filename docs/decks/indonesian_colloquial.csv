@@ -999,3 +999,253 @@ ID-0997,23731,cas,충전하다,mengisi daya,,Boleh cas di sini?,여기서 충전
 ID-0998,,omong-omong,그런데 (화제 전환),ngomong-ngomong,omong,"Omong-omong, kamu kerja di mana?",그런데 너 어디서 일해?,일반,"ngomong-ngomong, btw(베테웨)라고도 한다.",,discourse supplementary_spoken,by the way,omong-omong soal itu = 말 나온 김에
 ID-0999,,gabut,할 일 없이 심심한,,,Lagi gabut.,할 일 없어 심심해.,구어,젊은 층 은어. 표준형은 하나로 대응하지 않는다.,,adjective supplementary_spoken,bored with nothing to do,gabut banget = 진짜 할 거 없어; gabut di rumah = 집에서 할 일 없이 뒹굴어
 ID-1000,,bete,기분이 꿀꿀한,,,Lagi bete.,기분 별로야.,구어,BT(bad temper)에서 왔다는 설명이 흔하다.,,adjective supplementary_spoken,grumpy / in a bad mood,bete banget = 완전 꿀꿀해; bikin bete = 기분 잡치게 해; muka bete = 뚱한 얼굴
+ID-1001,,padahal,"그런데도, 사실은 ~인데",padahal,,Padahal tadi dia bilang mau datang.,아까는 온다고 했는데 말이야.,일반,"기대와 다른 결과를 나무랄 때. ""~인데도""",,connector,even though / when in fact,padahal udah dibilangin = 말해 줬는데도; padahal baru kemarin = 바로 어제였는데
+ID-1002,,makanya,그러니까 (그래서 ~했잖아),makanya,,Makanya dengerin kata orang tua.,그러니까 어른 말을 들어.,구어,"""내가 그랬잖아"" 느낌의 핀잔. soalnya(왜냐하면)의 반대 방향",,connector,that's why / so you see,makanya jangan telat = 그러니까 늦지 마; makanya aku bilang = 그래서 내가 말했잖아
+ID-1003,,lagian,"게다가, 어차피",lagi pula,lagi,Lagian aku juga nggak mau pergi.,게다가 나도 가고 싶지 않았어.,구어,앞 말에 이유를 하나 더 얹을 때,,connector,besides / anyway,lagian udah malem = 게다가 이미 밤이야; lagian siapa yang nyuruh? = 대체 누가 시켰다고?
+ID-1004,,jadinya,"결국, 그래서 ~하게 됐다",jadinya,jadi,Jadinya kita nggak jadi pergi.,결국 우리는 안 가게 됐어.,구어,"jadi에 -nya가 붙어 ""결국 그렇게 됐다""",,adverb,in the end / so it turned out,jadinya gimana? = 결국 어떻게 됐어?; jadinya telat = 결국 늦었어
+ID-1005,,rupanya,알고 보니 ~였더라,rupanya,rupa,Rupanya dia udah pulang dari tadi.,알고 보니 걔는 아까 집에 갔더라.,일반,ternyata와 비슷한데 약간 격식. 구어는 ternyata가 더 흔하다,,adverb,it turns out / apparently,rupanya begitu = 알고 보니 그랬구나; rupanya dia bohong = 알고 보니 걔가 거짓말했네
+ID-1006,,untungnya,다행히,untungnya,untung,Untungnya hujan udah berhenti.,다행히 비가 그쳤어.,일반,"문장 맨 앞에 붙여 ""다행히"". 반대는 sayangnya",,adverb,luckily / fortunately,untungnya nggak parah = 다행히 심하지 않아; untungnya ada kamu = 다행히 네가 있었어
+ID-1007,,syukurlah,"다행이다, 감사하게도",syukurlah,syukur,Syukurlah kamu selamat.,네가 무사해서 다행이야.,일반,좋은 소식을 들었을 때 하는 말. 신께 감사하는 느낌이 있다,,interjection,thank goodness,syukurlah kalo gitu = 그렇다니 다행이야; syukurlah udah sembuh = 다 나았다니 다행이야
+ID-1008,,alhamdulillah,"하나님 덕분에, 감사하게도",alhamdulillah,,"Alhamdulillah, anaknya udah sehat.",감사하게도 아이가 건강해졌어요.,일반,"이슬람 표현이지만 종교와 상관없이 일상에서 자주 쓴다. ""잘 지내?""에 ""Alhamdulillah baik""",,interjection,praise be to God / thankfully,alhamdulillah baik = 잘 지내요 (덕분에); alhamdulillah lancar = 순조로웠어요
+ID-1009,,amin,그렇게 되길 (기도에 대한 응답),amin,,Semoga sukses ya. — Amin!,성공하길 바라. — 그렇게 되길!,일반,"누가 덕담이나 기도를 해 주면 ""Amin""으로 받는다",,interjection,amen / may it be so,"amin ya Allah = 그렇게 되게 하소서; amin, semoga = 아멘, 그러길 바라요"
+ID-1010,,astagfirullah,"아이고, 세상에 (놀람·탄식)",astagfirullah,,"Astagfirullah, kok bisa lupa kunci lagi.","아이고, 어떻게 또 열쇠를 잊어.",구어,놀라거나 어이없을 때 하는 말. astaga보다 종교적 느낌,,interjection,oh my goodness / God forgive me,"astagfirullah, parah banget = 세상에 너무 심하다; astagfirullah, hampir aja = 아이고 큰일 날 뻔"
+ID-1011,,sepertinya,~인 것 같다,sepertinya,seperti,Sepertinya mau hujan.,비가 올 것 같아.,일반,kayaknya의 표준형. 글이나 정중한 말에서,,adverb,it seems / looks like,sepertinya begitu = 그런 것 같아요; sepertinya dia lupa = 걔 잊은 것 같아
+ID-1012,,barangkali,"어쩌면, 혹시",barangkali,barang,Barangkali dia lagi sibuk.,어쩌면 걔는 바쁜가 봐.,일반,mungkin보다 약간 부드럽고 책 같은 느낌,,adverb,perhaps / maybe,barangkali kamu salah = 어쩌면 네가 틀렸을지도; barangkali ada yang tau = 혹시 아는 사람 있을까요
+ID-1013,,jangan-jangan,혹시 ~가 아닐까,jangan-jangan,,Jangan-jangan dia nggak dateng.,혹시 걔가 안 오는 거 아냐?,구어,걱정되거나 의심스러운 추측. 나쁜 쪽 예감,,adverb,what if / don't tell me,jangan-jangan salah alamat = 혹시 주소가 틀린 거 아냐; jangan-jangan bohong = 혹시 거짓말 아냐
+ID-1014,,misalnya,예를 들어,misalnya,misal,"Aku suka buah, misalnya mangga.","나는 과일을 좋아해, 예를 들면 망고.",일반,"예를 들 때. 줄여서 misal, 구어에서는 contohnya도 쓴다",,connector,for example,misalnya kamu di sana = 예를 들어 네가 거기 있다면; misalnya begini = 예를 들면 이렇게
+ID-1015,,intinya,"요점은, 한마디로",intinya,inti,"Intinya, kita harus berangkat sekarang.",요점은 우리가 지금 출발해야 한다는 거야.,일반,"pokoknya(어쨌든)는 고집 부릴 때, intinya는 요약할 때",,connector,the point is / in short,intinya apa? = 요점이 뭐야?; intinya gini = 요점은 이거야
+ID-1016,,maksudnya,"그러니까 (말하자면), 무슨 뜻이냐면",maksudnya,maksud,"Maksudnya, kamu mau pindah?",그러니까 이사하겠다는 거야?,구어,말을 바꿔 설명하거나 되물을 때,,connector,I mean / in other words,maksudnya gimana? = 그게 무슨 뜻이야?; maksudnya begini = 말하자면 이런 거야
+ID-1017,,sekalian,"겸사겸사, 한꺼번에",sekalian,kali,"Aku ke toko, sekalian beli telur.",가게에 가는 김에 계란도 살게.,일반,"어차피 하는 김에 하나 더. 비슷한 한국어는 ""~하는 김에""",,adverb,while at it / all at once,sekalian aja = 이왕 하는 거 같이 해; sekalian pulang = 가는 길에
+ID-1018,,terutama,특히,terutama,utama,"Aku suka makanan pedas, terutama sambal.","나는 매운 음식을 좋아해, 특히 삼발.",일반,여럿 중에 하나를 꼽을 때,,adverb,especially,terutama malam hari = 특히 밤에; terutama buat anak = 특히 아이들에게
+ID-1019,,pantesan,어쩐지 (그래서 그랬구나),pantas,,Pantesan dia nggak jawab telpon.,어쩐지 걔가 전화를 안 받더라.,구어,"이유를 알고 나서 ""아하, 그래서!"". pantes(어울리다)와 다르다",,interjection,no wonder,pantesan aja = 어쩐지 그렇더라; pantesan capek = 어쩐지 피곤하더라
+ID-1020,,seandainya,만약 ~했다면,seandainya,andai,Seandainya aku tau dari awal.,처음부터 알았더라면.,일반,"지나간 일에 대한 가정. 구어는 kalo aja, andai",,connector,if only / suppose,seandainya bisa = 할 수만 있다면; seandainya dia dateng = 걔가 왔더라면
+ID-1021,,asalkan,"~이기만 하면, 조건만 맞다면",asalkan,asal,"Boleh pinjem, asalkan dibalikin besok.",내일 돌려주기만 하면 빌려도 돼.,일반,조건을 하나 걸 때. 구어는 asal만 쓰기도,,connector,as long as / provided that,asalkan kamu seneng = 네가 좋기만 하면; asalkan jujur = 솔직하기만 하다면
+ID-1022,,sehingga,"그래서, ~하도록",sehingga,hingga,Dia belajar keras sehingga lulus.,걔는 열심히 공부해서 합격했어.,격식,"글에서 결과를 이을 때. 구어는 jadi, makanya를 쓴다",,connector,so that / thus,sehingga bisa = ~할 수 있도록; sehingga nggak telat = 늦지 않게
+ID-1023,,tepatnya,정확히는,tepatnya,tepat,"Dia tinggal di Bali, tepatnya di Ubud.","걔는 발리에, 정확히는 우붓에 살아.",일반,말을 구체적으로 좁힐 때,,adverb,to be exact,tepatnya kapan? = 정확히 언제야?; tepatnya di mana? = 정확히 어디야?
+ID-1024,,sekedar,"그냥, 단지",sekadar,kadar,Aku cuma sekedar nanya.,나는 그냥 물어본 거야.,구어,표준 철자는 sekadar. cuma와 같이 쓰기도,,adverb,just / merely,sekedar info = 그냥 참고로; sekedar iseng = 그냥 심심해서
+ID-1025,,ngecek,"확인하다, 체크하다",mengecek,cek,"Bentar, aku ngecek dulu.","잠깐, 내가 먼저 확인해 볼게.",구어,영어 check에서. 표준은 memeriksa,,verb,to check,ngecek HP = 폰을 확인하다; lagi ngecek jadwal = 일정을 확인하는 중이야; ngecek ulang = 다시 확인하다
+ID-1026,,ngitung,"세다, 계산하다",menghitung,hitung,Aku ngitung uangnya dulu.,돈부터 세어 볼게.,구어,숫자를 세거나 값을 계산할 때,,verb,to count / calculate,ngitung ulang = 다시 세다; lagi ngitung uang = 돈을 세는 중이야
+ID-1027,,ngetik,"타자 치다, 입력하다",mengetik,ketik,Lagi ngetik laporan.,보고서 치는 중이야.,구어,키보드나 폰으로 글자를 칠 때,,verb,to type,ngetik pesan = 메시지를 쓰다; lagi ngetik = 입력 중이야
+ID-1028,,nyatet,"메모하다, 적다",mencatat,catat,"Tunggu, aku nyatet dulu.","잠깐, 내가 적을게.",구어,catat의 구어. 명사는 catatan(이미 덱에 있음),,verb,to jot down,nyatet nomor = 번호를 적다; nyatet dulu ya = 먼저 적을게
+ID-1029,,ngehubungin,연락하다,menghubungi,hubung,Nanti aku ngehubungin kamu.,나중에 내가 연락할게.,구어,전화·메시지로 연락할 때,,verb,to contact,nanti aku ngehubungin = 나중에 연락할게; lagi ngehubungin dokter = 의사한테 연락하는 중이야
+ID-1030,,ngabarin,소식을 알려 주다,mengabari,kabar,"Kalo udah sampe, ngabarin ya.",도착하면 알려 줘.,구어,"결과나 도착 소식을 전할 때. ngasih tau보다 ""소식 전달"" 느낌",,verb,to let someone know,ngabarin duluan = 먼저 알려 주다; nanti aku ngabarin = 이따 소식 전할게
+ID-1031,,ngundang,초대하다,mengundang,undang,Dia ngundang aku ke nikahannya.,걔가 나를 결혼식에 초대했어.,구어,undangan(초대장)과 같은 어근,,verb,to invite,ngundang temen = 친구를 초대하다; udah ngundang = 이미 초대했어
+ID-1032,,nginep,"묵다, 자고 가다",menginap,inap,Malam ini aku nginep di rumah temen.,오늘 밤은 친구 집에서 자.,구어,남의 집이나 숙소에서 하룻밤 잘 때,,verb,to stay overnight,nginep di sini = 여기서 자고 가; mau nginep? = 자고 갈래?
+ID-1033,,nyamperin,"찾아가다, 다가가다",menghampiri,hampir,Aku nyamperin dia ke kantornya.,내가 걔 사무실로 찾아갔어.,구어,상대에게 직접 다가갈 때,,verb,to go over to someone,nyamperin ke rumah = 집으로 찾아가다; mau nyamperin dia = 걔를 찾아가려고
+ID-1034,,nemenin,"함께 있어 주다, 동행하다",menemani,teman,Tolong nemenin aku ke dokter.,병원에 같이 가 줘.,구어,temen에서. 혼자 두지 않고 곁에 있어 줄 때,,verb,to keep company,nemenin aku = 나랑 같이 있어 줘; mau nemenin? = 같이 있어 줄래?
+ID-1035,,ngerepotin,번거롭게 하다,merepotkan,repot,"Maaf ya, ngerepotin kamu terus.",계속 번거롭게 해서 미안해.,구어,repot에서. 신세를 질 때 쓰는 인사말,,verb,to be a bother,jadi ngerepotin = 괜히 폐를 끼쳤네; nggak ngerepotin = 번거롭지 않아
+ID-1036,,ngomongin,"~에 대해 말하다, 뒷말하다",membicarakan,omong,Kalian lagi ngomongin siapa?,너희 누구 얘기 하는 거야?,구어,"주제를 두고 이야기할 때, 뒷담화일 때도 쓴다",,verb,to talk about,ngomongin orang = 남 얘기를 하다; lagi ngomongin siapa? = 누구 얘기 해?
+ID-1037,,ngebahas,"다루다, 논의하다",membahas,bahas,Kita ngebahas itu besok.,그건 내일 논의하자.,구어,회의나 대화에서 주제를 놓고 다룰 때,,verb,to discuss,ngebahas masalah = 문제를 논의하다; ngebahas bareng = 같이 논의하다
+ID-1038,,ngarep,"기대하다, 바라다",mengharap,harap,Jangan ngarep terlalu banyak.,너무 기대하지 마.,구어,"berharap의 구어. ""ngarep"" 자체가 기대가 크다는 뉘앙스",,verb,to hope / expect,ngarep banget = 엄청 바라; jangan ngarep = 기대하지 마
+ID-1039,,nyadar,깨닫다,menyadari,sadar,Aku baru nyadar dia udah pergi.,걔가 갔다는 걸 이제야 깨달았어.,구어,sadar(의식·자각)에서. 뒤늦게 알아챌 때,,verb,to realize,baru nyadar = 이제야 깨달았어; nyadar nggak? = 알아챘어?
+ID-1040,,nyerahin,"건네주다, 넘기다",menyerahkan,serah,Aku nyerahin berkasnya ke dia.,서류를 걔한테 넘겼어.,구어,물건을 건네거나 일을 넘길 때. nyerah(항복하다)와 다르다,,verb,to hand over,nyerahin berkas = 서류를 넘기다; nyerahin ke dia = 걔한테 넘겨
+ID-1041,,ngunci,잠그다,mengunci,kunci,Jangan lupa ngunci pintu.,문 잠그는 거 잊지 마.,구어,kunci(열쇠)에서. 반대는 buka,,verb,to lock,ngunci pintu = 문을 잠그다; lupa ngunci = 잠그는 걸 잊었어
+ID-1042,,masukin,넣다,memasukkan,masuk,Masukin aja ke tas.,그냥 가방에 넣어.,구어,물건을 어디에 넣을 때. masuk(들어가다)의 타동사,,verb,to put in,masukin ke kulkas = 냉장고에 넣어; dimasukin = 들어갔다
+ID-1043,,naro,놓아 두다,menaruh,taruh,Tadi aku naro HP di mana ya?,아까 폰을 어디에 뒀지?,구어,taro(이미 덱에 있음)의 변형. 물건을 어느 자리에 놓을 때,,verb,to put / place,naro di meja = 책상에 두다; lupa naro = 어디 뒀는지 잊었어
+ID-1044,,ngelap,닦다,mengelap,lap,Tolong ngelap mejanya.,책상 좀 닦아 줘.,구어,"마른 천이나 행주로 닦을 때. 명사는 lap(걸레, 행주)",,verb,to wipe,ngelap meja = 책상을 닦다; ngelap keringat = 땀을 닦다
+ID-1045,,nyapu,"쓸다, 빗자루질하다",menyapu,sapu,Aku nyapu lantai dulu.,바닥부터 쓸게.,구어,sapu(빗자루)에서,,verb,to sweep,nyapu lantai = 바닥을 쓸다; nyapu halaman = 마당을 쓸다
+ID-1046,,ngepel,걸레질하다,mengepel,pel,Hari ini giliran kamu ngepel.,오늘은 네가 걸레질할 차례야.,구어,젖은 걸걸레로 바닥을 닦을 때,,verb,to mop,ngepel lantai = 바닥을 걸레질하다; lagi ngepel = 걸레질하는 중이야
+ID-1047,,jemur,"(햇볕에) 널다, 말리다",menjemur,,Jemur bajunya di luar.,옷을 밖에 널어.,구어,빨래를 햇볕에 말릴 때. 어근 그대로 명령형으로 쓴다,,verb,to dry in the sun,jemur baju = 빨래를 널다; kejemur = 햇볕을 쬐었다
+ID-1048,,setrika,"다림질하다, 다리미",menyetrika,,Aku setrika baju dulu.,옷부터 다릴게.,일반,동사와 명사(다리미) 둘 다,,verb,to iron,setrika baju = 옷을 다리다; setrika uap = 스팀 다리미
+ID-1049,,nginjek,밟다,menginjak,injak,"Awas, jangan nginjek kakiku.","조심해, 내 발 밟지 마.",구어,발로 누를 때. 명령형은 injak,,verb,to step on,nginjek kaki = 발을 밟다; jangan nginjek = 밟지 마
+ID-1050,,dorong,밀다,mendorong,,"Dorong pintunya, jangan ditarik.","문을 밀어, 당기지 마.",일반,"반대는 tarik(당기다). 어떤 일을 ""밀어붙이다""에도",,verb,to push,dorong kuat = 세게 밀어; dorong mobil = 차를 밀다
+ID-1051,,ngelempar,던지다,melempar,lempar,Jangan ngelempar barang.,물건 던지지 마.,구어,물건을 멀리 던질 때,,verb,to throw,ngelempar bola = 공을 던지다; jangan ngelempar = 던지지 마
+ID-1052,,nendang,차다,menendang,tendang,Dia nendang bola jauh banget.,걔가 공을 엄청 멀리 찼어.,구어,발로 찰 때,,verb,to kick,nendang bola = 공을 차다; nendang pintu = 문을 걷어차다
+ID-1053,,meluk,"안다, 껴안다",memeluk,peluk,Dia meluk aku erat banget.,걔가 나를 꽉 안았어.,구어,포옹. 명사는 pelukan,,verb,to hug,meluk erat = 꽉 안다; pengen meluk = 안아 주고 싶어
+ID-1054,,nyubit,꼬집다,mencubit,cubit,Dia nyubit pipiku.,걔가 내 볼을 꼬집었어.,구어,"아프게도, 귀여워서도 꼬집을 때",,verb,to pinch,nyubit pipi = 볼을 꼬집다; jangan nyubit = 꼬집지 마
+ID-1055,,ribet,"복잡한, 번거로운",ribet,,Prosedurnya ribet banget.,절차가 너무 번거로워.,구어,"""귀찮고 복잡하다"". 일이든 사람이든 쓴다",,adjective,complicated / a hassle,ribet banget = 진짜 번거로워; nggak ribet = 간단해; bikin ribet = 일을 복잡하게 만들어
+ID-1056,,repot,"번거로운, 손이 많이 가는",repot,,"Nggak usah repot-repot, aku bisa sendiri.","애쓰지 마, 나 혼자 할 수 있어.",일반,"repot-repot는 ""수고하다""로 거절·사양할 때 자주 쓴다. ribet은 복잡함, repot은 손이 많이 가는 수고",,adjective,troublesome / busy with a chore,nggak usah repot = 수고하지 마; ngerepotin = 번거롭게 하다
+ID-1057,,cuek,"무심한, 신경 안 쓰는",cuek,,Dia cuek banget sama omongan orang.,걔는 남들 말에 전혀 신경 안 써.,구어,"좋게는 ""쿨하다"", 나쁘게는 ""무뚝뚝하다""",,adjective,indifferent / nonchalant,cuek aja = 그냥 신경 꺼; orangnya cuek = 무심한 사람이야
+ID-1058,,gengsi,"체면, 자존심",gengsi,,Dia gengsi buat minta tolong.,걔는 체면 때문에 도와 달라고 못 해.,구어,"남에게 약해 보이기 싫은 마음. ""gengsi dong""은 ""내 체면이 있지""",,noun,prestige / pride,gengsi banget = 자존심이 엄청 세; jaga gengsi = 체면을 지키다
+ID-1059,,ngambek,삐지다,merajuk,ambek,Adikku ngambek karena nggak dibeliin es krim.,동생이 아이스크림을 안 사 줘서 삐졌어.,구어,아이나 연인이 말없이 토라질 때. 표준형은 merajuk,,verb,to sulk,jangan ngambek = 삐지지 마; lagi ngambek = 지금 삐졌어
+ID-1060,,ngomel,"투덜대다, 잔소리하다",mengomel,omel,Ibu ngomel terus gara-gara kamarku berantakan.,엄마는 내 방이 어질러졌다고 계속 잔소리하셔.,구어,투덜거리는 소리. 명사는 omelan,,verb,to grumble / nag,ngomel terus = 계속 투덜대다; jangan ngomel = 투덜대지 마
+ID-1061,,rewel,"보채는, 칭얼대는",rewel,,Bayinya rewel dari semalem.,아기가 어젯밤부터 보채.,일반,아기나 환자가 안절부절 못해 칭얼댈 때. 까다로운 사람에게도 쓴다,,adjective,fussy / cranky,anak rewel = 칭얼대는 아이; lagi rewel = 지금 보채는 중이야
+ID-1062,,cerewet,"잔소리가 많은, 수다스러운",cerewet,,Ibu mertuaku cerewet banget.,시어머니가 잔소리가 엄청 많아.,구어,잔소리나 참견이 많은 사람. rewel과 헷갈리지 말 것(rewel은 칭얼댐),,adjective,nagging / chatty,cerewet banget = 잔소리가 심해; orangnya cerewet = 잔소리가 많은 사람
+ID-1063,,manja,응석 부리는,manja,,Anak bungsu biasanya manja.,막내는 보통 응석받이야.,일반,사랑받아서 의존적인 모습. 연인에게 애교 부릴 때도 쓴다,,adjective,spoiled / clingy,manja banget = 응석이 심해; jangan dimanjain = 오냐오냐하지 마
+ID-1064,,nakal,"말썽 부리는, 나쁜",nakal,,"Jangan nakal ya, Nak.","말썽 부리지 마, 얘야.",일반,"아이에게 쓰면 ""말썽꾸러기"", 어른에게는 ""나쁜 사람""",,adjective,naughty,anak nakal = 말썽꾸러기; nakal banget = 너무 말썽이야
+ID-1065,,bandel,"말 안 듣는, 고집 센",bandel,,"Pasiennya bandel, nggak mau minum obat.",환자가 말을 안 들어서 약을 안 먹으려 해.,구어,"타일러도 안 듣는 사람. nakal은 장난·말썽, bandel은 고집",,adjective,stubborn / disobedient,bandel banget = 정말 말을 안 들어; dasar bandel = 말 안 듣는 녀석
+ID-1066,,pelit,"인색한, 짠",pelit,,"Bosnya pelit, nggak pernah traktir.",사장님이 짜서 한 번도 안 사 줘.,구어,"돈 쓰기 싫어하는 사람. 반대는 royal, murah hati",,adjective,stingy,pelit banget = 엄청 짜; jangan pelit = 인색하게 굴지 마
+ID-1067,,rajin,부지런한,rajin,,Dia rajin banget belajar.,걔는 공부를 아주 부지런히 해.,일반,반대는 malas(게으른). 일에도 공부에도,,adjective,diligent,rajin banget = 정말 부지런해; rajin olahraga = 운동을 꾸준히 해
+ID-1068,,sombong,"거만한, 잘난 척하는",sombong,,"Jangan sombong, nanti jatuh.","거만하게 굴지 마, 나중에 넘어져.",일반,자랑하고 남을 얕볼 때,,adjective,arrogant,sombong banget = 엄청 거만해; nggak sombong = 잘난 척 안 해
+ID-1069,,ramah,"상냥한, 친절한",ramah,,Orang sini ramah-ramah.,여기 사람들은 다들 상냥해.,일반,말투와 태도가 따뜻한 사람. 반대는 jutek,,adjective,friendly,ramah banget = 엄청 친절해; ramah tamah = 상냥하게 맞이하는
+ID-1070,,jutek,"퉁명스러운, 쌀쌀맞은",jutek,,Kasirnya jutek banget.,계산원이 엄청 쌀쌀맞아.,구어,표정이나 말투가 차가울 때,,adjective,rude / curt,jutek banget = 엄청 퉁명스러워; mukanya jutek = 표정이 쌀쌀맞아
+ID-1071,,sopan,"예의 바른, 공손한",sopan,,Anaknya sopan banget.,아이가 아주 예의 발라.,일반,특히 어른에게 하는 행동. 반대는 nggak sopan,,adjective,polite,nggak sopan = 예의가 없어; sopan santun = 예의범절
+ID-1072,,galak,"사나운, 무섭게 구는",galak,,Guru itu galak banget.,그 선생님은 엄청 무서워.,구어,사람이나 동물이 무섭게 굴 때,,adjective,fierce / strict,anjingnya galak = 개가 사나워; jangan galak-galak = 너무 무섭게 굴지 마
+ID-1073,,jahil,짓궂은,jahil,,"Kakakku jahil banget, suka ngumpetin HP aku.",오빠는 엄청 짓궂어서 내 폰을 자꾸 숨겨.,구어,장난으로 약 올리는 사람. 나쁜 의도는 아니다,,adjective,mischievous,jahil banget = 엄청 짓궂어; dasar jahil = 짓궂은 녀석
+ID-1074,,iri,"부러워하는, 샘나는",iri,,Aku iri sama kamu.,나 너 부러워.,일반,질투와 부러움 사이. 연애 질투는 cemburu,,adjective,envious,iri banget = 엄청 부러워; nggak usah iri = 부러워하지 마
+ID-1075,,cemburu,질투하는 (연애),cemburu,,Pacarku gampang cemburu.,내 남자친구는 질투가 많아.,일반,연인이나 가까운 사이의 질투. iri는 남의 것이 부러운 마음,,adjective,jealous,cemburu buta = 맹목적인 질투; jangan cemburu = 질투하지 마
+ID-1076,,kecewa,실망한,kecewa,,Aku kecewa banget sama hasilnya.,결과에 너무 실망했어.,일반,기대가 깨졌을 때,,adjective,disappointed,bikin kecewa = 실망시키다; nggak mau kecewa = 실망하고 싶지 않아
+ID-1077,,gugup,"긴장한, 떨리는",gugup,,Aku gugup banget sebelum ujian.,시험 전에 너무 떨려.,일반,말이나 행동이 떨릴 때. 속이 두근거리는 건 deg-degan,,adjective,nervous,gugup banget = 엄청 긴장돼; jangan gugup = 긴장하지 마
+ID-1078,,deg-degan,두근두근하는,deg-degan,,Aku deg-degan mau ketemu dia.,그 사람 만날 생각에 두근거려.,구어,설렘이든 불안이든 심장이 뛸 때,,adjective,heart pounding,deg-degan banget = 심장이 엄청 뛰어; bikin deg-degan = 가슴 떨리게 해
+ID-1079,,tegang,"긴장된, 팽팽한",tegang,,Suasananya tegang banget.,분위기가 엄청 팽팽해.,일반,분위기나 근육이 굳을 때. gugup은 사람의 마음,,adjective,tense,otot tegang = 근육이 뭉쳤어; situasi tegang = 긴장된 상황
+ID-1080,,lega,"안도하는, 후련한",lega,,Aku lega akhirnya udah selesai.,드디어 끝나서 후련해.,일반,걱정이 풀렸을 때,,adjective,relieved,lega banget = 엄청 후련해; napas lega = 안도의 한숨
+ID-1081,,puas,"만족한, 흡족한",puas,,Aku puas sama pelayanannya.,서비스에 만족해.,일반,"반대는 nggak puas, kecewa",,adjective,satisfied,puas banget = 아주 만족해; belum puas = 아직 만족 못 해
+ID-1082,,penasaran,궁금한,penasaran,,Aku penasaran sama endingnya.,결말이 너무 궁금해.,일반,알고 싶어서 마음이 쓰일 때,,adjective,curious,penasaran banget = 엄청 궁금해; bikin penasaran = 궁금하게 만들어
+ID-1083,,galau,"심란한, 갈팡질팡하는",galau,,Lagi galau mikirin kerjaan.,일 때문에 심란해.,구어,고민이 많아 마음이 정리 안 될 때,,adjective,torn / unsettled,galau banget = 엄청 심란해; lagi galau = 지금 심란해
+ID-1084,,stres,스트레스 받은,stres,,Aku stres banget minggu ini.,이번 주에 스트레스 엄청 받았어.,구어,영어 stress에서. 명사·형용사 둘 다,,adjective,stressed,stres banget = 스트레스 엄청나; jangan stres = 스트레스 받지 마; bikin stres = 스트레스 주다
+ID-1085,,kesepian,외로운,kesepian,,Dia kesepian sejak istrinya meninggal.,부인이 돌아가신 뒤로 그분은 외로워하세요.,일반,혼자라서 쓸쓸할 때. 구어에서 sepi(조용한)도 비슷하게 쓴다,,adjective,lonely,merasa kesepian = 외롭다고 느끼다; kesepian banget = 엄청 외로워
+ID-1086,,pede,"자신 있는, 당당한",percaya diri,,Kamu harus pede dong.,너는 자신감을 가져야지.,구어,percaya diri의 줄임말 PD가 pede로,,adjective,confident,pede banget = 엄청 자신 있어; kepedean = 자신감 과잉이야
+ID-1087,,kapok,혼쭐나서 다시는 안 하는,kapok,,Aku kapok makan di sana.,거기서 먹은 건 혼쭐나서 다시는 안 가.,구어,"나쁜 경험 뒤 ""다시는 안 한다"". jera와 같다",,adjective,to have learned one's lesson,kapok deh = 다시는 안 해; bikin kapok = 혼쭐을 내다
+ID-1088,,sarapan,"아침을 먹다, 아침 식사",sarapan,,Udah sarapan belum?,아침 먹었어?,일반,makan pagi라고도 한다,,verb,breakfast / to have breakfast,sarapan dulu = 먼저 아침 먹어; belum sarapan = 아직 아침 안 먹었어
+ID-1089,,cemilan,간식,camilan,camil,Aku bawa cemilan buat di jalan.,가는 길에 먹을 간식을 챙겼어.,구어,표준 철자는 camilan. snack 느낌,,noun,snack,cemilan sehat = 건강한 간식; cemilan malam = 야식 간식
+ID-1090,,jajan,"군것질하다, 사 먹다",jajan,,Aku jajan di warung depan.,앞 가게에서 간식을 사 먹었어.,구어,길거리에서 싼 간식을 사 먹을 때,,verb,to buy snacks,uang jajan = 용돈; jajan mulu = 맨날 군것질해
+ID-1091,,traktir,한턱내다,mentraktir,traktir,Hari ini aku traktir.,오늘은 내가 살게.,구어,남에게 밥이나 음료를 사 줄 때. 명사형은 traktiran,,verb,to treat someone,ditraktir = 얻어먹다; traktiran = 한턱 낸 것
+ID-1092,,bayarin,대신 내 주다,membayarkan,bayar,Aku bayarin kopinya ya.,커피값은 내가 낼게.,구어,"bayar에 -in이 붙어 ""남의 몫을 내 주다""",,verb,to pay for someone,dibayarin = 대신 내줘서 먹었다; bayarin dulu = 먼저 내 줘
+ID-1093,,antri,줄 서다,antre,antre,"Antri dulu ya, jangan nyerobot.","줄 서요, 새치기하지 마세요.",구어,표준은 antre. 명사는 antrean,,verb,to queue,antri dulu = 먼저 줄 서; ikut antri = 줄을 서다
+ID-1094,,nambah,"더 먹다, 추가하다",menambah,tambah,Aku nambah nasinya ya.,밥 더 먹을게.,구어,식당에서 한 그릇 더 달라고 할 때도 쓴다,,verb,to have seconds / add,nambah nasi = 밥을 더 먹다; nambah lagi = 더 추가해
+ID-1095,,gurih,"고소한, 감칠맛 나는",gurih,,Sup-nya gurih banget.,국이 엄청 감칠맛 나.,일반,짠맛과 고소함이 섞인 맛. 코코넛 밀크가 들어가면 gurih,,adjective,savory,gurih banget = 엄청 고소해; nasi gurih = 코코넛 향 밥
+ID-1096,,asem,"신, 시큼한",asam,asam,Mangganya asem banget.,망고가 엄청 시어.,구어,표준은 asam. 신맛,,adjective,sour,asem banget = 엄청 시어; asem manis = 새콤달콤
+ID-1097,,pahit,쓴,pahit,,Kopinya pahit banget.,커피가 엄청 써.,일반,쓴맛. 힘든 일에도 쓴다,,adjective,bitter,pahit banget = 엄청 써; pengalaman pahit = 쓰라린 경험
+ID-1098,,tawar,"싱거운, 맛이 없는",tawar,,"Supnya tawar, kurang garam.","국이 싱거워, 소금이 모자라.",일반,간이 약할 때. nawar(흥정하다)와 어원은 같다,,adjective,bland,rasanya tawar = 맛이 싱거워; tawar banget = 엄청 싱거워
+ID-1099,,kuah,국물,kuah,,Aku suka kuahnya.,나는 이 국물이 좋아.,일반,"bakso, soto 같은 국물 요리",,noun,broth / soup,kuah pedas = 매운 국물; minta kuah = 국물 더 주세요
+ID-1100,,bubur,죽,bubur,,Bubur ayam enak buat sarapan.,닭죽은 아침으로 좋아.,일반,아플 때나 아침에 먹는 죽,,noun,porridge,bubur ayam = 닭죽; bubur kacang hijau = 녹두죽
+ID-1101,,sate,꼬치구이 (사테),sate,,Aku pesen sate ayam sepuluh tusuk.,닭 사테 열 꼬치 주문할게.,일반,땅콩 소스를 곁들이는 꼬치,,noun,satay,sate ayam = 닭 꼬치; sate kambing = 양 꼬치
+ID-1102,,tempe,템페,tempe,,Tempe goreng enak banget.,템페 튀김 엄청 맛있어.,일반,콩 발효 식품. tahu(두부)와 같이 먹는다,,noun,tempeh,tempe goreng = 템페 튀김; tempe mendoan = 얇은 템페 튀김
+ID-1103,,tepung,"가루, 밀가루",tepung,,Aku beli tepung buat bikin kue.,케이크 만들 가루를 샀어.,일반,밀가루는 tepung terigu,,noun,flour,tepung terigu = 밀가루; tepung beras = 쌀가루
+ID-1104,,minyak,기름,minyak,,Minyaknya udah abis.,기름이 다 떨어졌어.,일반,"식용유는 minyak goreng, 연료·오일에도",,noun,oil,minyak goreng = 식용유; minyak angin = 바르는 멘톨 오일
+ID-1105,,garam,소금,garam,,Tambahin garam dikit.,소금 조금 더 넣어.,일반,맛 간을 볼 때,,noun,salt,kurang garam = 소금이 모자라; garam dapur = 식탁용 소금
+ID-1106,,cabai,고추,cabai,,Cabainya pedes banget.,고추가 엄청 매워.,일반,구어는 cabe 또는 lombok. rawit(작은 매운 고추),,noun,chili,cabai rawit = 작은 매운 고추; cabai merah = 붉은 고추
+ID-1107,,bawang,"양파, 마늘류",bawang,,Aku lagi ngiris bawang.,양파를 썰고 있어.,일반,"bawang merah(샬롯·붉은 양파), bawang putih(마늘), bawang bombay(양파)",,noun,onion / garlic family,bawang putih = 마늘; bawang merah = 샬롯
+ID-1108,,jahe,생강,jahe,,Minum wedang jahe biar badan anget.,생강차 마셔서 몸을 데워.,일반,감기나 추울 때 마신다,,noun,ginger,wedang jahe = 생강차; jahe hangat = 따뜻한 생강
+ID-1109,,jeruk,"귤, 오렌지",jeruk,,Aku pesen es jeruk.,오렌지 주스(얼음) 주세요.,일반,감귤류 전부. 레몬은 jeruk nipis,,noun,orange / citrus,es jeruk = 오렌지 음료; jeruk nipis = 라임
+ID-1110,,pisang,바나나,pisang,,Pisang goreng enak buat camilan.,바나나 튀김은 간식으로 좋아.,일반,가장 흔한 과일. 튀김 pisang goreng,,noun,banana,pisang goreng = 바나나 튀김; pisang manis = 단 바나나
+ID-1111,,semangka,수박,semangka,,Semangka lagi musimnya.,수박이 제철이야.,일반,여름 과일,,noun,watermelon,es semangka = 수박 음료; semangka dingin = 시원한 수박
+ID-1112,,mangga,망고,mangga,,Mangganya manis banget.,망고가 엄청 달아.,일반,rujak에도 mangga muda(덜 익은 망고)를 쓴다,,noun,mango,mangga muda = 덜 익은 망고; jus mangga = 망고 주스
+ID-1113,,kelapa,코코넛,kelapa,,Aku beli air kelapa muda.,어린 코코넛 물을 샀어.,일반,열대 해변에서 마시는 air kelapa,,noun,coconut,air kelapa = 코코넛 워터; santan kelapa = 코코넛 밀크
+ID-1114,,garpu,포크,garpu,,Minta garpu satu ya.,포크 하나 주세요.,일반,"sendok(숟가락), pisau(칼)와 한 세트",,noun,fork,sendok garpu = 숟가락과 포크; pakai garpu = 포크를 쓰다
+ID-1115,,mangkuk,"그릇, 사발",mangkuk,,Aku pesen dua mangkuk bakso.,박소 두 그릇 주세요.,일반,국물 요리 그릇. 단위로도,,noun,bowl,satu mangkuk = 한 그릇; mangkuk kecil = 작은 그릇
+ID-1116,,botol,병 (물병 등),botol,,Aku bawa botol minum sendiri.,나는 물병을 내가 가져가.,일반,단위로도 쓴다. botol minum 물병,,noun,bottle,botol minum = 물병; dua botol air = 물 두 병
+ID-1117,,panci,냄비,panci,,Panci-nya kegedean.,냄비가 너무 커.,일반,국을 끓이는 냄비. 프라이팬은 wajan,,noun,pot,panci besar = 큰 냄비; panci air = 물 끓이는 냄비
+ID-1118,,kompor,"가스레인지, 버너",kompor,,Matiin kompornya ya.,가스레인지 꺼 줘.,일반,"켜기 nyalain, 끄기 matiin",,noun,stove,kompor gas = 가스레인지; nyalain kompor = 불을 켜다
+ID-1119,,kulkas,냉장고,kulkas,,Taro aja di kulkas.,그냥 냉장고에 넣어 둬.,구어,lemari es의 줄임. 표준어 느낌은 lemari es,,noun,fridge,isi kulkas = 냉장고 안; kulkas kosong = 냉장고가 비었어
+ID-1120,,perawat,간호사,perawat,rawat,Dia perawat di rumah sakit besar.,걔는 큰 병원 간호사야.,일반,호칭은 Suster(여성)나 Mas(남성)로 부르는 경우도 많다,,noun,nurse,perawat jaga = 당직 간호사; perawat anak = 소아 간호사
+ID-1121,,suntik,주사 (놓다),menyuntik,,Mau disuntik di mana?,어디에 주사 맞을래요?,일반,명사·동사 둘 다. 주사 맞다는 disuntik,,verb,injection / to inject,disuntik = 주사를 맞다; suntik vaksin = 백신 주사
+ID-1122,,infus,수액,infus,,Pasien itu lagi dipasang infus.,그 환자는 수액을 달고 있어.,일반,"병원 용어. ""infus dipasang""",,noun,IV drip,pasang infus = 수액을 달다; lepas infus = 수액을 빼다
+ID-1123,,gejala,증상,gejala,,Gejalanya apa aja?,증상이 어떤 건가요?,일반,병의 증상. 진료 때 첫 질문,,noun,symptom,gejala flu = 감기 증상; ada gejala = 증상이 있어
+ID-1124,,alergi,알레르기,alergi,,Aku alergi kacang.,나는 땅콩 알레르기가 있어.,일반,alergi + 음식·약 이름,,noun,allergy,alergi obat = 약 알레르기; alergi debu = 먼지 알레르기
+ID-1125,,diare,설사,diare,,Anaknya diare dari kemarin.,아이가 어제부터 설사해요.,일반,구어로는 mencret(속어),,noun,diarrhea,kena diare = 설사에 걸리다; obat diare = 설사약
+ID-1126,,muntah,구토하다,muntah,,Dia muntah terus dari tadi.,걔가 아까부터 계속 토해.,일반,mual(메스꺼움) 다음 단계,,verb,to vomit,muntah-muntah = 토하고 또 토해; pengen muntah = 토할 것 같아
+ID-1127,,sembelit,변비,sembelit,,Aku lagi sembelit.,나 지금 변비야.,일반,구어는 susah BAB,,noun,constipation,obat sembelit = 변비약; kena sembelit = 변비에 걸리다
+ID-1128,,lambung,위 (소화 기관),lambung,,Lambungku perih.,속(위)이 쓰려.,일반,asam lambung는 위산. maag(위염)이라고도,,noun,stomach,sakit lambung = 위 통증; asam lambung = 위산
+ID-1129,,tenggorokan,"목구멍, 목",tenggorokan,,Tenggorokanku sakit.,목이 아파.,일반,목 안쪽. leher는 목 전체,,noun,throat,sakit tenggorokan = 목이 아파; tenggorokan kering = 목이 말라
+ID-1130,,dada,가슴,dada,,Dadaku sesak.,가슴이 답답해.,일반,심장 증상에서 중요한 말,,noun,chest,nyeri dada = 흉통; sakit dada = 가슴이 아파
+ID-1131,,punggung,등,punggung,,Punggungku pegel banget.,등이 엄청 뻐근해.,일반,허리는 pinggang,,noun,back,sakit punggung = 등이 아파; tas punggung = 배낭
+ID-1132,,pinggang,허리,pinggang,,Pinggangku sakit.,허리가 아파.,일반,몸의 가운데. 요통은 sakit pinggang,,noun,waist / lower back,sakit pinggang = 허리 통증; pegel pinggang = 허리가 뻐근해
+ID-1133,,lutut,무릎,lutut,,Lututku luka.,무릎에 상처가 났어.,일반,계단에 오르내릴 때 아프다는 말과 함께,,noun,knee,sakit lutut = 무릎이 아파; lutut bengkak = 무릎이 부었어
+ID-1134,,bahu,어깨,bahu,,Bahuku kaku.,어깨가 뻐근해.,일반,pundak도 같은 뜻. 둘 다 흔하다,,noun,shoulder,bahu kaku = 어깨가 뻣뻣해; sakit bahu = 어깨가 아파
+ID-1135,,leher,목,leher,,Leherku kaku.,목이 뻣뻣해.,일반,tenggorokan(목구멍)과 구분,,noun,neck,sakit leher = 목이 아파; leher pegel = 목이 뻐근해
+ID-1136,,perban,붕대,perban,,Perbannya perlu diganti.,붕대를 갈아야 해요.,일반,상처 처치. 반창고는 plester,,noun,bandage,ganti perban = 붕대를 갈다; perban elastis = 탄력 붕대
+ID-1137,,plester,반창고,plester,,Tolong tempel plester di jari aku.,손가락에 반창고 좀 붙여 줘.,일반,작은 상처에 붙이는 반창고,,noun,plaster / band-aid,tempel plester = 반창고를 붙이다; plester luka = 상처용 반창고
+ID-1138,,tensi,혈압,tensi,,Tensinya berapa?,혈압이 얼마예요?,구어,공식은 tekanan darah(이미 덱에 있음). 구어는 tensi,,noun,blood pressure,tensi tinggi = 혈압이 높아; ukur tensi = 혈압을 재다
+ID-1139,,hamil,임신한,hamil,,Dia lagi hamil enam bulan.,걔는 임신 6개월이야.,일반,임신 중이다. 임신하다도 hamil,,adjective,pregnant,lagi hamil = 임신 중이야; hamil muda = 임신 초기
+ID-1140,,melahirkan,출산하다,melahirkan,lahir,Dia melahirkan kemarin malam.,걔는 어제 밤에 출산했어.,일반,lahir(태어나다)에서,,verb,to give birth,proses melahirkan = 출산 과정; melahirkan normal = 자연분만
+ID-1141,,bius,마취 (시키다),membius,,Pasien dibius sebelum operasi.,환자는 수술 전에 마취를 받았어요.,일반,bius total은 전신 마취,,noun,anesthesia,bius lokal = 국소 마취; dibius = 마취됐다
+ID-1142,,pingsan,기절하다,pingsan,,Dia tiba-tiba pingsan.,걔가 갑자기 쓰러졌어.,일반,의식을 잃을 때,,verb,to faint,hampir pingsan = 기절할 뻔했어; pingsan di jalan = 길에서 쓰러졌어
+ID-1143,,lemes,"기운 없는, 축 처진",lemas,,Badanku lemes banget.,몸에 힘이 하나도 없어.,구어,"표준은 lemas. 아플 때, 배고플 때",,adjective,weak / limp,lemes banget = 기운이 하나도 없어; badan lemes = 몸이 축 처졌어
+ID-1144,,gatel,가려운,gatal,,Kulitku gatel banget.,피부가 엄청 가려워.,구어,표준은 gatal,,adjective,itchy,gatel banget = 엄청 가려워; gatel-gatel = 가려워; kulit gatel = 피부가 가려워
+ID-1145,,bengkak,"붓다, 부은",bengkak,,Kakiku bengkak.,발이 부었어.,일반,염증이나 타박상으로 부을 때,,adjective,swollen,bengkak banget = 엄청 부었어; mata bengkak = 눈이 부었어
+ID-1146,,memar,"멍, 멍든",memar,,Kakiku memar kena meja.,책상에 부딪혀서 다리에 멍이 들었어.,일반,명사·형용사,,noun,bruise,ada memar = 멍이 있어; memar biru = 푸른 멍
+ID-1147,,berdarah,피가 나다,berdarah,darah,Lukanya berdarah lagi.,상처에서 또 피가 나.,일반,darah(피)에서,,verb,to bleed,berdarah banyak = 피가 많이 나; hidung berdarah = 코피가 나
+ID-1148,,sesak,"숨이 막히는, 답답한",sesak,,Dia sesak napas.,걔는 숨이 차.,일반,호흡 곤란. sesak napas가 핵심 표현,,adjective,short of breath / tight,sesak napas = 숨이 차; dada sesak = 가슴이 답답해
+ID-1149,,keringat,땀,keringat,,Keringatku bercucuran.,땀이 줄줄 흘러.,일반,"""땀이 나다""는 keluar keringat",,noun,sweat,keringat dingin = 식은땀; berkeringat = 땀이 나다
+ID-1150,,menggigil,"오한이 들다, 덜덜 떨다",menggigil,gigil,Badannya menggigil kedinginan.,걔는 추워서 온몸을 떨어.,일반,열이 오르기 전에 오한이 올 때,,verb,to shiver,menggigil kedinginan = 추워서 떨어; badan menggigil = 몸이 덜덜 떨려
+ID-1151,,meriang,몸살 기운이 있는,meriang,,"Badanku meriang, kayaknya mau demam.","몸살 기운이 있어, 열이 날 것 같아.",구어,열이 오르기 전의 으슬으슬 아픈 느낌,,adjective,feverish / achy,lagi meriang = 몸살 기운이야; meriang banget = 엄청 으슬으슬해
+ID-1152,,pegel,"뻐근한, 결리는",pegal,,Pundakku pegel banget.,어깨가 엄청 뻐근해.,구어,표준은 pegal. 근육이 뭉치고 지칠 때,,adjective,sore / stiff,pegel banget = 엄청 뻐근해; pegel linu = 쑤시고 결려
+ID-1153,,kram,"쥐, 경련",kram,,Kakiku kram.,다리에 쥐가 났어.,일반,근육이 갑자기 뭉쳐 아플 때,,noun,cramp,kram perut = 배 경련; kena kram = 쥐가 나다
+ID-1154,,pulih,회복하다,pulih,,Dia udah pulih dari sakitnya.,걔는 병에서 회복했어.,일반,"sembuh보다 ""원래 상태로 돌아오다""의 느낌",,verb,to recover,cepat pulih = 빨리 회복해; belum pulih = 아직 회복 안 됐어
+ID-1155,,kambuh,"재발하다, 도지다",kambuh,,Asmanya kambuh lagi.,천식이 또 도졌어.,일반,만성 병이 다시 나타날 때,,verb,to relapse / flare up,sakitnya kambuh = 병이 도졌어; sering kambuh = 자주 재발해
+ID-1156,,menular,전염되다,menular,tular,Penyakit ini bisa menular.,이 병은 전염될 수 있어요.,일반,전염성. 옮는 것은 tertular,,verb,contagious,nggak menular = 전염 안 돼; mudah menular = 쉽게 옮아
+ID-1157,,vaksin,백신,vaksin,,Kamu udah divaksin belum?,백신 맞았어?,일반,맞다는 divaksin,,noun,vaccine,vaksin booster = 추가 접종; divaksin = 백신을 맞다
+ID-1158,,kasur,"매트리스, 침대",kasur,,Kasurnya empuk banget.,매트리스가 엄청 푹신해.,일반,ranjang은 침대 프레임,,noun,mattress / bed,kasur lipat = 접이식 매트리스; tidur di kasur = 침대에서 자다
+ID-1159,,bantal,베개,bantal,,Aku butuh bantal satu lagi.,베개 하나 더 필요해.,일반,bantal guling은 길쭉한 안는 베개,,noun,pillow,bantal empuk = 푹신한 베개; sarung bantal = 베갯잇
+ID-1160,,selimut,"이불, 담요",selimut,,Tolong ambilin selimut.,이불 좀 가져다줘.,일반,추울 때 덮는 이불,,noun,blanket,selimut tebal = 두꺼운 이불; pakai selimut = 이불을 덮다
+ID-1161,,lemari,"장롱, 수납장",lemari,,Bajuku ada di lemari.,내 옷은 장롱에 있어.,일반,"옷장은 lemari baju, 냉장고는 lemari es",,noun,cupboard / wardrobe,lemari baju = 옷장; lemari buku = 책장
+ID-1162,,handuk,수건,handuk,,Aku lupa bawa handuk.,수건 가져오는 걸 잊었어.,일반,호텔에서 minta handuk으로 요청,,noun,towel,handuk mandi = 목욕 수건; minta handuk = 수건 주세요
+ID-1163,,sabun,비누,sabun,,Cuci tangan pake sabun.,비누로 손 씻어.,일반,"sabun cuci(세제), sabun mandi(바디워시)",,noun,soap,sabun cuci = 세제; sabun cair = 액체 비누
+ID-1164,,odol,치약,odol,,Odolnya abis.,치약이 떨어졌어.,구어,공식은 pasta gigi. 상표 Odol에서,,noun,toothpaste,odol habis = 치약이 떨어졌어; beli odol = 치약을 사다
+ID-1165,,sampo,샴푸,sampo,,Aku ganti sampo baru.,새 샴푸로 바꿨어.,일반,영어 shampoo,,noun,shampoo,sampo anti ketombe = 비듬 샴푸; ganti sampo = 샴푸를 바꾸다
+ID-1166,,kipas,"선풍기, 부채",kipas,,Nyalain kipasnya dong.,선풍기 좀 켜 줘.,일반,kipas angin 선풍기. AC는 에어컨,,noun,fan,kipas angin = 선풍기; kipas tangan = 부채
+ID-1167,,kamera,카메라,kamera,,Aku bawa kamera ke pantai.,바닷가에 카메라 가져갔어.,일반,폰 카메라도 kamera,,noun,camera,kamera depan = 전면 카메라; kamera belakang = 후면 카메라
+ID-1168,,baterai,배터리,baterai,,Baterai HP-ku tinggal sepuluh persen.,폰 배터리가 10% 남았어.,일반,구어는 batre,,noun,battery,baterai habis = 배터리가 다 됐어; ganti baterai = 배터리를 교체해
+ID-1169,,kabel,"케이블, 전선",kabel,,Kabel chargernya putus.,충전 케이블이 끊어졌어.,일반,"kabel data, kabel charger",,noun,cable,kabel charger = 충전 케이블; kabel putus = 케이블이 끊어졌어
+ID-1170,,laptop,노트북 컴퓨터,laptop,,Laptopku lemot banget.,내 노트북이 엄청 느려.,일반,구어로 lemot(느린),,noun,laptop,bawa laptop = 노트북을 가져가다; laptop rusak = 노트북이 고장났어
+ID-1171,,layar,화면,layar,,Layar HP-ku retak.,폰 화면이 깨졌어.,일반,"layar HP, layar laptop. 영화관 스크린도",,noun,screen,layar retak = 화면이 깨졌어; layar sentuh = 터치 화면
+ID-1172,,aplikasi,"앱, 응용 프로그램",aplikasi,,Aku download aplikasinya dulu.,그 앱부터 내려받을게.,일반,구어는 app,,noun,app,aplikasi ojek = 오토바이 택시 앱; buka aplikasi = 앱을 열다
+ID-1173,,internet,인터넷,internet,,Internetnya lemot banget.,인터넷이 엄청 느려.,일반,구어는 net. wifi는 이미 덱에 있음,,noun,internet,nggak ada internet = 인터넷이 안 돼; paket internet = 데이터 요금제
+ID-1174,,pulsa,"선불 통화료, 충전 금액",pulsa,,Pulsaku abis.,내 선불 요금이 다 떨어졌어.,일반,인도네시아의 선불 SIM 충전 단위,,noun,phone credit,isi pulsa = 요금을 충전하다; beli pulsa = 선불 충전을 사다
+ID-1175,,kuota,데이터 용량,kuota,,Kuota internetku abis.,데이터를 다 썼어.,일반,매달 쓰는 데이터 양,,noun,data quota,kuota habis = 데이터 소진; beli kuota = 데이터를 사다
+ID-1176,,dompet,지갑,dompet,,Dompetku ketinggalan di rumah.,지갑을 집에 두고 왔어.,일반,돈 지갑. 디지털 지갑은 dompet digital,,noun,wallet,dompet hilang = 지갑을 잃어버렸어; dompet kulit = 가죽 지갑
+ID-1177,,transfer,이체하다,transfer,,Aku transfer sekarang ya.,지금 이체할게.,일반,"계좌 이체. 구어에서 ""transfer aja""",,verb,to transfer money,transfer ke rekening = 계좌로 이체; udah ditransfer = 이미 이체했어
+ID-1178,,tagihan,"청구서, 고지서",tagihan,,Tagihan listrik bulan ini naik.,이번 달 전기 요금 청구서가 올랐어.,일반,매달 오는 요금,,noun,bill,tagihan listrik = 전기 요금 고지서; bayar tagihan = 요금을 내다
+ID-1179,,gratis,"공짜의, 무료의",gratis,,Parkir di sini gratis.,여기 주차는 공짜야.,일반,구어는 gretongan. 반대는 bayar,,adjective,free of charge,gratis ongkir = 배송비 무료; serba gratis = 다 공짜
+ID-1180,,promo,"할인 행사, 프로모션",promo,,Lagi ada promo diskon lima puluh persen.,지금 50% 할인 행사 중이야.,일반,diskon(이미 덱에 있음)을 포함한 행사 전체,,noun,promotion,lagi promo = 행사 중이야; kode promo = 할인 코드
+ID-1181,,belanja,"장보다, 쇼핑하다",berbelanja,belanja,Aku belanja ke pasar dulu.,시장에 장 보러 갈게.,일반,belanja bulanan = 한 달치 장보기,,verb,to shop,belanja online = 온라인 쇼핑; uang belanja = 생활비
+ID-1182,,jualan,"장사하다, 팔다",berjualan,jual,Ibuku jualan nasi uduk.,엄마는 나시 우둑을 팔아.,구어,"jual(팔다)의 구어. ""장사하다""의 느낌",,verb,to sell / run a stall,jualan online = 온라인으로 팔다; tukang jualan = 상인
+ID-1183,,ngutang,"외상하다, 빚지다",berutang,utang,Aku ngutang dulu ya.,나 일단 외상할게.,구어,utang은 빚. 돈 빌려 달라는 말은 pinjem duit,,verb,to owe / buy on credit,ngutang dulu = 일단 외상해; jangan ngutang = 빚지지 마
+ID-1184,,nabung,저축하다,menabung,tabung,Aku nabung buat liburan.,휴가를 위해 저축해.,구어,명사 tabungan(저축),,verb,to save money,nabung tiap bulan = 매달 저축해; lagi nabung = 저축 중이야
+ID-1185,,pajak,세금,pajak,,Harganya belum termasuk pajak.,가격에 세금이 포함 안 돼 있어.,일반,PPN은 부가가치세,,noun,tax,bayar pajak = 세금을 내다; pajak penghasilan = 소득세
+ID-1186,,paspor,여권,paspor,,Aku lupa bawa paspor.,여권을 가져오는 걸 잊었어.,일반,공항·호텔에서 필수,,noun,passport,paspor habis = 여권이 만료됐어; bikin paspor = 여권을 만들다
+ID-1187,,koper,"여행 가방, 캐리어",koper,,Kopernya berat banget.,캐리어가 엄청 무거워.,일반,bagasi는 부치는 짐,,noun,suitcase,bawa koper = 캐리어를 가져가다; packing koper = 짐을 싸다
+ID-1188,,bagasi,수하물,bagasi,,Bagasiku maksimal dua puluh kilo.,부치는 짐은 최대 20kg야.,일반,비행기 수하물. kabin은 기내,,noun,checked baggage,tambah bagasi = 수하물을 추가하다; bagasi kabin = 기내 수하물
+ID-1189,,turis,관광객,turis,,Banyak turis di pantai.,바닷가에 관광객이 많아.,일반,wisatawan은 격식 표현,,noun,tourist,turis asing = 외국인 관광객; tempat turis = 관광지
+ID-1190,,bioskop,영화관,bioskop,,Yuk nonton di bioskop.,영화관에서 보자.,일반,영어 cinema. XXI가 유명 체인,,place,cinema,nonton bioskop = 영화관에서 영화를 보다; tiket bioskop = 영화 티켓
+ID-1191,,perpustakaan,도서관,perpustakaan,pustaka,Aku belajar di perpustakaan.,나는 도서관에서 공부해.,일반,구어는 perpus,,place,library,pinjam buku di perpustakaan = 도서관에서 책을 빌리다; ke perpustakaan = 도서관에 가다
+ID-1192,,kampus,대학 캠퍼스,kampus,,Aku ketemu dia di kampus.,캠퍼스에서 걔를 만났어.,일반,대학 자체도 kampus,,place,campus,anak kampus = 대학생; kuliah di kampus = 캠퍼스에서 수업을 듣다
+ID-1193,,restoran,"식당, 레스토랑",restoran,,Kita makan di restoran Padang.,파당 식당에서 먹자.,일반,"warung은 작은 식당, restoran은 번듯한 식당",,place,restaurant,restoran Padang = 파당 식당; pesan restoran = 식당을 예약하다
+ID-1194,,kafe,카페,kafe,,Kita nongkrong di kafe itu.,우리 그 카페에서 놀자.,일반,구어는 kafe 또는 cafe,,place,cafe,kafe kopi = 커피 카페; kerja di kafe = 카페에서 일하다
+ID-1195,,minimarket,"편의점, 소형 마트",minimarket,,Aku beli air di minimarket.,편의점에서 물을 샀어.,일반,"Indomaret, Alfamart 같은 체인",,place,convenience store,minimarket depan = 앞 편의점; beli di minimarket = 편의점에서 사다
+ID-1196,,supermarket,슈퍼마켓,supermarket,,Aku belanja bulanan di supermarket.,한 달치 장은 슈퍼마켓에서 봐.,일반,pasar(시장)보다 현대식,,place,supermarket,ke supermarket = 슈퍼에 가다; keranjang supermarket = 장바구니
+ID-1197,,puskesmas,보건소,puskesmas,,Aku periksa ke puskesmas.,보건소에서 진찰받았어.,일반,지역 공공 의료 시설. 싼 값에 진료,,place,community health center,periksa di puskesmas = 보건소에서 진찰받다; dokter puskesmas = 보건소 의사
+ID-1198,,klinik,"클리닉, 의원",klinik,,Aku daftar ke klinik dulu.,먼저 클리닉에 접수했어.,일반,병원보다 작은 의료 시설,,place,clinic,klinik gigi = 치과 의원; klinik 24 jam = 24시간 의원
+ID-1199,,masjid,모스크,masjid,,Masjid itu deket banget dari sini.,그 모스크는 여기서 엄청 가까워.,일반,기도 시간 azan이 들린다,,place,mosque,masjid besar = 대형 모스크; ke masjid = 모스크에 가다
+ID-1200,,kantin,구내식당,kantin,,Kita makan siang di kantin.,우리 구내식당에서 점심 먹자.,일반,학교·회사 안에 있는 식당,,place,canteen,makan di kantin = 구내식당에서 먹다; kantin sekolah = 학교 식당
+ID-1201,,lift,엘리베이터,lift,,Liftnya lagi rusak.,엘리베이터가 고장났어.,일반,영어 lift. 계단은 tangga,,place,elevator,naik lift = 엘리베이터를 타다; lift penuh = 엘리베이터가 꽉 찼어
+ID-1202,,parkiran,주차장,parkiran,,Aku tunggu di parkiran ya.,주차장에서 기다릴게.,구어,공식은 tempat parkir,,place,parking lot,parkiran penuh = 주차장이 꽉 찼어; di parkiran = 주차장에서
+ID-1203,,halte,버스 정류장,halte,,Aku udah di halte.,나 정류장에 있어.,일반,TransJakarta 정류장도 halte,,place,bus stop,halte bus = 버스 정류장; nunggu di halte = 정류장에서 기다리다
+ID-1204,,terminal,터미널,terminal,,Kita ketemu di terminal.,터미널에서 만나자.,일반,버스 터미널. 공항은 bandara,,place,terminal,terminal bus = 버스 터미널; terminal bandara = 공항 터미널
+ID-1205,,pelabuhan,항구,pelabuhan,,Kapal berangkat dari pelabuhan.,배가 항구에서 출발해.,일반,배 타는 곳,,place,port / harbor,pelabuhan ferry = 페리 항구; ke pelabuhan = 항구로
+ID-1206,,gang,골목,gang,,Rumahku di gang kecil itu.,우리 집은 저 작은 골목에 있어.,일반,주택가의 좁은 길,,place,alley,gang sempit = 좁은 골목; masuk gang = 골목으로 들어가다
+ID-1207,,jembatan,다리,jembatan,,Kita nyebrang lewat jembatan.,다리로 건너가자.,일반,강·도로 위의 다리,,place,bridge,jembatan penyeberangan = 육교; lewat jembatan = 다리로 가다
+ID-1208,,kontrakan,월세집,kontrakan,,Kontrakanku deket kantor.,내 월세집은 사무실 근처야.,구어,ngontrak(월세로 살다)와 같은 어근,,noun,rented house,bayar kontrakan = 월세를 내다; cari kontrakan = 월세집을 찾다
+ID-1209,,kos,"하숙, 셰어 방",kos,,Aku tinggal di kos deket kampus.,캠퍼스 근처 하숙에 살아.,구어,방 하나를 빌려 사는 곳. anak kos는 하숙생,,noun,boarding room,anak kos = 하숙생; bayar kos = 하숙비를 내다
+ID-1210,,dapur,부엌,dapur,,Ibu lagi masak di dapur.,엄마는 부엌에서 요리하셔.,일반,주방. 식당 주방도 dapur,,place,kitchen,dapur bersih = 깨끗한 부엌; masuk dapur = 부엌에 들어가다
+ID-1211,,atap,지붕,atap,,Atapnya bocor.,지붕이 새.,일반,우기에 흔한 문제,,noun,roof,atap bocor = 지붕이 새; naik ke atap = 지붕에 오르다
+ID-1212,,pagar,"울타리, 담",pagar,,Pintu pagarnya kebuka.,대문이 열려 있어.,일반,집 앞 대문. pintu pagar,,noun,fence / gate,buka pagar = 대문을 열다; pagar tinggi = 높은 담
+ID-1213,,bensin,휘발유,bensin,,Bensinnya tinggal dikit.,기름이 조금밖에 안 남았어.,일반,구어는 BBM이나 isi bensin,,noun,gasoline,isi bensin = 주유하다; harga bensin = 기름값
+ID-1214,,parkir,주차(하다),parkir,,Parkir di mana?,어디에 주차해?,일반,동사·명사. 주차장은 parkiran,,verb,to park / parking,parkir motor = 오토바이 주차; tukang parkir = 주차 요원
+ID-1215,,supir,운전기사,sopir,,Supirnya ramah banget.,기사님이 엄청 친절해.,일반,표준은 sopir. 택시 기사에게 호칭은 Pak,,noun,driver,supir taksi = 택시 기사; supir pribadi = 개인 기사
+ID-1216,,nyetir,운전하다,menyetir,setir,Aku nggak bisa nyetir.,나는 운전 못 해.,구어,setir는 핸들,,verb,to drive,bisa nyetir = 운전할 수 있어; lagi nyetir = 운전 중이야
+ID-1217,,ngebut,"과속하다, 빨리 달리다",ngebut,,"Jangan ngebut, bahaya.","과속하지 마, 위험해.",구어,motor나 mobil을 아주 빨리 몰 때,,verb,to speed,ngebut banget = 엄청 빨리 달려; jangan ngebut = 과속하지 마
+ID-1218,,nyasar,길을 잃다,tersesat,sasar,Aku nyasar nih.,나 길 잃었어.,구어,표준은 tersesat. 지도 앱을 보는 장면에 흔하다,,verb,to get lost,nyasar ke mana-mana = 여기저기 헤매다; lagi nyasar = 길 잃은 중이야
+ID-1219,,helm,헬멧,helm,,Pake helm ya!,헬멧 써!,일반,오토바이 필수,,noun,helmet,pakai helm = 헬멧을 쓰다; lupa helm = 헬멧을 잊었어
+ID-1220,,angkot,앙콧 (소형 승합 버스),angkot,,Aku naik angkot ke sekolah.,나는 앙콧을 타고 학교에 가.,구어,angkutan kota의 줄임말. 정해진 노선의 작은 버스,,noun,minibus,naik angkot = 앙콧을 타다; angkot penuh = 앙콧이 꽉 찼어
+ID-1221,,ongkos,"요금, 교통비",ongkos,,Ongkosnya berapa?,요금이 얼마예요?,일반,교통·운송·수고비. harga는 물건 값,,noun,fare / cost,ongkos kirim = 배송비; ongkos naik = 차비
+ID-1222,,cuti,휴가,cuti,,Aku ambil cuti minggu depan.,다음 주에 휴가 낼게.,일반,직장 휴가. 개인 여행은 liburan(이미 덱에 있음),,noun,leave,ambil cuti = 휴가를 내다; cuti sakit = 병가
+ID-1223,,jadwal,"일정, 시간표, 근무표",jadwal,,Jadwal kerjaku berubah.,내 근무 일정이 바뀌었어.,일반,인도네시아 병원에서는 jadwal jaga,,noun,schedule,jadwal jaga = 당직표; cek jadwal = 일정을 확인해
+ID-1224,,lembur,"야근하다, 초과 근무",lembur,,Aku lembur sampe malam.,밤까지 야근해.,일반,명사·동사,,verb,to work overtime,lagi lembur = 야근 중이야; uang lembur = 야근 수당
+ID-1225,,gaji,월급,gaji,,Gajinya naik bulan ini.,이번 달에 월급이 올랐어.,일반,"보너스는 bonus, 상여금은 THR",,noun,salary,gaji pokok = 기본급; tanggal gajian = 월급날
+ID-1226,,rapat,회의,rapat,,Aku lagi rapat sekarang.,나 지금 회의 중이야.,일반,meeting. 구어로 meeting도 쓴다,,noun,meeting,rapat mendadak = 갑작스런 회의; habis rapat = 회의 끝나고
+ID-1227,,karyawan,직원,karyawan,,Karyawannya ramah-ramah.,직원들이 다들 친절해.,일반,회사 직원. pegawai는 공무원 쪽,,noun,employee,karyawan baru = 신입 직원; karyawan tetap = 정규직
+ID-1228,,wawancara,"면접, 인터뷰",wawancara,,Besok aku wawancara kerja.,내일 취업 면접 봐.,일반,interview. 구어는 interview,,noun,interview,wawancara kerja = 취업 면접; lolos wawancara = 면접에 합격하다
+ID-1229,,kontrak,계약,kontrak,,Kontrak kerjaku habis bulan depan.,내 근로 계약이 다음 달에 끝나.,일반,근로·임대 계약,,noun,contract,tanda tangan kontrak = 계약서에 서명하다; habis kontrak = 계약이 끝나다
+ID-1230,,dipecat,해고당하다,dipecat,pecat,Dia dipecat dari kantornya.,걔는 회사에서 해고당했어.,일반,pecat이 어근. 해고하다는 memecat,,verb,to be fired,dipecat dari kantor = 회사에서 해고당하다; takut dipecat = 해고당할까 봐 무서워
+ID-1231,,pensiun,은퇴하다,pensiun,,Ayahku pensiun tahun depan.,아버지는 내년에 은퇴하셔.,일반,연금도 pensiun,,verb,to retire,dana pensiun = 연금; usia pensiun = 은퇴 나이
+ID-1232,,subuh,새벽,subuh,,Aku bangun jam empat subuh.,새벽 4시에 일어났어.,일반,이슬람 새벽 기도 시간. 일반적으로 해뜨기 전,,time,dawn,salat subuh = 새벽 기도; subuh-subuh = 이른 새벽에
+ID-1233,,weekend,주말,akhir pekan,,Weekend ini kamu ngapain?,이번 주말에 뭐 해?,구어,영어 weekend. 표준은 akhir pekan,,time,weekend,weekend depan = 다음 주말; weekend ini = 이번 주말; liburan weekend = 주말 여행
+ID-1234,,puasa,"금식, 라마단 단식",puasa,,Aku puasa bulan ini.,이번 달에 단식 중이야.,일반,Ramadan 동안 해 뜰 때부터 질 때까지 금식,,noun,fasting,bulan puasa = 단식 달; buka puasa = 단식을 깨다
+ID-1235,,lebaran,르바란 (이드 알피트르),lebaran,,Aku mudik pas lebaran.,르바란 때 고향에 가.,일반,라마단이 끝난 뒤 가장 큰 명절,,noun,Eid / Lebaran,mudik lebaran = 르바란 귀향; THR lebaran = 르바란 보너스
+ID-1236,,mudik,귀향하다,mudik,,Aku mudik ke kampung minggu depan.,다음 주에 고향에 가.,일반,명절에 고향으로 가는 대이동,,verb,to go home for the holiday,mudik lebaran = 르바란 귀향; macet mudik = 귀향 정체
+ID-1237,,gemes,귀여워서 못 참겠는,gemas,,Gemes banget liat bayinya.,아기 보면 너무 귀여워서 못 참겠어.,구어,"귀엽고 깨물어 주고 싶은 느낌. 화날 때도 ""답답해서 환장하겠다""로 쓴다",,adjective,so cute I could squeeze it,gemes banget = 귀여워서 미치겠어; bikin gemes = 귀여워서 미치게 해
+ID-1238,,norak,"촌스러운, 유난스러운",norak,,"Jangan norak, ah.",유난 떨지 마.,구어,처음 본 것처럼 호들갑을 떨 때,,adjective,tacky / over the top,norak banget = 엄청 촌스러워; jangan norak = 유난 떨지 마
+ID-1239,,receh,"시시한, 소소한",receh,,Jokesnya receh banget.,개그가 너무 시시해.,구어,"원래 ""잔돈"". 수준이 낮은 농담이나 소소한 것에",,adjective,trivial / cheesy,humor receh = 소소한 유머; uang receh = 잔돈
+ID-1240,,jadul,옛날 스타일의,jadul,,HP-nya jadul banget.,폰이 엄청 옛날 거야.,구어,jaman dulu의 줄임말,,adjective,old-fashioned,jadul banget = 엄청 구식이야; gaya jadul = 옛날 스타일
+ID-1241,,gaul,"트렌디한, 사교적인",gaul,,Anaknya gaul banget.,걔는 엄청 잘 놀고 트렌디해.,구어,친구가 많고 요즘 유행을 아는 사람,,adjective,trendy / sociable,anak gaul = 인싸; gaul banget = 엄청 트렌디해
+ID-1242,,viral,"화제가 된, 퍼진",viral,,Videonya viral di mana-mana.,영상이 여기저기서 화제야.,구어,영어 viral,,adjective,viral,jadi viral = 화제가 됐어; lagi viral = 요즘 화제야
+ID-1243,,gerah,후텁지근한,gerah,,Gerah banget hari ini.,오늘 엄청 후텁지근해.,일반,덥고 끈적할 때. panas보다 습함,,adjective,muggy / sticky hot,gerah banget = 엄청 후텁지근해; cuaca gerah = 후텁지근한 날씨
+ID-1244,,sejuk,"선선한, 시원한",sejuk,,Udaranya sejuk banget di sini.,여기 공기가 엄청 선선해.,일반,기분 좋게 시원할 때. dingin은 차가움,,adjective,cool / pleasantly cool,udara sejuk = 선선한 공기; sejuk banget = 엄청 시원해
+ID-1245,,hangat,"따뜻한, 미지근한",hangat,,Mandi air hangat enak banget.,따뜻한 물로 샤워하면 정말 좋아.,일반,"뜨겁지 않은 온기. 사람에게 쓰면 ""정이 따뜻한""",,adjective,warm,air hangat = 따뜻한 물; sambutan hangat = 따뜻한 환영
+ID-1246,,terang,밝은,terang,,Kamarnya terang banget.,방이 엄청 밝아.,일반,"반대는 gelap. ""설명이 분명한""은 jelas",,adjective,bright,terang banget = 엄청 밝아; lampu terang = 밝은 전등
+ID-1247,,berisik,시끄러운,berisik,,Tetangga berisik banget semalem.,이웃이 어젯밤 엄청 시끄러웠어.,구어,소음이 거슬릴 때. 사람에게도 쓴다,,adjective,noisy,berisik banget = 엄청 시끄러워; jangan berisik = 시끄럽게 하지 마
+ID-1248,,sunyi,"고요한, 적막한",sunyi,,Malam ini sunyi banget.,오늘 밤은 엄청 고요해.,일반,소리가 없는 상태. sepi는 사람이 없어 한산함,,adjective,silent / still,sunyi senyap = 쥐 죽은 듯 고요한; malam sunyi = 고요한 밤
+ID-1249,,licin,미끄러운,licin,,"Hati-hati, lantainya licin.","조심해, 바닥이 미끄러워.",일반,"젖은 바닥, 기름기",,adjective,slippery,jalanan licin = 길이 미끄러워; licin banget = 엄청 미끄러워
+ID-1250,,tajam,날카로운,tajam,,Pisaunya tajam banget.,칼이 엄청 날카로워.,일반,반대는 tumpul(무딘),,adjective,sharp,tajam banget = 엄청 날카로워; mata tajam = 눈썰미가 좋은

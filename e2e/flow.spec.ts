@@ -221,7 +221,7 @@ test('PC 키보드: R 키로 발음을 다시 듣는다 (앞면엔 앞면, 정�
 test('새 버전이 있어도 복습 중에는 아무 알림이 없고, 설정에서 수동으로 업데이트한다 (덱과 기록은 그대로)', async ({ page }) => {
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
-  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+  await expect(page.getByText('단어 1250개를 넣었어요')).toBeVisible();
   await page.getByRole('button', { name: '이 덱 복습' }).click();
   await expect(page.getByText('aku', { exact: true })).toBeVisible();
   // 복습 중에 새 버전이 배포됐다고 흉내 낸다 → 아무 알림도, 새로고침도 없다
@@ -245,7 +245,7 @@ test('새 버전이 있어도 복습 중에는 아무 알림이 없고, 설정�
 test('덱 복습을 닫으면 그 덱 화면이 아니라 메인(오늘) 화면으로 간다', async ({ page }) => {
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
-  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+  await expect(page.getByText('단어 1250개를 넣었어요')).toBeVisible();
   await page.getByRole('button', { name: '이 덱 복습' }).click();
   await page.getByRole('button', { name: '복습 닫기' }).click();
   await expect(page.getByRole('heading', { name: '오늘' })).toBeVisible();

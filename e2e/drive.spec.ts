@@ -114,15 +114,15 @@ test('폰에서 공부한 덱과 기록을 PC에서 Google로 로그인해 그�
   // 폰에서 단어 하나를 지운다 → 다시 동기화
   await phone.goto('/#/decks');
   await phone.getByRole('button', { name: /인도네시아어 구어체/ }).click();
-  await phone.getByRole('button', { name: /단어 1000개 보기/ }).click();
+  await phone.getByRole('button', { name: /단어 1250개 보기/ }).click();
   await phone.getByLabel('단어 찾기').fill('mahal');
   await phone.getByRole('button', { name: /mahal/ }).click();
   await phone.getByRole('button', { name: '이 단어 지우기' }).click();
   await phone.getByRole('alertdialog').getByRole('button', { name: '지우기' }).click();
-  await expect(phone.getByRole('heading', { name: '단어 999개' })).toBeVisible();
+  await expect(phone.getByRole('heading', { name: '단어 1249개' })).toBeVisible();
   await phone.goto('/#/settings/backup');
   await phone.getByRole('button', { name: '지금 동기화' }).click();
-  await expect(phone.getByText(/동기화했어요 · 단어 999개/)).toBeVisible();
+  await expect(phone.getByText(/동기화했어요 · 단어 1249개/)).toBeVisible();
 
   // PC: 처음 여는 브라우저. 같은 클라이언트 ID로 로그인하면 폰의 덱과 기록을 불러온다
   const pc = await browser.newPage();
@@ -132,7 +132,7 @@ test('폰에서 공부한 덱과 기록을 PC에서 Google로 로그인해 그�
   await pc.getByRole('button', { name: 'Google로 불러오기' }).click();
   await pc.getByLabel('Google 클라이언트 ID').fill('123-abc.apps.googleusercontent.com');
   await pc.getByRole('button', { name: 'Google로 로그인' }).click();
-  await expect(pc.getByText(/다른 기기의 데이터를 불러왔어요 \(단어 999개\)/)).toBeVisible();
+  await expect(pc.getByText(/다른 기기의 데이터를 불러왔어요 \(단어 1249개\)/)).toBeVisible();
   await pc.goto('/#/stats');
   await expect(pc.getByText('2026년').or(pc.getByText(/\d{4}년/)).first()).toBeVisible();
   await expect(pc.getByText(/· 1장/)).toBeVisible(); // 폰에서 한 복습 기록
@@ -182,7 +182,7 @@ test('동기화 상태: 왼쪽 위 구름 아이콘에 올리지 않은 기록 �
   await fakeGoogle(page);
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
-  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+  await expect(page.getByText('단어 1250개를 넣었어요')).toBeVisible();
   await page.goto('/#/settings/backup');
   await page.getByLabel('Google 클라이언트 ID').fill('123-abc.apps.googleusercontent.com');
   await page.getByRole('button', { name: 'Google로 로그인' }).click();

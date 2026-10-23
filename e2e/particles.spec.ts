@@ -29,7 +29,7 @@ test('어조 말 덱: 예문 카드로 복습하고, 연결어는 새 덱으로 
   // 3) 인도네시아어 구어체 덱을 넣고, 연결어를 새 덱으로 옮긴다
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
-  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+  await expect(page.getByText('단어 1250개를 넣었어요')).toBeVisible();
   await expect(page.getByText(/연결어·표현 \d+개를 따로 모을 수 있어요/)).toBeVisible();
   await page.screenshot({ path: 'test-results/shots/55-connector-offer.png' });
   await page.getByRole('button', { name: '연결어 따로 모으기' }).click();
@@ -81,7 +81,7 @@ test('읽기: 어조 말이 이야기 만들기 요청에 PARTICLE로 들어가�
   await expect(page.getByText(/연결됨/)).toBeVisible();
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
-  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+  await expect(page.getByText('단어 1250개를 넣었어요')).toBeVisible();
   await page.goto('/#/decks/new');
   await page.locator('.row', { hasText: '인도네시아어 어조 말' }).getByRole('button', { name: /추가하기$/ }).click();
   await expect(page.getByText('단어 60개를 넣었어요')).toBeVisible();
@@ -103,7 +103,7 @@ test('읽기: 어조 말이 이야기 만들기 요청에 PARTICLE로 들어가�
 test('지운 단어 되살리기: 지운 단어만(중복·어조 말 덱이 맡은 말 제외) 골라서 되살린다', async ({ page }) => {
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
-  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+  await expect(page.getByText('단어 1250개를 넣었어요')).toBeVisible();
   // 처음에는 되살릴 것이 없다
   await expect(page.getByText(/지운 단어 \d+개를 되살릴 수 있어요/)).toHaveCount(0);
 
@@ -143,8 +143,8 @@ test('지운 단어 되살리기: 지운 단어만(중복·어조 말 덱이 맡
   await page.getByRole('button', { name: '3개 되살리기' }).click();
   await expect(page.getByText('단어 3개를 되살렸어요')).toBeVisible();
   await expect(page.getByText(/지운 단어 \d+개를 되살릴 수 있어요/)).toHaveCount(0);
-  // 한 번 더 지워지지 않는다: 단어 수 997 + 3
-  await expect(page.getByRole('button', { name: /단어 998개 보기/ })).toBeVisible();
+  // 한 번 더 지워지지 않는다: 단어 수 1247 + 3
+  await expect(page.getByRole('button', { name: /단어 1248개 보기/ })).toBeVisible();
 });
 
 test('aja 연습 덱: 준비된 덱에서 넣으면 예문 속 aja가 강조되고, 쓰임새가 섞여서 나온다', async ({ page }) => {

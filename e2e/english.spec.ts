@@ -25,9 +25,9 @@ test('인도네시아어: 정답 화면에 영어 뜻과 자주 쓰는 표현이
       }),
   );
   await page.reload();
-  await expect(page.getByText(/단어 1000개에 새 내용/)).toBeVisible();
+  await expect(page.getByText(/단어 1250개에 새 내용/)).toBeVisible();
   await page.getByRole('button', { name: '고친 내용 받기' }).click();
-  await expect(page.getByText('단어 1000개를 고쳤어요')).toBeVisible();
+  await expect(page.getByText('단어 1250개를 고쳤어요')).toBeVisible();
   await expect(page.getByText('준비된 덱이 고쳐졌어요')).toHaveCount(0);
 
   // 직접 고친 단어도 빈 칸은 채우고, 내 메모는 그대로

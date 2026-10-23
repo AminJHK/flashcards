@@ -60,7 +60,7 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
-  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+  await expect(page.getByText('단어 1250개를 넣었어요')).toBeVisible();
 
   // 읽기 탭
   await page.getByRole('navigation', { name: '메인 메뉴' }).getByRole('link', { name: '읽기' }).click();
@@ -274,7 +274,7 @@ test('읽기: 이야기를 만드는 동안 다른 화면(복습)으로 가도 �
   await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
-  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+  await expect(page.getByText('단어 1250개를 넣었어요')).toBeVisible();
 
   await page.goto('/#/read');
   await page.getByRole('button', { name: '이야기 만들기' }).click();
@@ -316,7 +316,7 @@ test('읽기 · 듣고 읽기: 새 문장은 글자를 가리고, 눌러서 보�
   await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
-  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+  await expect(page.getByText('단어 1250개를 넣었어요')).toBeVisible();
   await page.getByRole('navigation', { name: '메인 메뉴' }).getByRole('link', { name: '읽기' }).click();
   await page.getByRole('button', { name: '이야기 만들기' }).click();
   await page.locator('.story-row', { hasText: 'Bakso Malam' }).click();
@@ -368,7 +368,7 @@ test('읽기 · 받아쓰기: 빈칸 또는 문장 전체를 받아쓰고 확인
   await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
-  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+  await expect(page.getByText('단어 1250개를 넣었어요')).toBeVisible();
   await page.getByRole('navigation', { name: '메인 메뉴' }).getByRole('link', { name: '읽기' }).click();
   await page.getByRole('button', { name: '이야기 만들기' }).click();
   await page.locator('.story-row', { hasText: 'Bakso Malam' }).click();
@@ -461,7 +461,7 @@ test('읽기 · 음성: 음성 만들기가 중간에 멈춘 이야기는 준비
   await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
-  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+  await expect(page.getByText('단어 1250개를 넣었어요')).toBeVisible();
   await page.goto('/#/read');
   await page.getByRole('button', { name: '이야기 만들기' }).click();
   await page.getByText(/이야기 「Bakso Malam」가 완성됐어요/).click();
@@ -501,7 +501,7 @@ test('읽기 · 백그라운드: 이야기는 서비스 워커가 만들어서, 
   await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
-  await expect(page.getByText('단어 1000개를 넣었어요')).toBeVisible();
+  await expect(page.getByText('단어 1250개를 넣었어요')).toBeVisible();
   await page.goto('/#/read');
   // 서비스 워커가 이 화면을 맡을 때까지
   await page.evaluate(async () => {
