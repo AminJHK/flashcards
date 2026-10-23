@@ -1249,3 +1249,253 @@ ID-1247,,puskesmas,보건소,puskesmas,,Aku periksa ke puskesmas.,보건소에�
 ID-1248,,angkot,앙콧 (소형 승합 버스),angkot,,Aku naik angkot ke sekolah.,나는 앙콧을 타고 학교에 가.,구어,angkutan kota의 줄임말. 정해진 노선의 작은 버스,,noun supplementary_spoken,minibus,naik angkot = 앙콧을 타다; angkot penuh = 앙콧이 꽉 찼어
 ID-1249,,lebaran,르바란 (이드 알피트르),lebaran,,Aku mudik pas lebaran.,르바란 때 고향에 가.,일반,라마단이 끝난 뒤 가장 큰 명절,,noun supplementary_spoken,Eid / Lebaran,mudik lebaran = 르바란 귀향; THR lebaran = 르바란 보너스
 ID-1250,,mudik,귀향하다,mudik,,Aku mudik ke kampung minggu depan.,다음 주에 고향에 가.,일반,명절에 고향으로 가는 대이동,,verb supplementary_spoken,to go home for the holiday,mudik lebaran = 르바란 귀향; macet mudik = 귀향 정체
+ID-1251,2,kau,너 (드라마·노래 말투),engkau,,Kau di mana sekarang?,너 지금 어디야?,일반,"자막·노래·소설에 아주 많다. 실제 자카르타 대화에서는 kamu, lo가 더 흔하다",,pronoun,"you (informal, literary)",kau dan aku = 너와 나; kau tahu = 너도 알잖아
+ID-1252,20,anda,"당신 (정중, 불특정)",anda,,Apakah Anda sudah pesan?,주문하셨나요?,격식,"광고·안내문·처음 보는 손님에게. 대문자 Anda로 쓴다. 실제 대화에서는 Bapak, Ibu, Mas, Mbak 호칭이 더 자연스럽다",,pronoun,you (formal),Anda siapa? = 누구세요?; terima kasih atas kunjungan Anda = 방문해 주셔서 감사합니다
+ID-1253,35,jika,만약 ~하면 (글말),jika,,"Jika hujan, kita di rumah aja.",비가 오면 우리 그냥 집에 있자.,일반,kalau의 글말. 안내문·뉴스에 흔하다,,connector,if,jika perlu = 필요하면; jika tidak = 그렇지 않으면
+ID-1254,63,telah,이미 ~했다 (글말),telah,,Dia telah pergi.,그는 이미 떠났다.,격식,udah·sudah의 글말. 뉴스·이야기 서술에 많다,,adverb,already (formal),telah selesai = 이미 끝났다; telah tiba = 도착했다
+ID-1255,81,menjadi,~이 되다,menjadi,jadi,Dia ingin menjadi dokter.,그는 의사가 되고 싶어 해.,일반,구어에서는 jadi만 쓰는 일이 많다,,verb,to become,menjadi lebih baik = 더 나아지다; menjadi teman = 친구가 되다
+ID-1256,84,seorang,한 명의 (사람),seorang,orang,Dia seorang perawat.,그는 간호사야.,일반,se-(하나) + orang. 직업·신분 앞에,,noun,a (person),seorang diri = 혼자서; seorang teman = 한 친구
+ID-1257,90,bahwa,~라는 것 (글말),bahwa,,Dia bilang bahwa dia capek.,그는 피곤하다고 말했어.,일반,"""~라고/~라는 것"". 구어에서는 자주 생략한다",,connector,that (conjunction),tahu bahwa = ~라는 걸 알다; bilang bahwa = ~라고 말하다
+ID-1258,118,memiliki,"가지다, 소유하다",memiliki,milik,Dia memiliki dua anak.,그는 아이가 둘 있어.,일반,punya의 격식 표현,,verb,to have / own,memiliki waktu = 시간이 있다; memiliki rumah = 집을 가지다
+ID-1259,123,sebuah,한 개의 (물건),sebuah,buah,Aku punya sebuah rencana.,나한테 계획이 하나 있어.,일반,se- + buah. 물건·추상적인 것 앞에,,noun,a (thing),sebuah rumah = 집 한 채; sebuah cerita = 이야기 하나
+ID-1260,128,ia,"그, 그녀 (글말)",ia,,Ia tinggal di Bandung.,그는 반둥에 산다.,격식,dia의 글말. 뉴스·이야기 서술에 흔하다,,pronoun,he / she (formal),ia bilang = 그는 말했다; ia pun pergi = 그도 떠났다
+ID-1261,149,tuhan,"하나님, 신",Tuhan,,"Ya Tuhan, aku lupa!","세상에, 깜빡했어!",일반,"""Ya Tuhan""은 놀랐을 때도 쓴다",,noun,God,"ya Tuhan = 세상에, 맙소사; demi Tuhan = 맹세코"
+ID-1262,164,berada,"있다, 위치하다",berada,ada,Dia berada di rumah sakit.,그는 병원에 있어.,일반,ada의 격식 표현. 위치를 말할 때,,verb,to be located,berada di = ~에 있다; berada dalam bahaya = 위험에 처하다
+ID-1263,179,oleh,~에 의해,oleh,,Buku ini ditulis oleh dokter.,이 책은 의사가 썼다.,일반,"수동문에서 ""누가""를 말할 때. oleh karena itu = 그러므로",,connector,by,oleh karena itu = 그러므로; oleh-oleh = 기념품 (다른 말)
+ID-1264,192,mendapatkan,"얻다, 받다",mendapatkan,dapat,Aku mendapatkan kabar baik.,좋은 소식을 들었어.,일반,dapet(이미 덱에 있음)의 표준어,,verb,to get / obtain,mendapatkan pekerjaan = 일자리를 얻다; sulit mendapatkan = 구하기 어렵다
+ID-1265,206,takkan,~하지 않을 것이다,tidak akan,,Aku takkan lupa.,절대 잊지 않을게.,일반,tak + akan. 노래·드라마 말투. 구어는 nggak bakal,,adverb,will not,takkan pernah = 결코 ~않을 것; takkan menyerah = 포기하지 않을 거야
+ID-1266,207,apapun,무엇이든 (붙여 쓴 철자),apa pun,apa,"Apapun yang terjadi, aku di sini.",무슨 일이 있어도 나는 여기 있어.,일반,표준 철자는 apa pun (이미 덱에 있음). 붙여 쓰는 철자가 더 흔하다,,noun,whatever / anything,apapun itu = 그게 뭐든; apapun yang kamu mau = 네가 원하는 건 뭐든
+ID-1267,215,para,~들 (사람의 무리),para,,Para pasien nunggu di luar.,환자들이 밖에서 기다려.,일반,"사람 무리 앞에 붙인다. para tamu, para guru",,noun,(plural marker for people),para tamu = 손님들; para dokter = 의사들
+ID-1268,221,gadis,"아가씨, 소녀",gadis,,Gadis itu tetanggaku.,그 아가씨는 내 이웃이야.,일반,구어는 cewek,,noun,girl / young woman,gadis kecil = 어린 소녀; anak gadis = 딸 (미혼)
+ID-1269,256,terlihat,"보이다, ~해 보이다",terlihat,lihat,Kamu terlihat cantik hari ini.,오늘 예뻐 보여.,일반,keliatan의 표준어,,verb,to look / seem,terlihat jelas = 잘 보이다; terlihat sehat = 건강해 보여
+ID-1270,284,maafkan,용서해 줘,memaafkan,maaf,"Maafkan aku, ya.",나를 용서해 줘.,일반,maaf보다 깊은 사과,,verb,forgive (imperative),maafkan saya = 저를 용서해 주세요; memaafkan = 용서하다
+ID-1271,295,bergerak,움직이다,bergerak,gerak,Jangan bergerak dulu.,아직 움직이지 마세요.,일반,검사·치료 중 환자 안내에,,verb,to move,susah bergerak = 움직이기 힘들어; nggak bergerak = 안 움직여
+ID-1272,302,hentikan,"멈춰, 그만둬 (명령)",menghentikan,henti,Hentikan itu!,그만해!,일반,berhenti(이미 덱에 있음)의 타동사 명령형,,verb,stop it (imperative),hentikan sekarang = 지금 멈춰; dihentikan = 중단되다
+ID-1273,305,suatu,"어떤, 한",suatu,satu,"Suatu hari, aku mau ke Bali.",언젠가 발리에 가고 싶어.,일반,"suatu hari = 어느 날, 언젠가",,adverb,a certain / some,suatu hari = 어느 날; suatu saat = 언젠가
+ID-1274,322,tinggalkan,"남기다, 두고 가다",meninggalkan,tinggal,Tinggalkan pesan di sini.,여기에 메시지를 남겨 주세요.,일반,ninggalin(이미 덱에 있음)의 표준어 명령형,,verb,leave (imperative),tinggalkan aku = 나를 두고 가
+ID-1275,329,maka,"그러므로, 그러면",maka,,"Kalau capek, maka istirahat.",피곤하면 쉬어.,격식,"""~하면 그러면""의 글말",,connector,then / therefore,maka dari itu = 그러므로; jika… maka = 만약 ~라면 그러면
+ID-1276,330,memberikan,"주다, 제공하다",memberikan,beri,Dokter memberikan obat.,의사가 약을 줬어.,일반,kasih(이미 덱에 있음)의 격식 표현. berikan은 명령형,,verb,to give / provide,memberikan bantuan = 도움을 주다; memberikan hadiah = 선물을 주다
+ID-1277,333,secara,"~하게, ~적으로",secara,cara,Bayar secara online aja.,온라인으로 결제해.,일반,형용사 앞에 붙어 부사를 만든다 (secara langsung = 직접),,adverb,in a ... way,secara langsung = 직접; secara pribadi = 개인적으로
+ID-1278,354,menggunakan,사용하다,menggunakan,guna,Boleh menggunakan kartu kredit?,신용카드 써도 돼요?,일반,pake(이미 덱에 있음)의 표준어,,verb,to use,cara menggunakan = 사용법; menggunakan masker = 마스크를 쓰다
+ID-1279,364,inginkan,원하다 (~을),menginginkan,ingin,Apa yang kamu inginkan?,네가 원하는 게 뭐야?,일반,yang ~ inginkan 꼴로 자주 쓴다,,verb,to want (something),yang kamu inginkan = 네가 원하는 것; diinginkan = 원해지다
+ID-1280,367,berakhir,끝나다 (저절로),berakhir,akhir,Filmnya berakhir bahagia.,영화는 행복하게 끝났어.,일반,"selesai는 일을 마침, berakhir는 저절로 끝남",,verb,to end,berakhir di = ~에서 끝나다; udah berakhir = 이미 끝났어
+ID-1281,404,lepaskan,"놓아 줘, 풀어 줘",melepaskan,lepas,Lepaskan tanganku.,내 손 놔.,일반,lepas(이미 덱에 있음)에서,,verb,let go (imperative),lepaskan aku = 나를 놔줘; melepaskan = 풀어 주다
+ID-1282,405,kekuatan,힘,kekuatan,kuat,Dia punya kekuatan buat bangkit.,그는 다시 일어설 힘이 있어.,일반,kuat(이미 덱에 있음)의 명사,,noun,strength / power,kekuatan fisik = 체력; penuh kekuatan = 힘이 넘치는
+ID-1283,422,kehidupan,"삶, 생활",kehidupan,hidup,Kehidupan di kota mahal.,도시 생활은 비싸.,일반,hidup(이미 덱에 있음)의 명사,,noun,life,kehidupan sehari-hari = 일상생활; kehidupan baru = 새 삶
+ID-1284,431,memberitahu,"알리다, 말해 주다",memberi tahu,tahu,Tolong memberitahu dokter.,의사에게 알려 주세요.,일반,ngasih tau(이미 덱에 있음)의 표준어. beritahu는 명령형,,verb,to tell / inform,memberitahu saya = 저에게 알려 주세요
+ID-1285,437,menyenangkan,"즐거운, 기분 좋은",menyenangkan,senang,Liburannya menyenangkan banget.,휴가가 엄청 즐거웠어.,일반,seneng(이미 덱에 있음)에서,,adjective,enjoyable,pengalaman menyenangkan = 즐거운 경험; menyenangkan hati = 마음을 기쁘게 하다
+ID-1286,446,berkata,말하다 (인용),berkata,kata,"Dia berkata, ""Aku capek.""","그는 ""나 피곤해""라고 말했다.",일반,이야기 서술에서 인용할 때,,verb,to say,berkata jujur = 솔직하게 말하다; berkata begitu = 그렇게 말하다
+ID-1287,484,kematian,죽음,kematian,mati,Kematiannya bikin semua sedih.,그의 죽음에 모두가 슬퍼했어.,일반,mati(이미 덱에 있음)의 명사,,noun,death,penyebab kematian = 사망 원인; angka kematian = 사망률
+ID-1288,485,pikirkan,생각해 봐 (명령),memikirkan,pikir,Pikirkan baik-baik.,잘 생각해 봐.,일반,memikirkan의 명령형. mikirin(이미 덱에 있음)의 표준어,,verb,think about (imperative),pikirkan lagi = 다시 생각해 봐; dipikirkan = 생각되다
+ID-1289,498,membutuhkan,필요로 하다,membutuhkan,butuh,Pasien ini membutuhkan bantuan.,이 환자는 도움이 필요해요.,일반,butuh(이미 덱에 있음)의 격식 표현,,verb,to need,membutuhkan waktu = 시간이 필요하다; yang membutuhkan = 필요한 사람
+ID-1290,502,bicarakan,이야기하다 (~에 대해),membicarakan,bicara,Kita bicarakan nanti.,나중에 얘기하자.,일반,ngomongin의 표준어 명령·수동형,,verb,talk about (it),bicarakan baik-baik = 잘 얘기해 봐; dibicarakan = 논의되다
+ID-1291,538,segalanya,모든 것,segalanya,segala,Kamu segalanya buat aku.,넌 나한테 전부야.,일반,노래·드라마에 흔하다,,noun,everything,segalanya baik = 다 괜찮아; lebih dari segalanya = 무엇보다도
+ID-1292,549,melalui,~을 통해,melalui,lalu,Kirim melalui email aja.,이메일로 보내.,일반,lewat의 격식 표현,,connector,through / via,melalui telepon = 전화로; melalui jalan ini = 이 길을 통해
+ID-1293,568,perintah,"명령, 지시",perintah,,Itu perintah dokter.,그건 의사 지시야.,일반,지시를 내리는 것,,noun,order / command,perintah atasan = 상사의 지시; sesuai perintah = 지시대로
+ID-1294,612,tampak,~처럼 보이다 (글말),tampak,,Dia tampak capek.,그는 피곤해 보여.,일반,keliatan의 글말,,verb,to appear / look,tampak jelas = 분명히 보이다; tampak bahagia = 행복해 보이다
+ID-1295,613,berbahaya,위험한,berbahaya,bahaya,Jalan ini berbahaya malam-malam.,이 길은 밤에 위험해.,일반,bahaya(이미 덱에 있음)에서,,adjective,dangerous,sangat berbahaya = 매우 위험해; barang berbahaya = 위험물
+ID-1296,623,tampaknya,보아하니 ~인 듯,tampaknya,tampak,Tampaknya dia nggak dateng.,걔는 안 오는 것 같아.,일반,"sepertinya, kayaknya와 비슷",,adverb,it seems,tampaknya begitu = 그런 것 같아; tampaknya bagus = 좋아 보여
+ID-1297,636,segala,모든 (종류),segala,,Dia bisa segala hal.,그는 뭐든지 할 수 있어.,일반,segala sesuatu = 모든 것,,noun,all kinds of,segala sesuatu = 모든 것; segala macam = 온갖
+ID-1298,651,mengetahui,"알다, 알게 되다",mengetahui,tahu,Saya ingin mengetahui hasilnya.,결과를 알고 싶어요.,격식,tahu의 격식 표현,,verb,to know / find out,mengetahui hal ini = 이 일을 알다; belum mengetahui = 아직 모르다
+ID-1299,652,mengenai,~에 관해,mengenai,kena,Aku mau nanya mengenai jadwal.,일정에 관해 묻고 싶어요.,격식,tentang의 격식 표현,,connector,regarding / about,mengenai hal ini = 이 일에 관해; mengenai masalah = 문제에 관해
+ID-1300,683,hukum,법,hukum,,Itu melanggar hukum.,그건 법을 어기는 거야.,일반,hukuman은 벌,,noun,law,hukum negara = 국가 법; sesuai hukum = 법에 따라
+ID-1301,687,betapa,얼마나 (감탄),betapa,,Betapa indahnya pantai ini!,이 바다 얼마나 아름다운지!,일반,"감탄할 때. 구어에서는 ""betapa""보다 ""banget""",,adverb,how (exclamation),betapa senangnya = 얼마나 기쁜지; betapa pentingnya = 얼마나 중요한지
+ID-1302,698,rasakan,느껴 봐,merasakan,rasa,Rasakan angin pantai.,바닷바람을 느껴 봐.,일반,merasakan의 명령형. ngerasain(이미 덱에 있음)의 표준어,,verb,feel (imperative),merasakan sakit = 통증을 느끼다; dirasakan = 느껴지다
+ID-1303,699,keamanan,"안전, 보안",keamanan,aman,"Demi keamanan, pakai helm.",안전을 위해 헬멧을 쓰세요.,일반,aman(이미 덱에 있음)의 명사,,noun,security / safety,petugas keamanan = 보안 요원; keamanan data = 데이터 보안
+ID-1304,702,tersebut,그 (앞서 말한),tersebut,sebut,Pasien tersebut udah pulang.,그 환자는 퇴원했어요.,격식,뉴스·보고서에서 itu 대신,,noun,the aforementioned,hal tersebut = 그 일; orang tersebut = 그 사람
+ID-1305,707,mengubah,바꾸다,mengubah,ubah,Aku mau mengubah jadwal.,일정을 바꾸고 싶어요.,일반,"ganti는 교체, ubah는 변경",,verb,to change,mengubah rencana = 계획을 바꾸다
+ID-1306,711,melewati,"지나가다, 거치다",melewati,lewat,Kita melewati jembatan.,우리는 다리를 지나갔어.,일반,lewat(이미 덱에 있음)의 표준어 타동사,,verb,to pass through,melewati masa sulit = 힘든 시기를 지나다
+ID-1307,718,mendengarkan,귀 기울여 듣다,mendengarkan,dengar,Aku suka mendengarkan musik.,나는 음악 듣는 걸 좋아해.,일반,dengerin(이미 덱에 있음)의 표준어,,verb,to listen to,mendengarkan musik = 음악을 듣다
+ID-1308,733,terhadap,"~에 대해, ~에게",terhadap,hadap,Dia baik terhadap semua orang.,그는 모든 사람에게 친절해.,격식,태도나 영향의 대상,,connector,towards / against,terhadap orang lain = 다른 사람에게; alergi terhadap = ~에 알레르기
+ID-1309,739,menyukai,좋아하다 (격식),menyukai,suka,Semua orang menyukai dia.,모두가 그를 좋아해.,일반,suka의 격식 타동사,,verb,to like,menyukai kamu = 너를 좋아해
+ID-1310,748,berjanji,약속하다,berjanji,janji,Aku berjanji nggak telat lagi.,다시는 안 늦겠다고 약속할게.,일반,janji(약속)에서,,verb,to promise,berjanji sama = ~와 약속하다; sudah berjanji = 이미 약속했다
+ID-1311,762,mengerikan,"끔찍한, 무시무시한",mengerikan,ngeri,Kecelakaannya mengerikan.,그 사고는 끔찍했어.,일반,ngeri = 오싹한,,adjective,horrible,mengerikan banget = 엄청 끔찍해; kejadian mengerikan = 끔찍한 일
+ID-1312,787,pakaian,"옷, 의복",pakaian,pakai,Ganti pakaian dulu ya.,먼저 옷부터 갈아입으세요.,일반,baju(이미 덱에 있음)의 격식 표현. 병원 안내에 흔하다,,noun,clothing,pakaian dalam = 속옷; ganti pakaian = 옷을 갈아입다
+ID-1313,803,seberapa,얼마나 (정도),seberapa,berapa,Seberapa jauh dari sini?,여기서 얼마나 멀어?,일반,정도·양을 물을 때,,adverb,how much / how far,seberapa sering = 얼마나 자주; seberapa penting = 얼마나 중요한
+ID-1314,810,memulai,시작하다 (~을),memulai,mulai,Kita memulai rapat jam sembilan.,우리는 9시에 회의를 시작해.,일반,mulai(이미 덱에 있음)의 타동사,,verb,to start (something),memulai hidup baru = 새 삶을 시작하다; memulai lagi = 다시 시작하다
+ID-1315,819,mencintai,사랑하다,mencintai,cinta,Aku mencintai keluargaku.,나는 가족을 사랑해.,일반,cinta(이미 덱에 있음)의 타동사,,verb,to love,mencintai diri sendiri = 자신을 사랑하다
+ID-1316,834,memeriksa,"검사하다, 확인하다",memeriksa,periksa,Dokter memeriksa pasien.,의사가 환자를 진찰해.,일반,periksa(이미 덱에 있음)에서. 진찰·점검,,verb,to examine / check,memeriksa tensi = 혈압을 재다
+ID-1317,848,menyelesaikan,"끝내다, 해결하다",menyelesaikan,selesai,Aku harus menyelesaikan tugas ini.,이 일을 끝내야 해.,일반,selesai(끝나다)의 타동사,,verb,to finish / resolve,menyelesaikan masalah = 문제를 해결하다
+ID-1318,877,merupakan,~이다 (글말),merupakan,rupa,Ini merupakan masalah besar.,이건 큰 문제다.,격식,"adalah와 같은 글말 ""~이다""",,verb,to be (formal),merupakan bagian = ~의 일부다; merupakan salah satu = ~중 하나다
+ID-1319,891,sejauh,"~하는 한, ~까지",sejauh,jauh,Sejauh ini semuanya lancar.,지금까지는 다 순조로워.,일반,sejauh ini = 지금까지,,adverb,as far as,sejauh ini = 지금까지; sejauh mana = 어느 정도까지
+ID-1320,920,ceritakan,이야기해 줘 (명령),menceritakan,cerita,Ceritakan dong apa yang terjadi.,무슨 일이 있었는지 얘기해 줘.,일반,ceritain(이미 덱에 있음)의 표준어,,verb,tell (imperative),ceritakan lagi = 다시 얘기해 줘; menceritakan = 이야기하다
+ID-1321,943,pemerintah,정부,pemerintah,perintah,Pemerintah ngasih bantuan.,정부가 지원금을 줬어.,일반,뉴스에 흔하다,,noun,government,pemerintah daerah = 지방 정부; program pemerintah = 정부 정책
+ID-1322,955,terdengar,"들리다, ~하게 들리다",terdengar,dengar,Suaranya terdengar jelas.,목소리가 잘 들려.,일반,kedengeran(이미 덱에 있음)의 표준어,,verb,to sound / be heard,terdengar aneh = 이상하게 들려; terdengar bagus = 좋게 들려
+ID-1323,957,berasal,"~에서 오다, 출신이다",berasal,asal,Saya berasal dari Korea.,저는 한국 출신이에요.,일반,자기소개에 흔하다,,verb,to come from,berasal dari = ~출신이다
+ID-1324,961,pastikan,확실히 해 (명령),memastikan,pasti,Pastikan pintunya terkunci.,문이 잠겼는지 꼭 확인해.,일반,pastiin(이미 덱에 있음)의 표준어,,verb,make sure (imperative),pastikan dulu = 먼저 확인해
+ID-1325,980,jiwa,"영혼, 정신, 목숨",jiwa,,Dia sakit jiwa.,그는 정신 질환이 있어.,일반,kesehatan jiwa = 정신 건강. nyawa는 목숨,,noun,soul / mind,kesehatan jiwa = 정신 건강; sepenuh jiwa = 온 마음을 다해
+ID-1326,981,kebenaran,진실,kebenaran,benar,Aku cuma mau tahu kebenarannya.,나는 진실을 알고 싶을 뿐이야.,일반,bener(이미 덱에 있음)의 명사,,noun,truth,mencari kebenaran = 진실을 찾다; kebenaran pahit = 쓴 진실
+ID-1327,1037,jelaskan,설명해 줘 (명령),menjelaskan,jelas,Tolong jelaskan sekali lagi.,한 번 더 설명해 주세요.,일반,jelasin(이미 덱에 있음)의 표준어,,verb,explain (imperative),menjelaskan = 설명하다; dijelaskan = 설명되다
+ID-1328,1062,mencapai,"도달하다, 이루다",mencapai,capai,Dia mencapai mimpinya.,그는 꿈을 이뤘어.,일반,목표·수치에 도달할 때,,verb,to reach / achieve,mencapai target = 목표를 달성하다
+ID-1329,1063,kesepakatan,합의,kesepakatan,sepakat,Kita udah sampai kesepakatan.,우리는 합의에 이르렀어.,일반,deal,,noun,agreement / deal,kesepakatan bersama = 공동 합의
+ID-1330,1067,mengingat,"기억하다, ~을 고려하면",mengingat,ingat,Aku nggak bisa mengingat namanya.,그 이름이 기억이 안 나.,일반,inget(이미 덱에 있음)의 표준어 타동사,,verb,to remember,mengingat-ingat = 곰곰이 떠올리다
+ID-1331,1083,berbuat,"하다, 행동하다",berbuat,buat,Jangan berbuat jahat.,나쁜 짓 하지 마.,일반,도덕적인 행동에,,verb,to do / act,berbuat baik = 좋은 일을 하다; berbuat salah = 잘못을 하다
+ID-1332,1084,mengenal,알다 (사람·장소),mengenal,kenal,Aku mengenal dia dari kecil.,나는 걔를 어릴 때부터 알아.,일반,kenal(이미 덱에 있음)의 표준어. 사람을 알 때,,verb,to know (someone),mengenal lebih dekat = 더 가까이 알다
+ID-1333,1085,bermaksud,~할 생각이다,bermaksud,maksud,Aku nggak bermaksud nyakitin kamu.,너를 아프게 할 생각은 없었어.,일반,사과할 때 자주 쓴다,,verb,to intend,nggak bermaksud = 그럴 생각은 아니었어; bermaksud baik = 좋은 뜻이었다
+ID-1334,1086,tindakan,"행동, 조치",tindakan,tindak,Pasien perlu tindakan segera.,환자는 즉시 조치가 필요해요.,일반,"병원에서 ""시술·처치""의 뜻으로도",,noun,action / procedure,tindakan medis = 의료 처치; ambil tindakan = 조치를 취하다
+ID-1335,1119,tingkat,"수준, 층, 단계",tingkat,,Rumahnya dua tingkat.,그 집은 2층이야.,일반,수준·학년·층,,noun,level / floor,tingkat tinggi = 높은 수준; dua tingkat = 2층
+ID-1336,1124,menahan,"참다, 붙잡다",menahan,tahan,Aku nggak bisa menahan tawa.,웃음을 참을 수 없었어.,일반,tahan(이미 덱에 있음)의 타동사,,verb,to hold back / restrain,menahan sakit = 아픔을 참다; menahan napas = 숨을 참다
+ID-1337,1125,mengira,~라고 생각하다 (착각),mengira,kira,Aku mengira kamu udah pulang.,난 네가 집에 간 줄 알았어.,일반,사실과 다르게 생각했을 때,,verb,to think (mistakenly),mengira-ngira = 짐작하다
+ID-1338,1129,bertindak,"행동하다, 조치하다",bertindak,tindak,Kita harus bertindak cepat.,빨리 조치해야 해.,일반,긴급 상황에서,,verb,to act / take action,bertindak cepat = 빨리 조치하다; bertindak sendiri = 혼자 행동하다
+ID-1339,1291,menjalankan,"운영하다, 실행하다",menjalankan,jalan,Dia menjalankan bisnis keluarga.,그는 가족 사업을 운영해.,일반,일·기계를 돌릴 때,,verb,to run / carry out,menjalankan tugas = 임무를 수행하다
+ID-1340,1293,menyebabkan,"일으키다, ~의 원인이 되다",menyebabkan,sebab,Rokok menyebabkan kanker.,담배는 암을 일으켜.,일반,원인과 결과. 건강 설명에 흔하다,,verb,to cause,menyebabkan sakit = 병을 일으키다
+ID-1341,1296,terkadang,"가끔, 때때로",terkadang,kadang,Terkadang aku kangen rumah.,가끔 집이 그리워.,일반,kadang(이미 덱에 있음)의 글말,,adverb,sometimes,terkadang-kadang = 이따금; terkadang aja = 가끔만
+ID-1342,1311,menakutkan,무서운,menakutkan,takut,Film itu menakutkan.,그 영화 무서워.,일반,takut(이미 덱에 있음)에서. serem(구어)과 비슷,,adjective,scary,menakutkan banget = 엄청 무서워; suara menakutkan = 무서운 소리
+ID-1343,1343,sejati,진정한,sejati,,Dia teman sejati.,그는 진정한 친구야.,일반,cinta sejati = 진정한 사랑,,adjective,true / genuine,cinta sejati = 진정한 사랑; teman sejati = 진정한 친구
+ID-1344,1347,mustahil,불가능한,mustahil,,Itu mustahil!,그건 불가능해!,일반,nggak mungkin의 강한 말,,adjective,impossible,nggak mustahil = 불가능하지 않아; hampir mustahil = 거의 불가능
+ID-1345,1355,permintaan,"요청, 부탁",permintaan,minta,Ini permintaan pasien.,이건 환자의 요청이에요.,일반,minta(이미 덱에 있음)의 명사,,noun,request,atas permintaan = ~의 요청으로; permintaan maaf = 사과
+ID-1346,1392,sumber,"근원, 출처",sumber,,Apa sumbernya?,출처가 어디야?,일반,"원인, 출처, 자원",,noun,source,sumber air = 수원; sumber masalah = 문제의 근원
+ID-1347,1399,energi,"에너지, 기운",energi,,Aku nggak punya energi hari ini.,오늘은 기운이 하나도 없어.,일반,영어 energy,,noun,energy,hemat energi = 에너지 절약; penuh energi = 기운이 넘치는
+ID-1348,1403,lelucon,농담,lelucon,lucu,Leluconnya garing.,그 농담 썰렁해.,일반,"구어는 becandaan, jokes",,noun,joke,lelucon lucu = 재미있는 농담; bukan lelucon = 농담 아니야
+ID-1349,1424,menyembunyikan,숨기다,menyembunyikan,sembunyi,Dia menyembunyikan sesuatu.,그는 뭔가를 숨기고 있어.,일반,ngumpetin의 표준어,,verb,to hide,menyembunyikan rahasia = 비밀을 숨기다
+ID-1350,1430,matikan,꺼 (명령),mematikan,mati,Matikan lampunya ya.,불 좀 꺼 줘.,일반,matiin(이미 덱에 있음)의 표준어,,verb,turn off (imperative),matikan HP = 폰을 꺼; mematikan = 끄다
+ID-1351,1431,ancaman,"위협, 협박",ancaman,ancam,Itu ancaman serius.,그건 심각한 위협이야.,일반,ancam = 위협하다,,noun,threat,ancaman bahaya = 위험의 위협
+ID-1352,1432,istimewa,"각별한, 특별한",istimewa,,Hari ini hari istimewa.,오늘은 특별한 날이야.,일반,spesial과 같다,,adjective,special,tamu istimewa = 특별한 손님; sangat istimewa = 아주 특별한
+ID-1353,1439,kecepatan,속도,kecepatan,cepat,Kurangi kecepatan.,속도를 줄이세요.,일반,cepet(이미 덱에 있음)의 명사,,noun,speed,kecepatan tinggi = 고속; batas kecepatan = 제한 속도
+ID-1354,1449,berbagi,"나누다, 공유하다",berbagi,bagi,Kita berbagi kamar.,우리는 방을 같이 써.,일반,share,,verb,to share,berbagi makanan = 음식을 나누다; berbagi cerita = 이야기를 나누다
+ID-1355,1456,cerdas,"똑똑한, 영리한",cerdas,,Anaknya cerdas banget.,아이가 엄청 영리해.,일반,pinter(이미 덱에 있음)의 격식 표현,,adjective,smart,cerdas banget = 엄청 똑똑해; anak cerdas = 똑똑한 아이
+ID-1356,1463,masyarakat,"사회, 사람들",masyarakat,,Masyarakat di sini ramah.,여기 사람들은 친절해.,일반,공동체 전체,,noun,society / community,masyarakat umum = 일반 대중; masyarakat Indonesia = 인도네시아 사회
+ID-1357,1464,saksi,증인,saksi,,Aku jadi saksi nikahan mereka.,나는 그들 결혼식의 증인이 됐어.,일반,결혼식·법정의 증인,,noun,witness,saksi mata = 목격자; jadi saksi = 증인이 되다
+ID-1358,1475,berlatih,연습하다,berlatih,latih,Aku berlatih tiap hari.,나는 매일 연습해.,일반,latihan(이미 덱에 있음)과 같은 어근,,verb,to practice,berlatih keras = 열심히 연습하다; berlatih bahasa = 언어를 연습하다
+ID-1359,1484,rekaman,"녹음, 녹화",rekaman,rekam,Ada rekaman CCTV-nya.,CCTV 녹화본이 있어.,일반,rekam = 녹음하다,,noun,recording,rekaman suara = 음성 녹음; rekaman video = 동영상 녹화
+ID-1360,1490,rakyat,"국민, 백성",rakyat,,Rakyat butuh harga murah.,국민은 싼 물가가 필요해.,일반,뉴스·정치 말에 흔하다,,noun,the people,rakyat kecil = 서민; rakyat Indonesia = 인도네시아 국민
+ID-1361,1500,melanggar,"어기다, 위반하다",melanggar,langgar,Jangan melanggar aturan.,규칙을 어기지 마.,일반,규칙·약속·교통 법규,,verb,to violate,melanggar janji = 약속을 어기다; melanggar lalu lintas = 교통 위반
+ID-1362,1515,besi,"철, 쇠",besi,,Pagarnya dari besi.,울타리가 쇠로 되어 있어.,일반,kekurangan zat besi = 철분 부족,,noun,iron,zat besi = 철분; pintu besi = 철문
+ID-1363,1518,sudut,"모서리, 구석, 각도",sudut,,Dia duduk di sudut ruangan.,그는 방 구석에 앉아 있어.,일반,pojok과 비슷,,noun,corner / angle,sudut pandang = 관점; di sudut = 구석에
+ID-1364,1543,peringatan,"경고, 기념",peringatan,ingat,Ini peringatan terakhir.,이게 마지막 경고야.,일반,"경고, 또는 기념일(hari peringatan)",,noun,warning,peringatan dini = 조기 경보; tanda peringatan = 경고 표시
+ID-1365,1553,ribuan,수천의,ribuan,ribu,Ribuan orang dateng ke konser.,수천 명이 콘서트에 왔어.,일반,ribu에 -an,,number,thousands,ribuan kali = 수천 번; ribuan orang = 수천 명
+ID-1366,1564,teknologi,기술,teknologi,,Teknologi sekarang canggih banget.,요즘 기술이 엄청 발전했어.,일반,canggih = 첨단의,,noun,technology,teknologi baru = 신기술; teknologi medis = 의료 기술
+ID-1367,1567,hukuman,"벌, 처벌",hukuman,hukum,Dia dapet hukuman dari guru.,그는 선생님한테 벌을 받았어.,일반,hukum(법)에서,,noun,punishment,hukuman penjara = 징역형; kena hukuman = 벌을 받다
+ID-1368,1574,sepenuhnya,완전히,sepenuhnya,penuh,Aku percaya sepenuhnya sama kamu.,나는 너를 완전히 믿어.,일반,penuh(가득 찬)에서,,adverb,completely,belum sepenuhnya = 아직 완전히는 아니야; sepenuhnya sembuh = 완전히 나았어
+ID-1369,1581,jejak,"발자국, 흔적",jejak,,Ada jejak kaki di lantai.,바닥에 발자국이 있어.,일반,"자취, 흔적",,noun,trace / footprint,jejak kaki = 발자국; tanpa jejak = 흔적 없이
+ID-1370,1583,sebab,"이유, 왜냐하면",sebab,,Aku telat sebab macet.,길이 막혀서 늦었어.,일반,karena와 비슷. 원인,,connector,because / cause,sebab itu = 그래서; apa sebabnya? = 이유가 뭐야?
+ID-1371,1589,perlindungan,보호,perlindungan,lindung,Pakai krim buat perlindungan kulit.,피부 보호를 위해 크림을 발라.,일반,lindung = 보호하다,,noun,protection,perlindungan diri = 자기 보호; minta perlindungan = 보호를 요청하다
+ID-1372,1594,kenyataan,"현실, 사실",kenyataan,nyata,Itu kenyataannya.,그게 현실이야.,일반,nyata(실제의)에서,,noun,reality,kenyataannya = 실제로는; menerima kenyataan = 현실을 받아들이다
+ID-1373,1601,memasuki,들어가다 (격식),memasuki,masuk,Dilarang memasuki ruangan ini.,이 방에 들어가는 것을 금지합니다.,격식,masuk의 타동사. 표지판에 흔하다,,verb,to enter,memasuki usia = ~살이 되다; memasuki musim = 계절에 접어들다
+ID-1374,1604,resmi,공식적인,resmi,,Ini surat resmi dari kantor.,이건 회사에서 온 공문이야.,일반,정식·공식,,adjective,official,secara resmi = 공식적으로; acara resmi = 공식 행사
+ID-1375,1607,menanyakan,묻다 (~에 대해),menanyakan,tanya,Dia menanyakan kabarmu.,걔가 네 안부를 물었어.,일반,nanya(이미 덱에 있음)의 표준어 타동사,,verb,to ask about,menanyakan alamat = 주소를 묻다
+ID-1376,1614,gaya,"스타일, 방식",gaya,,Gayanya keren banget.,스타일이 엄청 멋져.,일반,옷차림·말투·방식,,noun,style,gaya hidup = 생활 방식; gaya rambut = 머리 스타일
+ID-1377,1616,tenaga,"힘, 인력",tenaga,,Butuh tenaga tambahan.,추가 인력이 필요해.,일반,tenaga kesehatan = 보건 인력 (간호사 포함),,noun,energy / manpower,tenaga kesehatan = 보건 인력; tenaga kerja = 노동력
+ID-1378,1629,pemilik,"주인, 소유자",pemilik,milik,Pemilik rumah ini siapa?,이 집 주인이 누구야?,일반,milik(이미 덱에 있음)에서,,noun,owner,pemilik toko = 가게 주인; pemilik mobil = 차 주인
+ID-1379,1639,gerakan,"움직임, 운동",gerakan,gerak,Ikuti gerakan saya.,제 동작을 따라 하세요.,일반,"몸의 동작, 사회 운동",,noun,movement,gerakan tubuh = 몸동작; gerakan pelan = 느린 동작
+ID-1380,1661,buta,눈먼,buta,,Kakeknya buta.,할아버지는 앞을 못 보셔.,일반,buta warna = 색맹,,adjective,blind,buta warna = 색맹; buta huruf = 문맹
+ID-1381,1668,seumur,"평생, 같은 나이의",seumur,umur,Aku belum pernah liat itu seumur hidup.,평생 그런 걸 본 적이 없어.,일반,seumur hidup = 평생,,adverb,lifetime / same age,seumur hidup = 평생; seumuran = 동갑
+ID-1382,1683,keinginan,"바람, 소망",keinginan,ingin,Itu keinginan dia dari dulu.,그건 걔가 예전부터 바라던 거야.,일반,ingin(원하다)에서,,noun,wish / desire,keinginan kuat = 강한 바람; sesuai keinginan = 원하는 대로
+ID-1383,1688,keberuntungan,행운,keberuntungan,untung,Semoga keberuntungan menyertaimu.,행운이 함께하길.,일반,untung(이미 덱에 있음)에서,,noun,luck,bawa keberuntungan = 행운을 가져오다; keberuntungan besar = 큰 행운
+ID-1384,1692,perjanjian,"약속, 계약서",perjanjian,janji,Kita tanda tangan perjanjian.,우리는 계약서에 서명했어.,일반,janji(약속)의 명사,,noun,agreement / contract,surat perjanjian = 계약서; perjanjian kerja = 근로 계약
+ID-1385,1697,berencana,계획하다,berencana,rencana,Aku berencana pindah tahun depan.,내년에 이사할 계획이야.,일반,rencana(이미 덱에 있음)에서,,verb,to plan,berencana pergi = 갈 계획이다; sudah berencana = 이미 계획했다
+ID-1386,1698,mengembalikan,돌려주다,mengembalikan,kembali,Aku mau mengembalikan buku ini.,이 책을 돌려주려고요.,일반,balikin(이미 덱에 있음)의 표준어,,verb,to return (something),mengembalikan uang = 돈을 돌려주다
+ID-1387,1710,kontak,"연락처, 접촉",kontak,,Simpan kontakku ya.,내 연락처 저장해 둬.,일반,연락처·접촉,,noun,contact,nomor kontak = 연락처; kontak langsung = 직접 접촉
+ID-1388,1719,melanjutkan,"계속하다, 이어 가다",melanjutkan,lanjut,Aku mau melanjutkan kuliah.,대학 공부를 계속하고 싶어.,일반,lanjut(이미 덱에 있음)의 타동사,,verb,to continue,melanjutkan perjalanan = 여행을 계속하다
+ID-1389,1721,keuntungan,"이익, 장점",keuntungan,untung,Apa keuntungannya buat aku?,그게 나한테 무슨 이득이야?,일반,"이윤, 장점",,noun,profit / advantage,dapat keuntungan = 이익을 얻다; keuntungan besar = 큰 이익
+ID-1390,1722,secepatnya,최대한 빨리,secepatnya,cepat,Tolong balas secepatnya.,최대한 빨리 답장 주세요.,일반,secepat mungkin과 같다,,adverb,as soon as possible,secepatnya ya = 최대한 빨리; secepatnya dong = 빨리 좀 해 줘
+ID-1391,1723,menawarkan,"제안하다, 권하다",menawarkan,tawar,Dia menawarkan bantuan.,그가 도움을 제안했어.,일반,nawar(흥정하다)와 같은 어근,,verb,to offer,menawarkan kerja = 일자리를 제안하다
+ID-1392,1728,berteman,친구로 지내다,berteman,teman,Kita udah berteman lama.,우리는 오래 친구로 지냈어.,일반,temen(이미 덱에 있음)에서,,verb,to be friends,berteman baik = 잘 지내는 친구다; mau berteman? = 친구 할래?
+ID-1393,1732,kenangan,추억,kenangan,kenang,Banyak kenangan di rumah ini.,이 집에는 추억이 많아.,일반,kenang = 회상하다,,noun,memory (nostalgic),kenangan indah = 아름다운 추억; jadi kenangan = 추억이 되다
+ID-1394,1737,keberanian,용기,keberanian,berani,Butuh keberanian buat ngomong.,말하려면 용기가 필요해.,일반,berani(이미 덱에 있음)에서,,noun,courage,penuh keberanian = 용기 가득한; kumpulin keberanian = 용기를 내다
+ID-1395,1738,bermimpi,꿈꾸다,bermimpi,mimpi,Semalam aku bermimpi aneh.,어젯밤 이상한 꿈을 꿨어.,일반,mimpi(이미 덱에 있음)에서,,verb,to dream,bermimpi buruk = 악몽을 꾸다; jangan bermimpi = 꿈 깨
+ID-1396,1741,medis,의료의,medis,,Dia butuh bantuan medis.,그는 의료 도움이 필요해.,일반,의료와 관련된,,adjective,medical,tim medis = 의료진; catatan medis = 의무 기록
+ID-1397,1752,tambahan,추가(분),tambahan,tambah,Ada biaya tambahan?,추가 비용 있어요?,일반,tambah(더하다)에서,,noun,addition / extra,biaya tambahan = 추가 비용; waktu tambahan = 추가 시간
+ID-1398,1760,jaringan,"네트워크, 망",jaringan,jaring,Jaringannya jelek di sini.,여기 통신망이 안 좋아.,일반,폰 신호·인맥·조직(의학: 조직),,noun,network,jaringan internet = 인터넷망; jaringan tubuh = 신체 조직
+ID-1399,1778,mempercayai,"믿다, 신뢰하다",mempercayai,percaya,Aku mempercayai kamu.,나는 너를 믿어.,일반,percaya(이미 덱에 있음)의 타동사,,verb,to trust,mempercayai diri = 자신을 믿다
+ID-1400,1783,pekan,주 (일주일),pekan,,Pekan depan aku libur.,다음 주에 쉬어.,일반,minggu와 같은 뜻의 글말. akhir pekan = 주말,,time,week,akhir pekan = 주말; pekan depan = 다음 주
+ID-1401,1790,sehari,하루,sehari,hari,Minum obatnya tiga kali sehari.,약은 하루 세 번 드세요.,일반,복약 안내의 기본. sehari-hari = 매일의,,noun,a day / per day,tiga kali sehari = 하루 세 번; sehari-hari = 일상의
+ID-1402,1795,peralatan,"장비, 도구들",peralatan,alat,Peralatan medisnya lengkap.,의료 장비가 다 갖춰져 있어.,일반,alat(도구)의 모음,,noun,equipment,peralatan dapur = 주방용품; peralatan kantor = 사무용품
+ID-1403,1803,akses,"접근, 이용 권한",akses,,Aku nggak punya akses ke sistem.,시스템 접근 권한이 없어.,일반,영어 access,,noun,access,akses internet = 인터넷 접속; akses masuk = 출입 권한
+ID-1404,1808,berkumpul,모이다,berkumpul,kumpul,Keluarga berkumpul pas lebaran.,르바란 때 가족이 모여.,일반,구어는 kumpul aja,,verb,to gather,berkumpul bareng = 같이 모이다
+ID-1405,1815,demikian,"그렇게, 이와 같이",demikian,,Demikian informasi dari kami.,이상 저희 안내였습니다.,격식,안내 방송·편지 끝맺음에 흔하다,,adverb,thus / so,demikian juga = 마찬가지로; namun demikian = 그럼에도
+ID-1406,1818,memaksa,강요하다,memaksa,paksa,Jangan memaksa dia.,걔한테 강요하지 마.,일반,terpaksa = 어쩔 수 없이,,verb,to force,jangan memaksa = 강요하지 마
+ID-1407,1831,spesial,특별한 (구어),spesial,,Martabak spesial satu.,스페셜 마르타박 하나요.,구어,"메뉴에서 ""특제""의 뜻으로도",,adjective,special,menu spesial = 특별 메뉴; orang spesial = 특별한 사람
+ID-1408,1835,perbedaan,차이,perbedaan,beda,Apa perbedaannya?,차이가 뭐야?,일반,beda(이미 덱에 있음)의 명사,,noun,difference,perbedaan besar = 큰 차이; perbedaan pendapat = 의견 차이
+ID-1409,1839,kekerasan,폭력,kekerasan,keras,Kekerasan dalam rumah tangga itu serius.,가정 폭력은 심각한 문제야.,일반,keras(이미 덱에 있음)에서. 간호 현장에서 중요,,noun,violence,kekerasan fisik = 신체적 폭력; tanpa kekerasan = 비폭력
+ID-1410,1848,nasib,"운명, 처지",nasib,,"Udah nasib, mau gimana lagi.","운명이지, 어쩌겠어.",일반,takdir보다 일상적,,noun,fate / luck,nasib baik = 행운; nasib buruk = 불운
+ID-1411,1854,membosankan,지루한,membosankan,bosan,Filmnya membosankan.,영화가 지루했어.,일반,bosen(이미 덱에 있음)에서,,adjective,boring,membosankan banget = 엄청 지루해; kerja yang membosankan = 지루한 일
+ID-1412,1860,kebohongan,거짓말 (명사),kebohongan,bohong,Semua itu kebohongan.,그건 다 거짓말이야.,일반,bohong(이미 덱에 있음)의 명사,,noun,lie,kebohongan besar = 큰 거짓말; penuh kebohongan = 거짓투성이
+ID-1413,1877,nasional,국가의,nasional,,Hari ini libur nasional.,오늘은 공휴일이야.,일반,libur nasional = 공휴일,,adjective,national,libur nasional = 공휴일; lagu nasional = 국가 노래
+ID-1414,1889,meyakinkan,"설득하다, 확신시키다",meyakinkan,yakin,Dia berusaha meyakinkan aku.,그는 나를 설득하려 했어.,일반,yakin(이미 덱에 있음)에서,,verb,to convince,meyakinkan orang tua = 부모님을 설득하다; kurang meyakinkan = 설득력이 없다
+ID-1415,1892,menjalani,"겪다, 받다 (치료 등)",menjalani,jalan,Dia menjalani operasi kemarin.,그는 어제 수술을 받았어요.,일반,"치료·생활을 ""해 나가다"". 병원에서 흔하다",,verb,to undergo,menjalani hidup = 삶을 살아가다; menjalani pengobatan = 치료를 받다
+ID-1416,1907,menghormati,존중하다,menghormati,hormat,Kita harus menghormati orang tua.,어른을 존중해야 해.,일반,hormat(존경)에서,,verb,to respect,saling menghormati = 서로 존중하다
+ID-1417,1909,sesungguhnya,"사실은, 참으로",sesungguhnya,sungguh,Sesungguhnya aku takut.,사실은 나 무서워.,격식,sebenernya의 글말,,adverb,in truth,yang sesungguhnya = 진짜의; sesungguhnya begitu = 사실 그래
+ID-1418,1921,memenuhi,"채우다, 충족하다",memenuhi,penuh,Dia memenuhi janjinya.,그는 약속을 지켰어.,일반,조건·약속·공간을 채움,,verb,to fulfill,memenuhi syarat = 조건을 충족하다; memenuhi kebutuhan = 필요를 채우다
+ID-1419,1932,mengakui,"인정하다, 자백하다",mengakui,aku,Dia mengakui kesalahannya.,그는 자기 잘못을 인정했어.,일반,aku(나)와 같은 철자의 어근 akui,,verb,to admit,mengakui salah = 잘못을 인정하다
+ID-1420,1934,sebaliknya,반대로,sebaliknya,balik,"Dia nggak marah, sebaliknya malah ketawa.",걔는 화내기는커녕 오히려 웃었어.,일반,"""그 반대로""",,adverb,on the contrary,sebaliknya juga = 그 반대도; justru sebaliknya = 오히려 그 반대
+ID-1421,1966,pengetahuan,지식,pengetahuan,tahu,Pengetahuannya luas banget.,그의 지식은 엄청 넓어.,일반,tahu에서,,noun,knowledge,"ilmu pengetahuan = 과학, 학문; pengetahuan umum = 일반 상식"
+ID-1422,1974,tertentu,특정한,tertentu,tentu,Obat ini cuma buat kondisi tertentu.,이 약은 특정한 상황에만 써요.,일반,tentu(물론)와 뜻이 다르다,,adjective,certain / specific,waktu tertentu = 특정 시간; orang tertentu = 특정한 사람
+ID-1423,1976,pekerja,"노동자, 일하는 사람",pekerja,kerja,Pekerja di sini ramah-ramah.,여기 일하는 사람들은 친절해.,일반,kerja에서,,noun,worker,pekerja keras = 열심히 일하는 사람; pekerja kantoran = 사무직
+ID-1424,1997,mengunjungi,방문하다,mengunjungi,kunjung,Aku mau mengunjungi nenek.,할머니를 찾아뵈려고.,일반,"구어는 nengok, mampir",,verb,to visit,mengunjungi teman = 친구를 방문하다
+ID-1425,2027,ratusan,수백의,ratusan,ratus,Ada ratusan orang di sana.,거기에 수백 명이 있었어.,일반,ratus에 -an,,number,hundreds,ratusan tahun = 수백 년; ratusan ribu = 수십만
+ID-1426,2035,bayangan,"그림자, 상상",bayangan,bayang,Aku liat bayangan di jendela.,창문에서 그림자를 봤어.,일반,bayangin(이미 덱에 있음)과 같은 어근,,noun,shadow / image,bayangan hitam = 검은 그림자; dalam bayangan = 상상 속에서
+ID-1427,2068,berbalik,돌아서다,berbalik,balik,Dia berbalik dan pergi.,그는 돌아서서 가 버렸어.,일반,balik(이미 덱에 있음)에서,,verb,to turn around,berbalik arah = 방향을 돌리다; berbalik badan = 몸을 돌리다
+ID-1428,2071,payah,"형편없는, 한심한",payah,,"Ah, payah kamu!","아, 너 진짜 한심하다!",구어,친구끼리 놀리듯이도 쓴다,,adjective,lame / hopeless,payah banget = 진짜 형편없어; dasar payah = 한심한 녀석
+ID-1429,2074,menghindari,피하다,menghindari,hindar,Sebaiknya menghindari makanan pedas dulu.,당분간 매운 음식은 피하는 게 좋아요.,일반,명령형은 hindari. 건강 안내에 흔하다,,verb,to avoid,menghindari macet = 정체를 피하다; menghindari macet = 정체를 피하다
+ID-1430,2081,kaca,"유리, 거울",kaca,,"Hati-hati, kacanya pecah.","조심해, 유리가 깨졌어.",일반,"kacamata = 안경, kaca spion = 사이드미러",,noun,glass / mirror,kacamata = 안경; kaca jendela = 창유리
+ID-1431,2090,permen,사탕,permen,,Mau permen?,사탕 먹을래?,일반,permen karet = 껌,,noun,candy,permen karet = 껌; permen mint = 박하사탕
+ID-1432,2091,pelatih,"코치, 트레이너",pelatih,latih,Pelatihnya galak.,코치가 무서워.,일반,latihan(이미 덱에 있음)과 같은 어근,,noun,coach / trainer,pelatih gym = 헬스 트레이너; pelatih tim = 팀 코치
+ID-1433,2094,saluran,"채널, 관",saluran,salur,Ganti saluran TV-nya.,TV 채널 바꿔.,일반,"TV 채널, 배수관, 의학의 관(saluran napas 기도)",,noun,channel / duct,saluran napas = 기도; saluran air = 수도관
+ID-1434,2096,setia,"충실한, 의리 있는",setia,,Anjingnya setia banget.,그 개는 엄청 충직해.,일반,연인·친구·고객에게,,adjective,loyal,teman setia = 의리 있는 친구; pelanggan setia = 단골손님
+ID-1435,2111,serta,"그리고, 및",serta,,Bawa KTP serta kartu BPJS.,신분증과 BPJS 카드를 가져오세요.,격식,dan의 격식 표현,,connector,and / as well as,serta merta = 곧바로; ikut serta = 참여하다
+ID-1436,2112,seolah,마치 ~처럼,seolah-olah,,Dia diam seolah nggak denger.,걔는 못 들은 것처럼 가만히 있었어.,일반,seolah-olah로도 쓴다,,connector,as if,seolah-olah = 마치 ~인 듯; seolah tahu = 아는 것처럼
+ID-1437,2121,mainan,장난감,mainan,main,Anakku suka mainan mobil.,우리 애는 자동차 장난감을 좋아해.,일반,main(이미 덱에 있음)에서,,noun,toy,mainan anak = 아이 장난감; toko mainan = 장난감 가게
+ID-1438,2124,potongan,"조각, 할인",potongan,potong,Ada potongan harga?,가격 할인 있어요?,일반,potong(자르다)에서. 조각·할인 둘 다,,noun,piece / discount,potongan harga = 가격 할인; potongan kue = 케이크 조각
+ID-1439,2144,jutaan,수백만의,jutaan,juta,Jutaan orang nonton videonya.,수백만 명이 그 영상을 봤어.,일반,juta(백만)에 -an,,number,millions,jutaan orang = 수백만 명; jutaan rupiah = 수백만 루피아
+ID-1440,2146,mendukung,"지지하다, 응원하다",mendukung,dukung,Keluargaku selalu mendukung aku.,가족은 늘 나를 지지해 줘.,일반,구어는 dukung aja,,verb,to support,saling mendukung = 서로 응원하다
+ID-1441,2150,pandai,"능숙한, 잘하는",pandai,,Dia pandai masak.,그는 요리를 잘해.,일반,pinter와 비슷. pandai + 동사 = ~을 잘하다,,adjective,skilled / clever,pandai bicara = 말을 잘하다; pandai menari = 춤을 잘 추다
+ID-1442,2153,sejujurnya,솔직히 말하면,sejujurnya,jujur,Sejujurnya aku nggak suka.,솔직히 말하면 나는 싫어.,일반,jujur(이미 덱에 있음)에서,,adverb,honestly,sejujurnya aja = 솔직히 말해서; sejujurnya aja = 솔직히 말해서
+ID-1443,2154,walau,비록 ~일지라도,walau,,"Walau capek, dia tetap senyum.",피곤해도 그는 계속 웃어.,일반,walaupun(이미 덱에 있음)의 짧은 꼴,,connector,although,walau begitu = 그래도; walau sedikit = 조금이지만
+ID-1444,2176,memohon,간청하다,memohon,mohon,Dia memohon maaf.,그는 용서를 빌었어.,일반,mohon(이미 덱에 있음)의 동사형,,verb,to beg / plead,memohon bantuan = 도움을 간청하다
+ID-1445,2181,profesional,전문적인,profesional,,Dia kerja profesional banget.,그는 엄청 프로답게 일해.,일반,professional,,adjective,professional,tenaga profesional = 전문 인력; kurang profesional = 프로답지 않아
+ID-1446,2190,mempelajari,"공부하다, 연구하다",mempelajari,ajar,Aku lagi mempelajari bahasa Indonesia.,인도네시아어를 배우는 중이야.,일반,"belajar보다 ""깊이 익히다""",,verb,to study (something),mempelajari budaya = 문화를 배우다
+ID-1447,2193,menyalahkan,탓하다,menyalahkan,salah,Jangan menyalahkan diri sendiri.,자기 자신을 탓하지 마.,일반,salah(이미 덱에 있음)에서,,verb,to blame,menyalahkan orang lain = 남을 탓하다
+ID-1448,2196,cemas,"불안한, 걱정되는",cemas,,Aku cemas nunggu hasilnya.,결과를 기다리는 게 불안해.,일반,"khawatir(이미 덱에 있음)와 비슷. 의학에서 ""불안""",,adjective,anxious,rasa cemas = 불안감; cemas banget = 엄청 불안해
+ID-1449,2197,sebulan,한 달,sebulan,bulan,Aku di sini udah sebulan.,여기 온 지 벌써 한 달이야.,일반,se- + bulan,,noun,a month,sebulan sekali = 한 달에 한 번; sebulan lagi = 한 달 뒤
+ID-1450,2201,terbiasa,익숙해지다,terbiasa,biasa,Aku udah terbiasa sama cuaca di sini.,여기 날씨에 익숙해졌어.,일반,biasa(이미 덱에 있음)에서,,verb,to get used to,belum terbiasa = 아직 익숙하지 않아; terbiasa dengan = ~에 익숙하다
+ID-1451,2208,menjijikkan,역겨운,menjijikkan,jijik,Baunya menjijikkan.,냄새가 역겨워.,일반,jijik = 역겨워하다,,adjective,disgusting,menjijikkan banget = 너무 역겨워
+ID-1452,2209,dokumen,서류,dokumen,,Bawa dokumen lengkap ya.,서류 다 챙겨 와.,일반,berkas도 같은 뜻,,noun,document,dokumen penting = 중요한 서류; tanda tangan dokumen = 서류에 서명
+ID-1453,2211,pabrik,공장,pabrik,,Ayahnya kerja di pabrik.,그의 아버지는 공장에서 일해.,일반,factory,,noun,factory,pabrik roti = 빵 공장; buruh pabrik = 공장 노동자
+ID-1454,2214,bakat,재능,bakat,,Dia punya bakat nyanyi.,그는 노래에 재능이 있어.,일반,타고난 재주,,noun,talent,bakat alami = 타고난 재능; punya bakat = 재능이 있다
+ID-1455,2222,pelanggan,"손님, 고객",pelanggan,langgan,Pelanggan nomor satu!,손님이 최우선!,일반,단골은 langganan,,noun,customer,pelanggan setia = 단골손님; layanan pelanggan = 고객 서비스
+ID-1456,2228,ingatan,기억(력),ingatan,ingat,Ingatannya mulai lemah.,기억력이 약해지기 시작했어.,일반,노인 환자 설명에 흔하다,,noun,memory (ability),hilang ingatan = 기억을 잃다; ingatan kuat = 기억력이 좋아
+ID-1457,2229,pembicaraan,"대화, 이야기",pembicaraan,bicara,Pembicaraan kita belum selesai.,우리 얘기 아직 안 끝났어.,일반,bicara의 명사,,noun,conversation,topik pembicaraan = 대화 주제; pembicaraan serius = 진지한 대화
+ID-1458,2231,merencanakan,계획하다 (~을),merencanakan,rencana,Kita merencanakan liburan.,우리는 휴가를 계획하고 있어.,일반,"berencana는 자동사, merencanakan은 ""~을 계획하다""",,verb,to plan (something),merencanakan pesta = 파티를 계획하다
+ID-1459,2247,saran,"제안, 조언",saran,,Ada saran?,제안 있어?,일반,nasihat보다 가벼운 조언,,noun,suggestion,kasih saran = 조언하다; saran dokter = 의사의 권고
+ID-1460,2253,singkat,"짧은, 간단한",singkat,,Ceritanya singkat aja.,짧게 얘기할게.,일반,시간·글이 짧을 때,,adjective,brief,singkat cerita = 간단히 말하면; waktu singkat = 짧은 시간
+ID-1461,2259,mengatasi,"극복하다, 해결하다",mengatasi,atas,Gimana cara mengatasi stres?,스트레스를 어떻게 이겨내?,일반,문제·어려움을 해결,,verb,to overcome / deal with,mengatasi masalah = 문제를 해결하다
+ID-1462,2260,berikut,다음과 같은,berikut,ikut,Berikut jadwal minggu ini.,다음은 이번 주 일정입니다.,격식,"안내문에서 ""다음은""",,adverb,the following,sebagai berikut = 다음과 같이; berikutnya = 그다음 (이미 덱에 있음)
+ID-1463,2275,politik,정치,politik,,Aku nggak suka ngomongin politik.,정치 얘기는 싫어.,일반,politics,,noun,politics,partai politik = 정당; urusan politik = 정치 문제
+ID-1464,2276,universitas,대학교,universitas,,Dia kuliah di universitas negeri.,그는 국립대에 다녀.,일반,"구어는 kampus, univ",,noun,university,universitas negeri = 국립대; masuk universitas = 대학에 들어가다
+ID-1465,2284,penelitian,연구,penelitian,teliti,Penelitiannya tentang diabetes.,연구 주제는 당뇨병이야.,일반,teliti = 꼼꼼한,,noun,research,hasil penelitian = 연구 결과; penelitian medis = 의학 연구
+ID-1466,2304,aktif,활동적인,aktif,,Anaknya aktif banget.,아이가 엄청 활발해.,일반,active,,adjective,active,aktif bergerak = 활발히 움직이다; nomor aktif = 사용 중인 번호
+ID-1467,2328,keselamatan,"안전, 무사",keselamatan,selamat,Keselamatan pasien nomor satu.,환자 안전이 최우선이에요.,일반,selamat(이미 덱에 있음)에서,,noun,safety,keselamatan kerja = 산업 안전; demi keselamatan = 안전을 위해
+ID-1468,2342,yaitu,"즉, 다시 말해",yaitu,,"Ada dua pilihan, yaitu A dan B.","선택지가 두 개 있어, 즉 A와 B.",격식,목록을 설명할 때,,connector,namely,yaitu dengan = 즉 ~로; yaitu bahwa = 즉 ~라는 것
+ID-1469,2343,lengan,팔 (위팔),lengan,,Suntiknya di lengan kiri.,주사는 왼팔에 놓을게요.,일반,"tangan(이미 덱에 있음)은 손·팔 전체, lengan은 팔 부분",,noun,arm,lengan baju = 소매; lengan kiri = 왼팔
+ID-1470,2354,lokal,현지의,lokal,,Aku suka makanan lokal.,나는 현지 음식을 좋아해.,일반,local,,adjective,local,orang lokal = 현지인; produk lokal = 국산품
+ID-1471,2356,pemeriksaan,"검사, 진찰",pemeriksaan,periksa,Hasil pemeriksaan keluar besok.,검사 결과는 내일 나와요.,일반,periksa(이미 덱에 있음)의 명사,,noun,examination / check-up,pemeriksaan darah = 혈액 검사; pemeriksaan rutin = 정기 검진
+ID-1472,2363,penumpang,승객,penumpang,tumpang,Penumpang harap turun di sini.,승객 여러분은 여기서 내려 주세요.,일반,numpang(이미 덱에 있음)과 같은 어근,,noun,passenger,penumpang pesawat = 비행기 승객; kursi penumpang = 조수석
+ID-1473,2374,identitas,신분,identitas,,Tolong tunjukkan kartu identitas.,신분증을 보여 주세요.,일반,KTP = 신분증,,noun,identity,kartu identitas = 신분증; identitas diri = 신원
+ID-1474,2379,bencana,"재해, 재난",bencana,,Banjir itu bencana besar.,그 홍수는 큰 재난이었어.,일반,bencana alam = 자연재해,,noun,disaster,bencana alam = 자연재해; korban bencana = 이재민
+ID-1475,2381,pemuda,청년,pemuda,muda,Pemuda di desa ini rajin.,이 마을 청년들은 부지런해.,일반,muda(이미 덱에 있음)에서,,noun,youth,pemuda-pemudi = 청년들; sumpah pemuda = 청년 서약 (기념일)
+ID-1476,2384,menentukan,"정하다, 결정하다",menentukan,tentu,Kamu yang menentukan.,네가 정해.,일반,tentu(물론)와 같은 어근,,verb,to determine,menentukan pilihan = 선택을 정하다
+ID-1477,2389,merayakan,"축하하다, 기념하다",merayakan,raya,Kita merayakan ulang tahun ibu.,우리는 엄마 생신을 축하했어.,일반,명절·생일·기념일,,verb,to celebrate,merayakan lebaran = 르바란을 쇠다
+ID-1478,2400,kering,"마른, 건조한",kering,,Kulitku kering banget.,피부가 엄청 건조해.,일반,basah(이미 덱에 있음)의 반대,,adjective,dry,batuk kering = 마른기침; musim kering = 건기
+ID-1479,2406,gelombang,"파도, 물결",gelombang,,Gelombangnya tinggi hari ini.,오늘 파도가 높아.,일반,"ombak과 비슷. 감염 확산의 ""파""에도",,noun,wave,gelombang tinggi = 높은 파도; gelombang panas = 폭염
+ID-1480,2415,kebahagiaan,행복,kebahagiaan,bahagia,Kebahagiaan itu sederhana.,행복은 단순해.,일반,bahagia(이미 덱에 있음)의 명사,,noun,happiness,demi kebahagiaan = 행복을 위해; kebahagiaan keluarga = 가족의 행복
+ID-1481,2417,tetangga,이웃,tetangga,,Tetanggaku baik banget.,우리 이웃은 정말 좋아.,일반,이웃집 사람,,noun,neighbor,tetangga sebelah = 옆집 사람; rumah tetangga = 이웃집
+ID-1482,2418,perlahan,"천천히, 서서히",perlahan,lahan,Bangun perlahan-lahan ya.,천천히 일어나세요.,일반,pelan-pelan(이미 덱에 있음)과 비슷. 환자 안내에 쓰기 좋다,,adverb,slowly,perlahan-lahan = 천천히; perlahan tapi pasti = 느리지만 확실히
+ID-1483,2422,puncak,"정상, 절정",puncak,,Kita naik ke puncak gunung.,우리는 산 정상에 올랐어.,일반,"산꼭대기, 절정",,noun,peak,puncak gunung = 산 정상; jam puncak = 러시아워
+ID-1484,2429,kesehatan,건강,kesehatan,sehat,Jaga kesehatan ya.,건강 챙겨.,일반,sehat(이미 덱에 있음)의 명사. 헤어질 때 인사로도,,noun,health,jaga kesehatan = 건강 챙겨; kesehatan mental = 정신 건강
+ID-1485,2431,beban,"짐, 부담",beban,,Aku nggak mau jadi beban.,짐이 되고 싶지 않아.,일반,마음의 부담,,noun,burden,beban pikiran = 걱정거리; jadi beban = 짐이 되다
+ID-1486,2437,mempertahankan,"지키다, 유지하다",mempertahankan,tahan,Kita harus mempertahankan kebiasaan baik.,좋은 습관을 유지해야 해.,일반,tahan(이미 덱에 있음)에서,,verb,to maintain / defend,mempertahankan berat badan = 체중을 유지하다
+ID-1487,2439,impian,"꿈, 소망",impian,impi,Rumah ini impianku.,이 집은 내 꿈이야.,일반,"mimpi는 자면서 꾸는 꿈, impian은 바라는 꿈",,noun,dream (aspiration),rumah impian = 꿈의 집; impian besar = 큰 꿈
+ID-1488,2464,stabil,안정된,stabil,,Kondisi pasien stabil.,환자 상태는 안정적이에요.,일반,병원에서 자주 쓰는 말,,adjective,stable,kondisi stabil = 상태가 안정적이다; belum stabil = 아직 불안정해
+ID-1489,2474,lancar,"순조로운, 유창한",lancar,,Bahasa Indonesianya lancar.,인도네시아어가 유창해.,일반,일이 잘 풀리거나 말이 유창할 때,,adjective,smooth / fluent,lancar jaya = 술술 잘 풀려; semoga lancar = 순조롭길
+ID-1490,2485,peluang,"기회, 가능성",peluang,,Masih ada peluang.,아직 기회가 있어.,일반,kesempatan(이미 덱에 있음)과 비슷,,noun,chance / opportunity,peluang kerja = 취업 기회; peluang kecil = 가능성이 낮다
+ID-1491,2488,sahabat,절친한 친구,sahabat,,Dia sahabatku dari SMA.,걔는 고등학교 때부터 절친이야.,일반,temen보다 깊은 친구,,noun,best friend,sahabat dekat = 가까운 친구; sahabat sejati = 진정한 친구
+ID-1492,2490,terkesan,"감동받은, ~한 인상을 주는",terkesan,kesan,Aku terkesan sama pelayanannya.,서비스에 감동받았어.,일반,kesan = 인상,,adjective,impressed,terkesan banget = 엄청 감동받았어; terkesan sombong = 거만해 보여
+ID-1493,2503,lezat,맛있는 (격식),lezat,,Masakannya lezat sekali.,요리가 정말 맛있어요.,일반,enak의 격식 표현,,adjective,delicious,lezat banget = 엄청 맛있어; makanan lezat = 맛있는 음식
+ID-1494,2504,mengingatkan,"일깨워 주다, 상기시키다",mengingatkan,ingat,Tolong mengingatkan aku besok.,내일 나한테 꼭 알려 줘.,일반,명령형은 ingatkan,,verb,to remind,mengingatkan minum obat = 약 먹으라고 알려 주다; mengingatkan minum obat = 약 먹으라고 알려 주다; mengingatkan lagi = 다시 알려 주다
+ID-1495,2509,pandangan,"견해, 시선",pandangan,pandang,Gimana pandanganmu soal ini?,이 일에 대한 네 견해는 어때?,일반,pendapat과 비슷,,noun,view / opinion,pandangan hidup = 인생관; pandangan mata = 시야
+ID-1496,2510,emosi,"감정, 화",emosi,,Jangan emosi dulu.,일단 흥분하지 마.,구어,"구어에서는 ""화난""의 뜻으로 자주 쓴다",,noun,emotion / anger,lagi emosi = 지금 화났어; emosi banget = 엄청 열받아
+ID-1497,2518,cermin,거울,cermin,,Liat di cermin.,거울 봐.,일반,kaca도 거울로 쓴다,,noun,mirror,depan cermin = 거울 앞; bercermin = 거울을 보다
+ID-1498,2522,jarang,"드물게, 좀처럼 ~않는",jarang,,Aku jarang masak.,나는 요리를 잘 안 해.,일반,sering(이미 덱에 있음)의 반대,,adverb,rarely,jarang banget = 거의 안 해; jarang-jarang = 드문드문
+ID-1499,2524,asap,연기,asap,,Ada asap dari dapur.,부엌에서 연기가 나.,일반,asap rokok = 담배 연기,,noun,smoke,asap rokok = 담배 연기; berasap = 연기가 나다
+ID-1500,2526,menyewa,빌리다 (돈 내고),menyewa,sewa,Kita menyewa mobil di Bali.,우리는 발리에서 차를 빌렸어.,일반,"pinjem(이미 덱에 있음)은 공짜로 빌림, sewa는 돈 내고",,verb,to rent,menyewa motor = 오토바이를 빌리다

@@ -151,6 +151,24 @@ describe('repo', () => {
     other.close();
   });
 
+  it('동기화: 새 기록이 없는 카드는 다시 계산하지 않고 이 기기 상태를 그대로 쓴다 (다른 기기의 어긋난 캐시가 덮어쓰지 않는다)', async () => {
+    const deck = await repo.createDeck('HSK', settings, d);
+    const a = await repo.addNote(deck.id, 'zh-word', { hanzi: '书', meaning: '책' }, d);
+    const b = await repo.addNote(deck.id, 'zh-word', { hanzi: '笔', meaning: '펜' }, d);
+    const ca = (await d.cards.where('noteId').equals(a.id).toArray())[0]!;
+    const cb = (await d.cards.where('noteId').equals(b.id).toArray())[0]!;
+    await repo.recordReview(ca.id, 3, undefined, d);
+    const before = (await d.cards.get(ca.id))!;
+    const remote = await repo.exportSyncData(d);
+    // 다른 기기: ca의 캐시가 이상하게 저장돼 있고(새 기록 없음), cb는 한 번 복습했다
+    const theirLog = { id: 'their-log', cardId: cb.id, kind: 'review' as const, rating: 3 as const, at: Date.now() + 60_000, tzOffsetMin: 0, scheduler: 'x' };
+    const cards = remote.cards.map((c) => (c.id === ca.id ? { ...c, due: 1, reps: 99, lastReviewAt: Date.now() + 120_000 } : c));
+    await repo.mergeIntoLocal({ ...remote, cards, reviewLogs: [...remote.reviewLogs, theirLog] }, d);
+    const afterA = (await d.cards.get(ca.id))!;
+    expect([afterA.due, afterA.reps, afterA.memory]).toEqual([before.due, before.reps, before.memory]);
+    expect((await d.cards.get(cb.id))!.reps).toBe(1);
+  });
+
   it('연결어 옮기기: 연결어만 새 덱으로 가고, 복습 기록·기억 상태가 그대로 따라가며, 다시 눌러도 덱이 늘지 않는다', async () => {
     const idSettings = { defaultTypeId: 'id-spoken', reverseEnabled: false, newPerDay: 10, autoplay: 'front' as const, langs: { front: 'id-ID', back: 'ko-KR' } };
     const main = await repo.createDeck('인도네시아어 구어체', idSettings, d);

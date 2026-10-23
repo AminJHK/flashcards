@@ -323,6 +323,19 @@ export async function rebuildAll(d: FlashcardsDB = db): Promise<void> {
   });
 }
 
+/** 지금 알고리즘으로 계산되지 않은 카드(schedulerId가 다름)만 로그로 다시 계산한다 */
+export async function rebuildStale(d: FlashcardsDB = db): Promise<void> {
+  await d.transaction('rw', [d.cards, d.reviewLogs, d.settings], async () => {
+    const sched = schedulerFor(await getSettings(d));
+    const stale = (await d.cards.toArray()).filter((c) => c.schedulerId !== sched.id);
+    if (!stale.length) return;
+    const ids = new Set(stale.map((c) => c.id));
+    const byCard = new Map<Id, ReviewLog[]>();
+    for (const l of await d.reviewLogs.toArray()) if (ids.has(l.cardId)) byCard.set(l.cardId, [...(byCard.get(l.cardId) ?? []), l]);
+    await d.cards.bulkPut(stale.map((c) => withState(c, rebuildFromLogs(c.createdAt, byCard.get(c.id) ?? [], sched, c.id), sched.id)));
+  });
+}
+
 // ---------------- 백업 ----------------
 
 export async function exportBackup(d: FlashcardsDB = db): Promise<Backup> {
@@ -379,17 +392,26 @@ export async function mergeIntoLocal(remote: SyncData, d: FlashcardsDB = db): Pr
     await d.cards.bulkDelete(gone(local.cards, m.cards));
     await d.decks.bulkPut(m.decks);
     await d.notes.bulkPut(m.notes);
-    await d.cards.bulkPut(m.cards.map((c) => ({ ...c, schedulerId: undefined })));
+    // 카드 상태는 로그로 다시 계산한다. 단 새 로그가 없고 이 기기 상태가 지금 알고리즘으로 계산된 카드는 그대로 둔다
+    // (모든 카드를 매번 다시 계산하면 단어가 많을수록 동기화가 느려진다: 1500단어에서 5초 넘게 걸렸다)
+    const localLogIds = new Set(local.reviewLogs.map((l) => l.id));
+    const touched = new Set(m.reviewLogs.filter((l) => !localLogIds.has(l.id)).map((l) => l.cardId));
+    const localCards = new Map(local.cards.map((c) => [c.id, c]));
+    const cards = m.cards.map((c) => {
+      const lc = localCards.get(c.id);
+      return lc && !touched.has(c.id) && lc.schedulerId === sched.id ? lc : { ...c, schedulerId: undefined };
+    });
+    await d.cards.bulkPut(cards);
     await d.reviewLogs.bulkPut(m.reviewLogs);
     await d.tombstones.bulkPut(m.tombstones);
     // 카드 구성 맞추기 (덱 설정에 따른 숨김, 빠진 카드 만들기)
     const deckById = new Map(m.decks.map((x) => [x.id, x]));
     const cardsByNote = new Map<Id, Card[]>();
-    for (const c of m.cards) cardsByNote.set(c.noteId, [...(cardsByNote.get(c.noteId) ?? []), c]);
+    for (const c of cards) cardsByNote.set(c.noteId, [...(cardsByNote.get(c.noteId) ?? []), c]);
     const fixed = m.notes.flatMap((n) => cardsForNote(n, cardsByNote.get(n.id) ?? [], deckById.get(n.deckId)!, now, sched));
     if (fixed.length) await d.cards.bulkPut(fixed);
     return m;
   });
-  await rebuildAll(d);
+  await rebuildStale(d);
   return { ...merged, cards: await d.cards.toArray() };
 }
