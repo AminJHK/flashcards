@@ -3000,3 +3000,30 @@ textarea.input-sentence {
   font-size: 13px;
 }
 .word-family-hint { color: var(--text3); margin: 8px 4px 0; font-size: 11px; line-height: 1.45; }
+
+/* 구어형·표준형 짝 (정답 화면) */
+.register-pairs {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 16px 6px;
+}
+.register-pair {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 14px;
+}
+.register-pair-label {
+  color: var(--text2);
+  font-size: 12px;
+}
+.register-pair-status {
+  color: var(--text2);
+  font-size: 12px;
+}

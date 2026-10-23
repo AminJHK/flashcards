@@ -132,7 +132,8 @@ test('폰에서 공부한 덱과 기록을 PC에서 Google로 로그인해 그�
   await pc.getByRole('button', { name: 'Google로 불러오기' }).click();
   await pc.getByLabel('Google 클라이언트 ID').fill('123-abc.apps.googleusercontent.com');
   await pc.getByRole('button', { name: 'Google로 로그인' }).click();
-  await expect(pc.getByText(/다른 기기의 데이터를 불러왔어요 \(단어 1499개\)/)).toBeVisible();
+  // 처음 불러올 때는 1500단어의 카드 일정을 모두 계산해야 해서, 테스트를 여러 개 같이 돌리면 5초를 넘길 수 있다
+  await expect(pc.getByText(/다른 기기의 데이터를 불러왔어요 \(단어 1499개\)/)).toBeVisible({ timeout: 20_000 });
   await pc.goto('/#/stats');
   await expect(pc.getByText('2026년').or(pc.getByText(/\d{4}년/)).first()).toBeVisible();
   await expect(pc.getByText(/· 1장/)).toBeVisible(); // 폰에서 한 복습 기록

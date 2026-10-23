@@ -376,6 +376,8 @@ export async function exportSyncData(d: FlashcardsDB = db): Promise<SyncData> {
  * 다른 기기의 자료를 이 기기에 합친다 (mergeSync). 합치는 동안 생긴 이 기기의 변경도 잃지 않도록
  * 지금 저장된 것을 한 트랜잭션 안에서 다시 읽어서 합친다. 반환값은 합친 결과 (Drive에 올릴 것).
  */
+const stableJson = (x: unknown) => JSON.stringify(x);
+
 export async function mergeIntoLocal(remote: SyncData, d: FlashcardsDB = db): Promise<SyncData> {
   const merged = await d.transaction('rw', [d.decks, d.notes, d.cards, d.reviewLogs, d.tombstones, d.settings], async () => {
     const local = await exportSyncData(d);
@@ -391,7 +393,9 @@ export async function mergeIntoLocal(remote: SyncData, d: FlashcardsDB = db): Pr
     await d.notes.bulkDelete(gone(local.notes, m.notes));
     await d.cards.bulkDelete(gone(local.cards, m.cards));
     await d.decks.bulkPut(m.decks);
-    await d.notes.bulkPut(m.notes);
+    // 바뀐 것만 쓴다 (단어가 많으면 전부 다시 쓰는 데만 몇 초 걸린다)
+    const localNotes = new Map(local.notes.map((x) => [x.id, x]));
+    await d.notes.bulkPut(m.notes.filter((x) => localNotes.get(x.id)?.updatedAt !== x.updatedAt || stableJson(localNotes.get(x.id)) !== stableJson(x)));
     // 카드 상태는 로그로 다시 계산한다. 단 새 로그가 없고 이 기기 상태가 지금 알고리즘으로 계산된 카드는 그대로 둔다
     // (모든 카드를 매번 다시 계산하면 단어가 많을수록 동기화가 느려진다: 1500단어에서 5초 넘게 걸렸다)
     const localLogIds = new Set(local.reviewLogs.map((l) => l.id));
@@ -399,11 +403,16 @@ export async function mergeIntoLocal(remote: SyncData, d: FlashcardsDB = db): Pr
     const localCards = new Map(local.cards.map((c) => [c.id, c]));
     const cards = m.cards.map((c) => {
       const lc = localCards.get(c.id);
-      return lc && !touched.has(c.id) && lc.schedulerId === sched.id ? lc : { ...c, schedulerId: undefined };
+      if (!lc || touched.has(c.id) || lc.schedulerId !== sched.id) return { ...c, schedulerId: undefined };
+      // 일정(캐시)은 이 기기 것, 나머지(숨김·보류·덱 등)는 합친 것
+      const { isNew, phase, due, reps, lapses, lastReviewAt, firstReviewAt, memory, schedulerId } = lc;
+      const next: Card = { ...c, isNew, phase, due, reps, lapses, lastReviewAt, firstReviewAt, memory, schedulerId };
+      return stableJson(next) === stableJson(lc) ? lc : next;
     });
-    await d.cards.bulkPut(cards);
-    await d.reviewLogs.bulkPut(m.reviewLogs);
-    await d.tombstones.bulkPut(m.tombstones);
+    await d.cards.bulkPut(cards.filter((c) => c !== localCards.get(c.id)));
+    await d.reviewLogs.bulkPut(m.reviewLogs.filter((l) => !localLogIds.has(l.id)));
+    const localTombs = new Set(local.tombstones.map((t) => `${t.id}|${t.at}`));
+    await d.tombstones.bulkPut(m.tombstones.filter((t) => !localTombs.has(`${t.id}|${t.at}`)));
     // 카드 구성 맞추기 (덱 설정에 따른 숨김, 빠진 카드 만들기)
     const deckById = new Map(m.decks.map((x) => [x.id, x]));
     const cardsByNote = new Map<Id, Card[]>();

@@ -162,10 +162,11 @@ describe('repo', () => {
     const remote = await repo.exportSyncData(d);
     // 다른 기기: ca의 캐시가 이상하게 저장돼 있고(새 기록 없음), cb는 한 번 복습했다
     const theirLog = { id: 'their-log', cardId: cb.id, kind: 'review' as const, rating: 3 as const, at: Date.now() + 60_000, tzOffsetMin: 0, scheduler: 'x' };
-    const cards = remote.cards.map((c) => (c.id === ca.id ? { ...c, due: 1, reps: 99, lastReviewAt: Date.now() + 120_000 } : c));
+    const cards = remote.cards.map((c) => (c.id === ca.id ? { ...c, due: 1, reps: 99, lastReviewAt: Date.now() + 120_000, suspended: true } : c));
     await repo.mergeIntoLocal({ ...remote, cards, reviewLogs: [...remote.reviewLogs, theirLog] }, d);
     const afterA = (await d.cards.get(ca.id))!;
     expect([afterA.due, afterA.reps, afterA.memory]).toEqual([before.due, before.reps, before.memory]);
+    expect(afterA.suspended).toBe(true); // 일정이 아닌 칸(보류 등)은 다른 기기에서 바꾼 것을 따른다
     expect((await d.cards.get(cb.id))!.reps).toBe(1);
   });
 
