@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 export function Segmented<T extends string | number>({
   options,
@@ -78,14 +78,28 @@ export function Stepper({
 
 function NumberInput({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (v: number) => void }) {
   const [draft, setDraft] = useState(String(value));
-  useEffect(() => setDraft(String(value)), [value]);
-  const commit = () => {
-    const n = parseInt(draft, 10);
-    if (Number.isNaN(n)) return setDraft(String(value));
-    const v = Math.min(max, Math.max(min, n));
-    setDraft(String(v));
-    if (v !== value) onChange(v);
+  const latest = useRef({ value, onChange, min, max });
+  latest.current = { value, onChange, min, max };
+  const pending = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const focused = useRef(false);
+  useEffect(() => {
+    if (!focused.current) setDraft(String(value));
+  }, [value]);
+  /** 입력한 숫자를 저장한다. 확인(엔터)을 누르지 않고 뒤로 가거나 화면을 옮겨도 저장되게, 입력하는 동안에도 잠깐 뒤에 저장한다 */
+  const save = (text: string) => {
+    clearTimeout(pending.current);
+    const n = parseInt(text, 10);
+    if (Number.isNaN(n)) return;
+    const { value: cur, onChange: change, min: lo, max: hi } = latest.current;
+    const v = Math.min(hi, Math.max(lo, n));
+    if (v !== cur) change(v);
   };
+  // 화면을 떠날 때 아직 저장하지 않은 숫자가 있으면 저장한다
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  useEffect(() => () => {
+    if (pending.current !== undefined) save(draftRef.current);
+  }, []);
   return (
     <input
       className="stepper-value stepper-input"
@@ -94,9 +108,26 @@ function NumberInput({ label, value, min, max, onChange }: { label: string; valu
       pattern="[0-9]*"
       aria-label={label}
       value={draft}
-      onFocus={(e) => e.currentTarget.select()}
-      onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))}
-      onBlur={commit}
+      onFocus={(e) => {
+        focused.current = true;
+        e.currentTarget.select();
+      }}
+      onChange={(e) => {
+        const text = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
+        setDraft(text);
+        clearTimeout(pending.current);
+        pending.current = setTimeout(() => {
+          pending.current = undefined;
+          save(text);
+        }, 400);
+      }}
+      onBlur={() => {
+        focused.current = false;
+        pending.current = undefined;
+        save(draft);
+        const n = parseInt(draft, 10);
+        setDraft(String(Number.isNaN(n) ? value : Math.min(max, Math.max(min, n))));
+      }}
       onKeyDown={(e) => {
         if (e.key === 'Enter') e.currentTarget.blur();
       }}

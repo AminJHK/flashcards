@@ -239,4 +239,10 @@ test('하루 새 카드: 숫자를 눌러 직접 입력할 수 있고, 범위 �
   await page.getByRole('textbox', { name: '하루 새 카드' }).fill('999');
   await page.getByRole('textbox', { name: '하루 새 카드' }).blur();
   await expect(page.getByRole('textbox', { name: '하루 새 카드' })).toHaveValue('200');
+  // 확인(엔터)을 누르지 않고 바로 뒤로 가도 저장되고, 오늘 화면의 새 카드 수가 바뀐다 (사용자 보고 2026-10-23)
+  await page.getByRole('textbox', { name: '하루 새 카드' }).fill('30');
+  await page.evaluate(() => {
+    location.hash = '#/';
+  });
+  await expect(page.getByText('새 30')).toBeVisible();
 });
