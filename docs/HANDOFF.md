@@ -40,6 +40,12 @@ npm run dev        # 개발 서버
 - Capacitor 앱이 배포된 웹앱을 불러온다 → 웹 배포가 곧 앱 업데이트. APK는 GitHub Actions(`android.yml`)가 서명 없이 만들어 릴리스 `android-latest`에 올리고, 서명해서 사용자에게 준다. **서명 키는 저장소에 없다** — 사용자가 자기 Drive에 보관 (ANDROID.md).
 - 앱 안 Google 로그인은 네이티브 방식(`NativeGooglePlugin`)이고, 사용자가 Google Cloud에 Android 클라이언트를 한 번 만들어야 한다. 서명 키는 사용자 Drive에 보관(키가 필요하면 사용자에게 받는다). 다음 단계: 복습 알림.
 
+## 2026-10-23 · 인도네시아어 어근 가족 복습 UI
+
+- 구어 카드 정답을 본 뒤에만 접힌 '같은 어근' 영역을 표시한다 (`src/ui/components/WordFamilyPanel.tsx`). 최대 4장 먼저 보여주고 펼쳐 나머지 단어와 예문을 확인할 수 있다. 관련 카드를 누르면 별도 상세 표시를 하되 현재 복습 화면에서 벗어나지 않는다.
+- `src/core/decks/wordFamily.ts`는 같은 덱에 설치된 `id-spoken` 노트의 명시된 root 또는 단어 기본형을 연결하고, denger/dengar 등의 소수 구어 철자만 보정한다. 접사를 임의로 잘라 추측하지 않는다.
+- 관련 단어는 읽기 전용이다. 기존 카드/노트/복습 로그/FSRS 일정/데이터베이스 스키마를 바꾸지 않는다. 새 카드나 강제 퀴즈도 생성하지 않는다. 유닛 테스트: `src/core/decks/wordFamily.test.ts`.
+
 ## 지금 있는 기능
 
 - **복습:** FSRS-6 (ts-fsrs 5.4.2). 2버튼/4버튼, 되돌리기, 짧은 간격 카드는 정해진 시간까지 기다림
