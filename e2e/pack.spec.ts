@@ -221,3 +221,22 @@ test('예전에 100장만 받은 인도네시아어 덱: 새 단어 1150개를 �
   await page.getByRole('button', { name: '이 덱 복습' }).click();
   await expect(page.getByText('kamu', { exact: true })).toBeVisible();
 });
+
+test('하루 새 카드: 숫자를 눌러 직접 입력할 수 있고, 범위 밖이면 맞춰지며, −/+도 그대로 된다', async ({ page }) => {
+  await page.goto('/#/decks/new');
+  await page.locator('.row', { hasText: '여행 스페인어' }).getByRole('button', { name: /추가하기$/ }).click();
+  await expect(page.getByLabel('덱 이름')).toHaveValue('여행 스페인어');
+  const input = page.getByRole('textbox', { name: '하루 새 카드' });
+  await expect(input).toHaveValue('15');
+  await input.fill('37');
+  await input.press('Enter');
+  await expect(input).toHaveValue('37');
+  await page.screenshot({ path: 'test-results/shots/18-new-per-day-typed.png' });
+  await page.reload();
+  await expect(page.getByRole('textbox', { name: '하루 새 카드' })).toHaveValue('37');
+  await page.getByRole('button', { name: '하루 새 카드 늘리기' }).click();
+  await expect(page.getByRole('textbox', { name: '하루 새 카드' })).toHaveValue('42');
+  await page.getByRole('textbox', { name: '하루 새 카드' }).fill('999');
+  await page.getByRole('textbox', { name: '하루 새 카드' }).blur();
+  await expect(page.getByRole('textbox', { name: '하루 새 카드' })).toHaveValue('200');
+});

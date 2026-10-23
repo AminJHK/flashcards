@@ -558,7 +558,7 @@ export function DeckDetail({ id }: { id: string }) {
           </Row>
         )}
         <Row title="하루 새 카드">
-          <Stepper label="하루 새 카드" value={s.newPerDay} min={0} max={200} step={s.newPerDay <= 10 ? 1 : 5} onChange={(v) => set({ newPerDay: v })} />
+          <Stepper label="하루 새 카드" typeable value={s.newPerDay} min={0} max={200} step={s.newPerDay <= 10 ? 1 : 5} onChange={(v) => set({ newPerDay: v })} />
         </Row>
         <Row col title="발음 자동 재생">
           <Segmented<AutoplaySide>

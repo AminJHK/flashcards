@@ -496,6 +496,21 @@ svg.icon {
   font-weight: 600;
 }
 
+.stepper-input {
+  width: 56px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+}
+
+.stepper-input:focus {
+  outline: 2px solid var(--accent);
+  border-color: transparent;
+}
+
 .select {
   height: 44px;
   border: none;

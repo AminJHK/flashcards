@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 export function Segmented<T extends string | number>({
   options,
@@ -45,6 +45,7 @@ export function Stepper({
   step = 1,
   format = (v) => String(v),
   label,
+  typeable,
 }: {
   value: number;
   onChange: (v: number) => void;
@@ -53,19 +54,53 @@ export function Stepper({
   step?: number;
   format?: (v: number) => string;
   label: string;
+  /** 가운데 숫자를 눌러 직접 입력할 수 있게 한다 (범위 밖이면 min~max로 맞춘다) */
+  typeable?: boolean;
 }) {
   return (
     <div className="stepper" role="group" aria-label={label}>
       <button type="button" aria-label={`${label} 줄이기`} onClick={() => onChange(Math.max(min, value - step))}>
         −
       </button>
-      <span className="stepper-value" aria-live="polite">
-        {format(value)}
-      </span>
+      {typeable ? (
+        <NumberInput label={label} value={value} min={min} max={max} onChange={onChange} />
+      ) : (
+        <span className="stepper-value" aria-live="polite">
+          {format(value)}
+        </span>
+      )}
       <button type="button" aria-label={`${label} 늘리기`} onClick={() => onChange(Math.min(max, value + step))}>
         +
       </button>
     </div>
+  );
+}
+
+function NumberInput({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (v: number) => void }) {
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => setDraft(String(value)), [value]);
+  const commit = () => {
+    const n = parseInt(draft, 10);
+    if (Number.isNaN(n)) return setDraft(String(value));
+    const v = Math.min(max, Math.max(min, n));
+    setDraft(String(v));
+    if (v !== value) onChange(v);
+  };
+  return (
+    <input
+      className="stepper-value stepper-input"
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      aria-label={label}
+      value={draft}
+      onFocus={(e) => e.currentTarget.select()}
+      onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur();
+      }}
+    />
   );
 }
 
