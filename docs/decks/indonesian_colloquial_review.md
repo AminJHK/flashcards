@@ -91,11 +91,12 @@
 
 ## 1001~1250장 (네 번째 묶음, 2026-10-23)
 
-- 사용자 요청: "단어 250개 더". 읽기 이야기에서 아는 단어 비율을 올리려는 목적이라 **빈도표 순위가 아니라 실생활 쓸모** 순으로 직접 골랐다 (자막 빈도표는 극중 어휘와 번역투가 많다).
-- 구성: 이어 주는 말·추측·감탄(padahal, makanya, jangan-jangan, alhamdulillah 등) → 일상 동사(ngecek, nginep, ngomongin 등 구어형) → 성격·감정(ribet, cuek, gengsi, deg-degan 등) → 음식·주방 → 몸·증상·간호 단어(gejala, suntik, sesak, meriang 등) → 집·전자기기·돈 → 장소·교통·직장·명절 → 감각·상태 형용사 (이 마지막 묶음이 가장 급하지 않다).
-- 이미 있는 단어(철자·표준형 모두)와 겹치지 않게 검사했다. 한국어 뜻이 겹치지 않는지, 예문·표현에 그 단어가 들어 있는지는 `packs.test.ts`가 검사한다.
-- 뒤에 이어 붙였으므로 이미 덱을 받은 사람에게는 "새 단어 250개 받기"로 들어온다.
-- 현지인 검증은 아직 안 했다. 특히 확인하면 좋은 곳: 은어·구어 동사형(ngomel, ngambek, nyasar, ngecek), 종교 표현(alhamdulillah, astagfirullah, amin)의 쓰임, 예문 전체.
+- 사용자 요청: "단어 250개 더" (목표: 읽기에서 아는 단어 95%).
+- 처음엔 빈도표를 보지 않고 쓸모만으로 골랐다가, 사용자 지적("순위표가 자주 나오는 순서 아니야?")으로 다시 골랐다: 같은 자막 빈도표에서 덱에 없는 단어를 보고, 격식형 변형(lakukan, katakan 등 이미 아는 단어의 다른 꼴)과 극중 어휘(senjata, raja 등)는 뺐다. 빈도가 낮은 생활 단어 56개(집안일·과일·양념 등)를 빼고 빈도 높은 일반 단어 56개(pria, wanita, kemudian, tubuh, udara, gagal, biaya, ujian 등)로 바꿨다.
+- 결과: 250개 중 126개가 빈도표 3000위 안, 217개가 10000위 안. 빈도표에 없는 10개는 자막엔 안 나오지만 생활 구어에서 아주 흔한 말(ribet, gengsi, pede, jajan, deg-degan, mudik, lebaran, angkot, puskesmas, meriang).
+- 순서는 빈도순 (구어형은 표준형의 순위, 빈도표에 없는 말은 맨 뒤). CSV의 Rank_Source에 순위를 적었다.
+- 이미 있는 단어(철자·표준형)와 겹치지 않게 검사했다. 예문·표현에 그 단어가 들어 있는지는 `packs.test.ts`가 검사한다.
+- 현지인 검증은 아직 안 했다. 특히 구어 동사형(ngomongin, nyamperin, ngambek, nyasar), 종교 표현(alhamdulillah, amin), 예문 전체.
 
 ## 다음 단계 (요청서 9번)
 

@@ -55,7 +55,7 @@ export function packAdditions(pack: Pack, notes: readonly Note[], everywhere: re
 }
 
 /**
- * 꾸러미에는 있는데 지금 어느 덱에도 없는 단어 (지운 단어). 이미 있는 말은 뺀다:
+ * 꾸러미에는 있는데 지금 어느 덱에도 없는 단어 (지운 단어). 받은 범위 안에서만 찾는다 (뒤에 새로 붙은 단어는 지운 단어가 아니다). 이미 있는 말은 뺀다:
  * 같은 카드 종류·같은 단어(duplicateKey)가 어느 덱에든 있으면 있는 것으로 보고,
  * 인도네시아어 구어 단어는 단어 철자만 같아도 있는 것으로 본다. skipWords의 말(다른 덱이 맡은 말)도 뺀다.
  */
@@ -63,7 +63,13 @@ export function packMissing(pack: Pack, allNotes: readonly Note[], skipWords: Re
   const keyOf = (typeId: string, fields: Record<string, string>) => `${typeId}|${getCardType(typeId).duplicateKey(fields)}`;
   const have = new Set(allNotes.map((n) => keyOf(n.typeId, n.fields)));
   const haveWords = new Set(allNotes.filter((n) => n.typeId === 'id-spoken').map((n) => (n.fields.word ?? '').trim().toLowerCase()));
-  return pack.notes.filter((pn) => {
+  // 받은 적 있는 범위(이 꾸러미에서 받은 단어 중 가장 뒤의 것까지)만 본다. 그 뒤는 아직 안 받은 새 단어(packAdditions)라서 지운 단어가 아니다
+  const received = new Set(allNotes.filter((n) => n.tags.includes(`pack:${pack.id}`)).map((n) => keyOf(n.typeId, n.fields)));
+  let last = -1;
+  pack.notes.forEach((pn, i) => {
+    if (received.has(keyOf(pn.typeId, pn.fields))) last = i;
+  });
+  return pack.notes.slice(0, last + 1).filter((pn) => {
     if (have.has(keyOf(pn.typeId, pn.fields))) return false;
     if (pn.typeId === 'id-spoken') {
       const w = (pn.fields.word ?? '').trim().toLowerCase();

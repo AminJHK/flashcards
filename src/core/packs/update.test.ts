@@ -90,5 +90,7 @@ describe('준비된 덱에 단어가 늘었을 때', () => {
     // 대소문자·철자만 같아도 있는 말
     expect(packMissing(idPack, [...notes, have('3', 'AJA')]).map((n) => n.fields.word)).toEqual(['doang', 'dong']);
     expect(packMissing(idPack, notes.concat([have('4', 'aja'), have('5', 'doang'), have('6', 'dong')]))).toEqual([]);
+    // 꾸러미 뒤에 새로 붙은 단어(아직 안 받음)는 지운 단어가 아니다: 받은 단어 중 가장 뒤의 것(doang)까지만 본다
+    expect(packMissing(idPack, [have('7', 'emang'), have('8', 'doang')]).map((n) => n.fields.word)).toEqual(['aja']);
   });
 });
