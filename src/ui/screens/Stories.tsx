@@ -14,7 +14,8 @@ import { useSettings } from '../hooks';
 import { go } from '../router';
 import { markStorySeen, startStoryJob, useStoryAudioJob, useStoryJob } from '../storyJob';
 import { setKnownWord, useLexicon } from '../useLexicon';
-import { isExtraWord } from '../../core/stories/vocab';
+import { isExtraWord, lookupForm } from '../../core/stories/vocab';
+import { BASIC_WORDS } from '../../core/stories/basicWords';
 import { isNativeApp } from '../../adapters/native/platform';
 
 const DIFF_OPTIONS = (Object.keys(DIFFICULTIES) as StoryDifficulty[]).map((k) => [k, `${DIFFICULTIES[k].label} ${Math.round(DIFFICULTIES[k].known * 100)}%`] as const);
@@ -62,7 +63,9 @@ export function Stories() {
   // 덱의 단어만 센다 (기본 단어·복습 없이 아는 단어는 빼고)
   const count = (s: string) => lex.entries.filter((e) => e.status === s && !isExtraWord(e)).length;
   const familiar = count('known') + count('learning');
-  const basic = lex.entries.filter((e) => e.kind === 'basic');
+  // 기본 단어 전부: 덱에서 이미 배우는 단어는 덱 기록을 따르므로 그 상태를 같이 보여 준다
+  const basic = BASIC_WORDS.map(([w, meaning]) => ({ w, meaning, e: lookupForm(lex, w) }));
+  const DECK_STATUS = { known: '덱 · 아는 단어', learning: '덱 · 배우는 중', deckNew: '덱 · 아직 안 배움' } as const;
   const byId = new Map(progress.map((p) => [p.storyId, p]));
   // 기기 음성으로 읽기를 켰으면 AI 음성 준비 상태는 보여 주지 않는다
   const audio = job.status === 'done' && audioJob.storyId === job.storyId && !settings.storyDeviceVoice ? audioJob : undefined;
@@ -84,7 +87,7 @@ export function Stories() {
           인도네시아어 · 아는 단어 {count('known')} · 배우는 중 {count('learning')} · 아직 안 배운 덱 단어 {count('deckNew')}
         </span>
         <button type="button" className="link-btn small" onClick={() => setMineOpen(true)}>
-          복습 없이 아는 단어 {basic.length + (settings.knownWords?.length ?? 0)}개 보기
+          기본 단어 {basic.length}개 · 내가 아는 단어 {settings.knownWords?.length ?? 0}개 보기
         </button>
       </div>
 
@@ -194,7 +197,7 @@ export function Stories() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <strong style={{ fontSize: 18 }}>복습 없이 아는 단어</strong>
               <span className="muted small" style={{ lineHeight: 1.6 }}>
-                배우지 않아도 이야기에서 아는 단어로 쳐요. 덱에서 이미 배우기 시작한 단어는 덱의 복습 기록을 따라서 여기엔 안 나와요.
+                복습 카드 없이 이야기에서 아는 단어로 치는 말이에요.
               </span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: '55vh', overflowY: 'auto' }}>
@@ -211,11 +214,15 @@ export function Stories() {
               ))}
               </div>
               <span className="section-label">기본 단어 {basic.length}개 (앱에 들어 있음)</span>
+              <span className="faint small" style={{ lineHeight: 1.6 }}>모두 아는 단어로 쳐요. 덱에서 이미 배우고 있는 단어는 덱의 복습 기록을 따라요.</span>
               <div className="group" style={{ padding: '0 16px' }}>
-                {basic.map((e) => (
-                  <div key={e.word} className="row">
-                    <span className="row-title" style={{ flex: 1 }}>{e.word}</span>
-                    <span className="muted small">{e.meaning}</span>
+                {basic.map(({ w, meaning, e }) => (
+                  <div key={w} className="row">
+                    <span className="row-text" style={{ flex: 1 }}>
+                      <span className="row-title">{w}</span>
+                      <span className="row-desc">{meaning}</span>
+                    </span>
+                    <span className="faint small">{!e || isExtraWord(e) ? '복습 없이 앎' : DECK_STATUS[e.status]}</span>
                   </div>
                 ))}
               </div>
