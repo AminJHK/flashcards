@@ -7,6 +7,7 @@ import { assumeAnswered, buildQueue, hasUnsavedAnswers, stateOf } from '../../co
 import { recordReview, undoReview } from '../../adapters/storage/repo';
 import { play, stopAll } from '../../adapters/speech/speech';
 import { CardFace } from '../components/CardFace';
+import { WordFamilyPanel } from '../components/WordFamilyPanel';
 import { Icon } from '../components/Icon';
 import { VoiceMeter } from '../components/VoiceMeter';
 import { useCards, useDecks, useNotes, useNow, useScheduler, useSettings } from '../hooks';
@@ -429,6 +430,7 @@ export function Review({ deckId }: { deckId?: string }) {
           {cardInner}
         </button>
       )}
+      {flipped && note.typeId === 'id-spoken' && <WordFamilyPanel key={note.id} current={note} notes={notes} cards={cards} />}
       {!flipped && !produce && !hasControls && <div className="flip-hint">아무 곳이나 탭해서 정답 보기</div>}
       <div className="answer-bar">
         {!flipped ? (

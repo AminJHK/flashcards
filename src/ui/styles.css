@@ -2931,3 +2931,72 @@ textarea.input-sentence {
   text-align: left;
   cursor: pointer;
 }
+
+
+/* 인도네시아어 구어 정답 뒤의 어근 가족 (복습·FSRS 상태는 바꾸지 않음) */
+.word-family {
+  flex: 0 0 auto;
+  margin: 0 16px 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  max-height: min(38dvh, 290px);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.word-family-toggle {
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  width: 100%;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.word-family-toggle[aria-expanded='true'] > .icon { transform: rotate(180deg); }
+.word-family-count { color: var(--text3); font-size: 12px; margin-left: 3px; }
+.word-family-content { padding: 0 10px 10px; }
+.word-family-item {
+  border: 0;
+  border-top: 1px solid var(--line);
+  width: 100%;
+  padding: 10px 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  text-align: left;
+  background: transparent;
+}
+.word-family-item[aria-expanded='true'] { color: var(--accent); }
+.word-family-name { font: 600 15px var(--font-latin); min-width: 0; }
+.word-family-meaning { color: var(--text2); font-size: 13px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.word-family-status { color: var(--text3); font-size: 11px; flex-shrink: 0; }
+.word-family-detail {
+  margin-top: 8px;
+  background: var(--surface2);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.word-family-detail > strong { font: 600 16px var(--font-latin); }
+.word-family-muted { color: var(--text2); font-size: 12px; }
+.word-family-more {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  padding: 10px;
+  text-align: center;
+  font-size: 13px;
+}
+.word-family-hint { color: var(--text3); margin: 8px 4px 0; font-size: 11px; line-height: 1.45; }
