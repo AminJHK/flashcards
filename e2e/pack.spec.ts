@@ -292,3 +292,40 @@ test('하루 새 카드: 숫자를 눌러 직접 입력할 수 있고, 범위 �
   });
   await expect(page.getByText('새 30')).toBeVisible();
 });
+
+test('비슷한 말 묶음: 정답 쪽에 표가 나오고, 대표 구어는 "말할 때", 글말은 → 대표, 지금 단어는 굵게', async ({ page }) => {
+  await page.goto('/#/decks/new');
+  await page.locator('.row', { hasText: '인도네시아어 구어체' }).getByRole('button', { name: /추가하기$/ }).click();
+  await expect(page.getByLabel('덱 이름')).toHaveValue('인도네시아어 구어체');
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const open = indexedDB.open('flashcards');
+        open.onsuccess = () => {
+          const tx = open.result.transaction(['notes', 'cards'], 'readwrite');
+          tx.objectStore('notes').getAll().onsuccess = (e) => {
+            const keep = new Set(((e.target as IDBRequest).result as { id: string; fields: { word: string } }[]).filter((n) => n.fields.word === 'sehingga').map((n) => n.id));
+            const cards = tx.objectStore('cards');
+            cards.getAll().onsuccess = (ev) => {
+              for (const c of (ev.target as IDBRequest).result as { noteId: string; suspended: boolean }[]) if (!keep.has(c.noteId)) cards.put({ ...c, suspended: true });
+            };
+          };
+          tx.oncomplete = () => resolve();
+        };
+      }),
+  );
+  await page.reload();
+  await page.getByRole('button', { name: '이 덱 복습' }).click();
+  await expect(page.getByText('sehingga', { exact: true })).toBeVisible();
+  await expect(page.locator('.cf-similar')).toHaveCount(0); // 앞면에는 없다
+  await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
+  const table = page.locator('.cf-similar');
+  await expect(table).toContainText('비슷한 말 · 그래서 (결과)');
+  await expect(table.locator('.cf-sim-word.main')).toHaveText('jadi');
+  await expect(table.locator('.cf-sim-row.current .cf-sim-word')).toHaveText('sehingga');
+  await expect(table.locator('.cf-sim-row.current')).toContainText('→ jadi');
+  await table.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'test-results/shots/23-similar-words.png' });
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.screenshot({ path: 'test-results/shots/23b-similar-words-dark.png' });
+});

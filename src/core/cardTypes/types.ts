@@ -57,6 +57,8 @@ export type Block =
   | { kind: 'phrases'; items: { text: string; ko: string }[]; lang: Lang; highlight?: string; label?: string }
   /** 작은 꼬리표 (표준형·어근·사용역 같은 정보) */
   | { kind: 'tags'; items: string[] }
+  /** 비슷한 말 표 (synonymGroups.ts): 대표 구어는 강조, 글말은 → 대표 */
+  | { kind: 'similar'; title: string; current: string; items: { word: string; diff: string; role: 'main' | 'spoken' | 'written' }[]; lang: Lang }
   | { kind: 'prompt'; text: string }
   | { kind: 'divider' }
   | { kind: 'memo'; text: string }

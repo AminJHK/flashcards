@@ -76,4 +76,9 @@ export const SPOKEN_OF: Readonly<Record<string, string>> = {
   wawancara: 'interview',
   kelompok: 'grup',
   lelucon: 'becandaan',
+  // 비슷한 말 묶음(synonymGroups.ts)의 글말 → 그 묶음의 구어
+  maka: 'jadi',
+  sebab: 'soalnya',
+  walau: 'walaupun',
+  barangkali: 'kayaknya',
 };

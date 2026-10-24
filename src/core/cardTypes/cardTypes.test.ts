@@ -97,7 +97,9 @@ describe('카드 종류', () => {
     expect(t.view('forward', { fields: { ...f, example: '' }, deck: on }).front.map((b) => b.kind)).toEqual(['word']);
     // 뒷면: 단어 · 뜻 · 꼬리표(표준형·어근·사용역) → 예문·표현 목록(예문이 맨 위, 배우는 말 강조) · 메모
     const back = t.view('forward', { fields: { ...f, root: 'pokok', register: '구어', note: '말 앞에 온다' }, deck: d }).back;
-    expect(back.map((b) => b.kind)).toEqual(['word', 'meaning', 'tags', 'phrases', 'memo']);
+    // pokoknya는 비슷한 말 묶음(아무튼·요점은)이 있어서 표가 붙는다
+    expect(back.map((b) => b.kind)).toEqual(['word', 'meaning', 'tags', 'phrases', 'similar', 'memo']);
+    expect(back[4]).toMatchObject({ kind: 'similar', current: 'pokoknya', title: '아무튼 · 요점은' });
     expect(back[2]).toEqual({ kind: 'tags', items: ['어근 pokok', '구어'] });
     expect(back[3]).toMatchObject({ highlight: 'pokoknya', label: '예문·표현', items: [{ text: 'Pokoknya aku ikut!', ko: '아무튼 나도 갈 거야!' }] });
   });

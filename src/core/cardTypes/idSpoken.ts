@@ -2,6 +2,7 @@ import type { Block, CardType } from './types';
 import { ttsText } from './types';
 import { SPOKEN_OF } from '../stories/formalForms';
 import { isConnector } from '../decks/connectors';
+import { synonymGroupOf } from '../decks/synonymGroups';
 
 /**
  * 인도네시아어 구어 단어. 현지인이 말하는 형태(구어형)를 보고 뜻을 떠올린다 (듣기·알아듣기 중심).
@@ -67,12 +68,14 @@ export const idSpoken: CardType = {
     ].filter(Boolean);
     const tags: Block[] = forms.length ? [{ kind: 'tags', items: forms }] : [];
     const memo: Block[] = t('note') ? [{ kind: 'memo', text: t('note') }] : [];
+    const group = synonymGroupOf(t('word'));
+    const similar: Block[] = group ? [{ kind: 'similar', title: group.title, current: w, items: group.members, lang: LANG }] : [];
     const en: Block[] = t('en') ? [{ kind: 'gloss', text: t('en'), lang: 'en-US' }] : [];
     // 예문은 따로 큰 상자로 두지 않고 "예문·표현" 목록 맨 위에 같은 모양으로 (사용자 요청 2026-10-24: 화면이 지저분하다)
     const items = [...(t('example') ? [{ text: t('example'), ko: t('exampleKo') }] : []), ...parsePhrases(t('phrases'))];
     const phrases: Block[] = items.length ? [{ kind: 'phrases', items, lang: LANG, highlight: t('word'), label: t('example') ? '예문·표현' : '자주 쓰는 표현' }] : [];
     // 뒷면: 단어 · 뜻 · 영어 뜻 · 꼬리표(위, 가운데) → 예문 · 자주 쓰는 표현 · 메모(아래, 왼쪽)
-    const back: Block[] = [{ kind: 'word', text: t('word'), size: 'back', lang: LANG, ...(pair ? { pair } : {}) }, { kind: 'meaning', text: t('meaning'), size: 'back' }, ...en, ...tags, ...phrases, ...memo];
+    const back: Block[] = [{ kind: 'word', text: t('word'), size: 'back', lang: LANG, ...(pair ? { pair } : {}) }, { kind: 'meaning', text: t('meaning'), size: 'back' }, ...en, ...tags, ...phrases, ...similar, ...memo];
     if (templateId === 'reverse') {
       return {
         front: [{ kind: 'meaning', text: t('meaning'), size: 'front' }],

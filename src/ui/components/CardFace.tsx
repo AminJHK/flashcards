@@ -14,7 +14,7 @@ type SentenceBlock = Extract<Block, { kind: 'sentence' }>;
  */
 export function CardFace({ blocks, side = 'front', onSpeak }: { blocks: readonly Block[]; side?: 'front' | 'back'; onSpeak?: () => void }) {
   const content = blocks.filter((b) => b.kind !== 'divider');
-  const split = content.findIndex((b) => b.kind === 'sentence' || b.kind === 'memo' || b.kind === 'phrases');
+  const split = content.findIndex((b) => b.kind === 'sentence' || b.kind === 'memo' || b.kind === 'phrases' || b.kind === 'similar');
   const zoned = side === 'back' && split > 0;
   if (!zoned) {
     return <span className={`card-sheet ${side}`}>{content.map((b, i) => renderBlock(b, i, onSpeak))}</span>;
@@ -195,6 +195,27 @@ function renderBlock(b: Block, i: number, onSpeak?: () => void): ReactNode {
           ))}
         </span>
       );
+    case 'similar': {
+      // 비슷한 말 표: 대표 구어는 강조색 + "말할 때", 글말은 회색 + "→ 대표", 지금 카드의 단어는 굵게
+      const main = b.items.find((x) => x.role === 'main')?.word;
+      return (
+        <span key={i} className="cf-similar">
+          <span className="cf-label">비슷한 말 · {b.title}</span>
+          {b.items.map((x) => (
+            <span key={x.word} className={`cf-sim-row${x.word === b.current ? ' current' : ''}`}>
+              <span lang={b.lang} className={`cf-sim-word ${x.role}`}>
+                {x.word}
+              </span>
+              <span className="cf-sim-diff">
+                {x.diff}
+                {x.role === 'main' && <span className="cf-sim-tag">말할 때</span>}
+                {x.role === 'written' && main && <span className="cf-sim-tag">→ {main}</span>}
+              </span>
+            </span>
+          ))}
+        </span>
+      );
+    }
     case 'tags':
       return (
         <span key={i} className="cf-tags">
