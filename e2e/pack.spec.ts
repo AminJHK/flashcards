@@ -329,3 +329,39 @@ test('비슷한 말 묶음: 정답 쪽에 표가 나오고, 대표 구어는 "�
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.screenshot({ path: 'test-results/shots/23b-similar-words-dark.png' });
 });
+
+test('뜻이 거의 같은 구어: kelar 카드는 대표 selesai를 강조색으로 옆에, selesai 카드는 아래에 "같은 말 kelar"', async ({ page }) => {
+  await page.goto('/#/decks/new');
+  await page.locator('.row', { hasText: '인도네시아어 구어체' }).getByRole('button', { name: /추가하기$/ }).click();
+  await expect(page.getByLabel('덱 이름')).toHaveValue('인도네시아어 구어체');
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const open = indexedDB.open('flashcards');
+        open.onsuccess = () => {
+          const tx = open.result.transaction(['notes', 'cards'], 'readwrite');
+          tx.objectStore('notes').getAll().onsuccess = (e) => {
+            const keep = new Set(((e.target as IDBRequest).result as { id: string; fields: { word: string } }[]).filter((n) => (n.fields.word === 'kelar' || n.fields.word === 'selesai')).map((n) => n.id));
+            const cards = tx.objectStore('cards');
+            cards.getAll().onsuccess = (ev) => {
+              for (const c of (ev.target as IDBRequest).result as { noteId: string; suspended: boolean }[]) if (!keep.has(c.noteId)) cards.put({ ...c, suspended: true });
+            };
+          };
+          tx.oncomplete = () => resolve();
+        };
+      }),
+  );
+  await page.reload();
+  await page.getByRole('button', { name: '이 덱 복습' }).click();
+  // selesai가 덱에서 먼저 나온다
+  await expect(page.getByText('selesai', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
+  await expect(page.locator('.b-word-std')).toHaveText('같은 말 kelar');
+  await page.screenshot({ path: 'test-results/shots/24-same-main.png' });
+  await page.getByRole('button', { name: /알았음/ }).click();
+  await expect(page.getByText('kelar', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
+  await expect(page.locator('.b-word-alt')).toHaveText('selesai');
+  await expect(page.locator('.b-word-mate-label')).toHaveText('같은 말 · 말할 때');
+  await page.screenshot({ path: 'test-results/shots/24b-same-other.png' });
+});

@@ -137,6 +137,14 @@ describe('이야기 계획과 요청문', () => {
     expect(p).toContain(plan.seed!.en);
   });
 
+  it('뜻이 거의 같은 구어(selesai = kelar)는 둘 다 알면 골고루 섞어 쓰라고 한다', () => {
+    const items = [...Array.from({ length: 40 }, (_, i) => word(`kata${i}`)), word('selesai'), word('kelar'), word('tanya')];
+    const p = userPrompt(planStory(lexOf(items), 'normal'), 'food');
+    expect(p).toContain('SAME-MEANING WORDS: selesai = kelar');
+    expect(p).not.toContain('tanya = nanya'); // nanya는 모르는 말
+    expect(p).toContain('Mix them');
+  });
+
   it('표준어·글말 단어(memberikan, jika …)는 따로 적어서, 대화에서는 구어형을 쓰라고 한다', () => {
     const items = [...Array.from({ length: 40 }, (_, i) => word(`kata${i}`)), word('memberikan'), word('jika'), word('kasih')];
     const lex = lexOf(items);

@@ -128,16 +128,23 @@ function renderBlock(b: Block, i: number, onSpeak?: () => void): ReactNode {
         </span>
       );
     case 'word':
-      // 구어가 주인공: 구어 카드면 표준어를 아래에 작은 회색 한 줄로
-      if (b.pair?.label === '표준어')
+      // 구어가 주인공: 구어 카드면 표준어(·같은 뜻 말)를 아래에 작은 회색 한 줄로
+      if (b.pair?.label === '표준어' || (!b.pair && b.same))
         return (
           <span key={i} className="b-word-std-wrap">
             <span lang={b.lang} className={`b-word ${b.size}`}>
               {b.text}
             </span>
-            <span className="b-word-std">
-              표준어 <span lang={b.lang}>{b.pair.text}</span>
-            </span>
+            {b.same && (
+              <span className="b-word-std">
+                같은 말 <span lang={b.lang}>{b.same}</span>
+              </span>
+            )}
+            {b.pair && (
+              <span className="b-word-std">
+                표준어 <span lang={b.lang}>{b.pair.text}</span>
+              </span>
+            )}
           </span>
         );
       // 표준어 카드면 이 단어는 회색, 구어 짝을 같은 크기 강조색으로
