@@ -159,6 +159,10 @@ test('인도네시아어 구어체 덱: 말하는 형태를 보고, 뒷면에서
   await page.screenshot({ path: 'test-results/shots/22-indonesian-back.png' });
   await page.getByRole('button', { name: /알았음/ }).click();
   await expect(page.getByText('kamu', { exact: true })).toBeVisible();
+  // kamu는 표준어 짝이 여럿(kau·anda)이라 붙이지 않는다
+  await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
+  await expect(page.locator('.b-word-pair')).toHaveCount(0);
+  await page.getByRole('button', { name: /알았음/ }).click();
   // 표준형·어근이 있는 동사: 단어 목록에서 찾아 확인
   await page.getByRole('button', { name: '복습 닫기' }).click();
   await expect(page.getByRole('heading', { name: '오늘' })).toBeVisible(); // 복습을 닫으면 메인 화면
@@ -169,6 +173,41 @@ test('인도네시아어 구어체 덱: 말하는 형태를 보고, 뒷면에서
   await page.getByRole('button', { name: /nyari/ }).click();
   await expect(page.getByLabel('표준형')).toHaveValue('mencari');
   await expect(page.getByLabel('어근')).toHaveValue('cari');
+});
+
+test('인도네시아어 구어체: 같은 뜻의 짝(pria · cowok)은 정답 쪽에만 같은 크기로 나란히, 표준어 꼬리표', async ({ page }) => {
+  await page.goto('/#/decks/new');
+  await page.locator('.row', { hasText: '인도네시아어 구어체' }).getByRole('button', { name: /추가하기$/ }).click();
+  await expect(page.getByLabel('덱 이름')).toHaveValue('인도네시아어 구어체');
+  // pria 카드를 바로 복습하도록, pria만 남기고 다른 새 카드는 보류한다
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const open = indexedDB.open('flashcards');
+        open.onsuccess = () => {
+          const tx = open.result.transaction(['notes', 'cards'], 'readwrite');
+          tx.objectStore('notes').getAll().onsuccess = (e) => {
+            const pria = ((e.target as IDBRequest).result as { id: string; fields: { word: string } }[]).find((n) => n.fields.word === 'pria')!;
+            const cards = tx.objectStore('cards');
+            cards.getAll().onsuccess = (ev) => {
+              for (const c of (ev.target as IDBRequest).result as { noteId: string; suspended: boolean }[]) if (c.noteId !== pria.id) cards.put({ ...c, suspended: true });
+            };
+          };
+          tx.oncomplete = () => resolve();
+        };
+      }),
+  );
+  await page.reload();
+  await page.getByRole('button', { name: '이 덱 복습' }).click();
+  await expect(page.getByText('pria', { exact: true })).toBeVisible();
+  await expect(page.locator('.b-word-alt')).toHaveCount(0); // 앞면에는 없다
+  await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
+  await expect(page.locator('.b-word-alt')).toHaveText('cowok');
+  await expect(page.locator('.b-word-mate-label')).toHaveText('구어');
+  await expect(page.locator('.cf-tags')).toContainText('표준어');
+  await page.screenshot({ path: 'test-results/shots/22b-indonesian-pair.png' });
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.screenshot({ path: 'test-results/shots/22c-indonesian-pair-dark.png' });
 });
 
 test('예전에 100장만 받은 인도네시아어 덱: 새 단어 1400개를 받으면 뒤에 이어서 들어가고, 복습 기록은 그대로다', async ({ page }) => {

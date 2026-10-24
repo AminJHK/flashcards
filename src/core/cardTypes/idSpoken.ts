@@ -1,5 +1,6 @@
 import type { Block, CardType } from './types';
 import { ttsText } from './types';
+import { SPOKEN_OF } from '../stories/formalForms';
 
 /**
  * 인도네시아어 구어 단어. 현지인이 말하는 형태(구어형)를 보고 뜻을 떠올린다 (듣기·알아듣기 중심).
@@ -46,10 +47,18 @@ export const idSpoken: CardType = {
     const t = (k: string) => (f[k] ?? '').trim();
     const sayWord = { text: ttsText('word', ctx), lang: LANG };
     const sayExample = t('example') ? [{ text: t('example'), lang: LANG }] : [];
+    // 같은 뜻의 짝 (formalForms.ts): 표준어 단어면 구어형, 구어 단어면 표준어 (정답 쪽에만, 앞면에 보이면 답이 새어 나간다)
+    const w = t('word').toLowerCase();
+    const spoken = SPOKEN_OF[w];
+    const written = Object.keys(SPOKEN_OF).filter((k) => SPOKEN_OF[k] === w);
+    // 구어 단어 하나에 표준어가 여럿이면(kamu ← kau·anda, kalo ← jika·bila) 뜻이 조금씩 달라서 붙이지 않는다
+    const pair = spoken ? { text: spoken, label: '구어' } : written.length === 1 ? { text: written[0]!, label: '표준어' } : undefined;
+    // 사용역 꼬리표: 구어형 짝이 있는 단어는 표준어라고 보여 준다 (일반 → 표준어, 격식 → 표준어 · 격식)
+    const register = spoken ? (t('register') && t('register') !== '일반' ? `표준어 · ${t('register')}` : '표준어') : t('register');
     const forms = [
-      t('standard') && t('standard') !== t('word') ? `표준형 ${t('standard')}` : '',
+      t('standard') && t('standard') !== t('word') && !written.includes(t('standard').toLowerCase()) ? `표준형 ${t('standard')}` : '',
       t('root') && t('root') !== t('word') ? `어근 ${t('root')}` : '',
-      t('register'),
+      register,
     ].filter(Boolean);
     const tags: Block[] = forms.length ? [{ kind: 'tags', items: forms }] : [];
     const memo: Block[] = t('note') ? [{ kind: 'memo', text: t('note') }] : [];
@@ -61,7 +70,7 @@ export const idSpoken: CardType = {
       ...(t('exampleKo') ? [{ kind: 'sentence' as const, text: t('exampleKo'), lang: 'ko-KR', emphasis: 'sub' as const }] : []),
     ];
     // 뒷면: 단어 · 뜻 · 영어 뜻 · 꼬리표(위, 가운데) → 예문 · 자주 쓰는 표현 · 메모(아래, 왼쪽)
-    const back: Block[] = [{ kind: 'word', text: t('word'), size: 'back', lang: LANG }, { kind: 'meaning', text: t('meaning'), size: 'back' }, ...en, ...tags, ...example, ...phrases, ...memo];
+    const back: Block[] = [{ kind: 'word', text: t('word'), size: 'back', lang: LANG, ...(pair ? { pair } : {}) }, { kind: 'meaning', text: t('meaning'), size: 'back' }, ...en, ...tags, ...example, ...phrases, ...memo];
     if (templateId === 'reverse') {
       return {
         front: [{ kind: 'meaning', text: t('meaning'), size: 'front' }],

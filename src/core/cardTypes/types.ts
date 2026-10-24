@@ -45,7 +45,8 @@ export type BlockSize = 'front' | 'back';
 export type Block =
   | { kind: 'hanzi'; text: string; size: BlockSize }
   | { kind: 'pinyin'; text: string }
-  | { kind: 'word'; text: string; size: BlockSize; lang: Lang }
+  /** pair: 같은 뜻의 짝 단어 (구어형↔표준어), 같은 크기로 옆에 다른 색으로 보여 준다 */
+  | { kind: 'word'; text: string; size: BlockSize; lang: Lang; pair?: { text: string; label: string } }
   | { kind: 'meaning'; text: string; size: BlockSize }
   /** highlight: 문장 안에서 강조할 말 (배우는 단어). 화면이 찾아서 색으로 표시한다 */
   | { kind: 'sentence'; text: string; lang: Lang; emphasis: 'main' | 'sub'; highlight?: string }

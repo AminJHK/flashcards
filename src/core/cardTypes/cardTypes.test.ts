@@ -116,6 +116,21 @@ describe('카드 종류', () => {
     expect(t.view('forward', { fields: { ...f, en: '', phrases: '' }, deck: d }).back.map((b) => b.kind)).toEqual(['word', 'meaning', 'sentence', 'sentence', 'memo']);
   });
 
+  it('인도네시아어 구어: 같은 뜻의 짝(표준어 ↔ 구어)은 정답 쪽 단어 옆에만 나오고, 표준어 단어의 사용역은 "표준어"', () => {
+    const t = getCardType('id-spoken');
+    const pria = t.view('forward', { fields: { word: 'pria', meaning: '남자', standard: 'pria', register: '일반' }, deck: d });
+    expect(pria.front).toEqual([{ kind: 'word', text: 'pria', size: 'front', lang: 'id-ID' }]);
+    expect(pria.back[0]).toEqual({ kind: 'word', text: 'pria', size: 'back', lang: 'id-ID', pair: { text: 'cowok', label: '구어' } });
+    expect(pria.back.find((b) => b.kind === 'tags')).toEqual({ kind: 'tags', items: ['표준어'] });
+    const namun = t.view('forward', { fields: { word: 'namun', meaning: '그러나', register: '격식' }, deck: d });
+    expect(namun.back.find((b) => b.kind === 'tags')).toEqual({ kind: 'tags', items: ['표준어 · 격식'] });
+    // 구어 단어: 표준어 짝, 같은 표준형 꼬리표는 겹치지 않게 뺀다
+    const dengerin = t.view('forward', { fields: { word: 'dengerin', meaning: '귀 기울여 듣다', standard: 'mendengarkan', root: 'dengar', register: '구어' }, deck: d });
+    expect(dengerin.back[0]).toMatchObject({ pair: { text: 'mendengarkan', label: '표준어' } });
+    expect(dengerin.back.find((b) => b.kind === 'tags')).toEqual({ kind: 'tags', items: ['어근 dengar', '구어'] });
+    expect(t.view('forward', { fields: { word: 'makan', meaning: '먹다' }, deck: d }).back[0]).not.toHaveProperty('pair');
+  });
+
   it('어조 말 자리 계산: 문두·문중·문미, 쉼표·문장부호는 단어에 안 센다', async () => {
     const { particlePlace } = await import('./idParticle');
     expect(particlePlace('Lho, kamu belum pulang?', 'lho')).toBe('문두');

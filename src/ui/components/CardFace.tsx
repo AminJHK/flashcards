@@ -128,6 +128,23 @@ function renderBlock(b: Block, i: number, onSpeak?: () => void): ReactNode {
         </span>
       );
     case 'word':
+      if (b.pair)
+        return (
+          <span key={i} className="b-word-pair">
+            <span lang={b.lang} className={`b-word ${b.size}`}>
+              {b.text}
+            </span>
+            <span className={`b-word ${b.size} b-word-dot`} aria-hidden="true">
+              ·
+            </span>
+            <span className="b-word-mate">
+              <span lang={b.lang} className={`b-word ${b.size} b-word-alt`}>
+                {b.pair.text}
+              </span>
+              <span className="b-word-mate-label">{b.pair.label}</span>
+            </span>
+          </span>
+        );
       return (
         <span key={i} lang={b.lang} className={`b-word ${b.size}`}>
           {b.text}
