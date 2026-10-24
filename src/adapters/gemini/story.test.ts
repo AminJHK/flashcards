@@ -268,6 +268,20 @@ describe('조금씩 받다가 멈출 때', () => {
     expect(s.blocks.filter((b) => b.kind === 'line')).toHaveLength(13);
   });
 
+  it('끊긴 답이 너무 짧으면(7줄에서 끊김) 그대로 쓰지 않고 처음부터 다시 받는다', async () => {
+    const text = formatStoryText(story([]));
+    const lines = text.split('\n');
+    const seventh = lines.findIndex((l, i) => l.startsWith('LINE:') && lines.slice(0, i + 1).filter((x) => x.startsWith('LINE:')).length === 7);
+    const cut = lines.slice(0, seventh + 1).join('\n') + '\nLINE: a | aku';
+    const f = vi.fn().mockResolvedValueOnce(sseStream([cut], true)).mockResolvedValueOnce(sseStream([text], true));
+    vi.stubGlobal('fetch', f);
+    const steps: string[] = [];
+    const s = await createStory({ lex, plan: planStory(lex, 'normal'), topicKey: 'free', key: 'K', sleep: async () => {}, onStep: (x) => steps.push(`${x.attempt}:${x.stage}`) });
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(steps).toContain('2:retrying');
+    expect(s.blocks.filter((b) => b.kind === 'line')).toHaveLength(13);
+  });
+
   it('생각에 토큰을 다 써서 몇 줄에서 끊기면, 끝난 이유와 생각 토큰 수를 오류에 담는다', async () => {
     const head = formatStoryText(story([])).slice(0, 400);
     const enc = new TextEncoder();

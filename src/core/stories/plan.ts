@@ -139,7 +139,8 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     'Dialogue uses spoken forms consistently (nggak, udah, emang, gimana, ketemu rather than tidak, sudah, memang, bagaimana, ditemukan); narration may be a little more neutral. End with a small payoff (a joke, a reaction or a punchline), not a flat summary sentence.',
     'First plan, then write: before TITLE, write 3 to 5 PLAN lines in English (the learner does not see them): the characters and what each one wants and knows; where and when it happens; cause → main event → result; how the twist is set up. Then write the story so it follows the PLAN exactly.',
     plan.seed ? `Situation (start from this idea and adapt it to the topic; do not build the plot around finding objects on the floor): ${plan.seed.en}.` : '',
-    'Length: 120 to 180 Indonesian words in total across narration and dialogue, in 10 to 18 short lines. Use narration sparingly.',
+    'Length: 220 to 320 Indonesian words in total across narration and dialogue, in 18 to 28 short lines (the learner asked for longer stories). Use narration sparingly. Give the story room: a setup, a problem that grows, a turn, and a clear ending with a payoff.',
+    'Speakers: every dialogue line belongs to the person who really says it. If anyone else speaks (a mother, a waiter, a nurse …), add them as a CHARACTER (up to 4) instead of giving their words to another character.',
     '',
     'VOCABULARY RULES (very important, they are checked automatically by counting every word occurrence):',
     `- Build the story from the KNOWN WORDS below. At least ${Math.round(plan.knownTarget * 100)}% of all word occurrences must be KNOWN WORDS (character names do not count).`,
@@ -168,7 +169,7 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     `NEW WORDS: ${listed(plan.newWords).join(', ') || '(none)'}`,
     plan.fallback && plan.deckPool.length ? `DECK WORDS (only when necessary): ${plan.deckPool.map(form).join(', ')}` : '',
     '',
-    'QUESTIONS: 4 to 6 questions in Korean, placed right after the part of the story they ask about. Use at least three types:',
+    'QUESTIONS: 5 to 7 questions in Korean, placed right after the part of the story they ask about. Use at least three types:',
     '- CHOICE: a comprehension question with exactly 3 options and one clearly correct answer.',
     '- TF: a Korean statement about the story, true or false.',
     '- GAP: copy one story line exactly, replace one word or short phrase with ___, and give 3 Indonesian options (the removed text is correct).',
@@ -292,7 +293,7 @@ export function parseDraft(raw: unknown): { draft?: StoryDraft; problems: string
   if (lines < 6) blocking.push(`줄이 너무 적어요 (${lines}줄)`);
   if (questions < 3) blocking.push(`쓸 수 있는 질문이 너무 적어요 (${questions}개)`);
   if (chars.length < 2) blocking.push('등장인물이 2명보다 적어요');
-  if (words < 80 || words > 260) blocking.push(`길이가 맞지 않아요 (${words}단어, 120~180단어 필요)`);
+  if (words < 100 || words > 450) blocking.push(`길이가 맞지 않아요 (${words}단어, 220~320단어 필요)`);
   problems.push(...blocking);
   const glossary: GlossEntry[] = (Array.isArray(r.glossary) ? r.glossary : [])
     .map((g) => {

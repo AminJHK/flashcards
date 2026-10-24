@@ -18,7 +18,7 @@ export const NEAR_TARGET = 0.03;
 export type StoryStep = { attempt: number; stage: 'writing' | 'checking' | 'revising' | 'retrying' | 'waiting'; pct?: number };
 
 /** 이야기 글의 보통 길이 (글자 수). 진행률을 어림하는 데만 쓴다 */
-export const EXPECTED_CHARS = 5000;
+export const EXPECTED_CHARS = 7500;
 /** 이보다 길면 같은 말을 반복하는 등 고장 난 답으로 보고 끊는다 (보통은 4~7천 자) */
 export const MAX_CHARS = 20_000;
 
@@ -221,8 +221,8 @@ export async function createStory(opts: {
       if (ok) break;
       // 목표에 아주 가까우면(NEAR_TARGET 안) 다시 쓰지 않고 그대로 쓴다 (경고만 보여 준다)
       if (parsed.blocking.length === 0 && meetsTarget(coverage, plan.knownTarget - NEAR_TARGET, plan.fallback)) break;
-      if (salvaged) {
-        // 끊긴 답을 살려 쓴 것: 다시 고쳐 달라고 해도 또 끊기기 쉬우니 여기서 멈춘다
+      if (salvaged && parsed.blocking.length === 0) {
+        // 끊긴 답을 살려 쓴 것: 쓸 만하면 여기서 멈춘다 (다시 고쳐 달라고 해도 또 끊기기 쉽다)
         break;
       }
       // 고쳐 쓰기는 한 번만: 그래도 모자라면 가장 나은 것을 쓴다 (경고만 보여 준다)
@@ -231,10 +231,11 @@ export async function createStory(opts: {
     } else {
       notes.push(`${attempt}번째: ${parsed.problems.join(', ') || '쓸 수 없는 답'}${complete ? '' : ', 끝(END)까지 안 옴'} [${why}]`);
     }
-    retry = !parsed.draft || parsed.fatal;
+    // 끊긴 답인데 너무 짧거나 형식이 모자라면(예: 6줄에서 끊김) 그대로 쓰지 않고 처음부터 다시 요청한다
+    retry = !parsed.draft || parsed.fatal || (salvaged && parsed.blocking.length > 0);
     if (attempt < MAX_ATTEMPTS && retry) {
       // 끊기거나 깨진 답: 그 답은 대화에 넣지 않고 처음 요청을 짧게 다시 한다
-      contents.splice(0, contents.length, { role: 'user', parts: [{ text: `${userPrompt(plan, topic.en)}\n\nIMPORTANT: the previous answer was broken or unusable. Follow the line format exactly, keep it short (120-180 words, at most 18 LINE lines) and finish with END.` }] });
+      contents.splice(0, contents.length, { role: 'user', parts: [{ text: `${userPrompt(plan, topic.en)}\n\nIMPORTANT: the previous answer was broken or unusable. Follow the line format exactly, keep it within 220-320 words and at most 28 LINE lines, and finish with END.` }] });
       continue;
     }
     if (attempt < MAX_ATTEMPTS) {
