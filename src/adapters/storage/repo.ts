@@ -144,6 +144,34 @@ export async function moveConnectors(fromDeckId: Id, d: FlashcardsDB = db): Prom
   });
 }
 
+/**
+ * 연결어·표현 덱을 인도네시아어 구어체 덱으로 다시 합친다 (사용자 요청 2026-10-24: 따로 있으니 안 보게 된다).
+ * 단어·카드를 옮기기만 해서 복습 기록·일정은 그대로다. 연결어 카드는 구어 덱에서도 예문 먼저 보기로 나온다 (idSpoken.view).
+ * 빈 덱은 지운 흔적을 남기고 지운다 (다른 기기에서 되살아나지 않게). 단어에는 흔적을 남기지 않는다.
+ */
+export async function mergeConnectorsBack(fromDeckId: Id, d: FlashcardsDB = db): Promise<{ moved: number; deck: Deck } | undefined> {
+  return d.transaction('rw', [d.decks, d.notes, d.cards, d.settings, d.tombstones], async () => {
+    const decks = (await d.decks.toArray()).filter((x) => x.id !== fromDeckId);
+    const notes = await d.notes.toArray();
+    const score = (deckId: Id, pred: (n: Note) => boolean) => notes.filter((n) => n.deckId === deckId && pred(n)).length;
+    const best = (pred: (n: Note) => boolean) => decks.map((x) => ({ x, n: score(x.id, pred) })).filter((y) => y.n > 0).sort((a, b) => b.n - a.n)[0]?.x;
+    const target = best((n) => n.tags.includes('pack:indonesian-colloquial')) ?? best((n) => n.typeId === 'id-spoken');
+    if (!target) return undefined;
+    const now = Date.now();
+    const sched = schedulerFor(await getSettings(d));
+    const mine = notes.filter((n) => n.deckId === fromDeckId);
+    const cards = await d.cards.where('deckId').equals(fromDeckId).toArray();
+    const byNote = new Map<Id, Card[]>();
+    for (const c of cards) byNote.set(c.noteId, [...(byNote.get(c.noteId) ?? []), c]);
+    const moved = mine.map((n) => ({ ...n, deckId: target.id, updatedAt: now, ...(userEdited(n) ? {} : { packUpdatedAt: now }) }));
+    await d.notes.bulkPut(moved);
+    await d.cards.bulkPut(moved.flatMap((n) => cardsForNote(n, byNote.get(n.id) ?? [], target, now, sched)));
+    await d.tombstones.put({ id: fromDeckId, kind: 'deck', at: now });
+    await d.decks.delete(fromDeckId);
+    return { moved: moved.length, deck: target };
+  });
+}
+
 /** 노트와 카드를 지운다. 복습 로그는 남긴다 (나중에 파라미터 최적화에 쓸 수 있음). */
 export async function deleteNote(id: Id, d: FlashcardsDB = db): Promise<void> {
   await d.transaction('rw', [d.notes, d.cards, d.tombstones], async () => {

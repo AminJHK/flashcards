@@ -197,6 +197,17 @@ describe('repo', () => {
     const again = await repo.moveConnectors(main.id, d);
     expect(again.moved).toBe(0);
     expect((await d.decks.toArray()).filter((x) => x.name === '연결어·표현')).toHaveLength(1);
+
+    // 다시 합치기: 연결어 덱의 단어가 구어 덱으로 돌아가고, 기록·일정은 그대로, 빈 연결어 덱은 지운 흔적과 함께 없어진다
+    const back = await repo.mergeConnectorsBack(r.deck.id, d);
+    expect(back?.deck.id).toBe(main.id);
+    expect((await d.notes.get(pok.id))!.deckId).toBe(main.id);
+    const home = (await d.cards.get(card.id))!;
+    expect(home.deckId).toBe(main.id);
+    expect([home.reps, home.phase, home.due]).toEqual([before.reps, before.phase, before.due]);
+    expect(await d.decks.get(r.deck.id)).toBeUndefined();
+    expect((await d.tombstones.get(r.deck.id))?.kind).toBe('deck');
+    expect(await d.tombstones.get(pok.id)).toBeUndefined();
   });
 
   it('준비된 덱 고친 내용 받기: 시각을 올려서 동기화가 받기 전 내용으로 되돌리지 않고, 계속 "안 고친 단어"로 남는다', async () => {

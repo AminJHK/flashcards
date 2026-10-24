@@ -1,6 +1,7 @@
 import type { Block, CardType } from './types';
 import { ttsText } from './types';
 import { SPOKEN_OF } from '../stories/formalForms';
+import { isConnector } from '../decks/connectors';
 
 /**
  * 인도네시아어 구어 단어. 현지인이 말하는 형태(구어형)를 보고 뜻을 떠올린다 (듣기·알아듣기 중심).
@@ -67,14 +68,11 @@ export const idSpoken: CardType = {
     const tags: Block[] = forms.length ? [{ kind: 'tags', items: forms }] : [];
     const memo: Block[] = t('note') ? [{ kind: 'memo', text: t('note') }] : [];
     const en: Block[] = t('en') ? [{ kind: 'gloss', text: t('en'), lang: 'en-US' }] : [];
-    const items = parsePhrases(t('phrases'));
-    const phrases: Block[] = items.length ? [{ kind: 'phrases', items, lang: LANG, highlight: t('word') }] : [];
-    const example: Block[] = [
-      ...(t('example') ? [{ kind: 'sentence' as const, text: t('example'), lang: LANG, emphasis: 'main' as const, highlight: t('word') }] : []),
-      ...(t('exampleKo') ? [{ kind: 'sentence' as const, text: t('exampleKo'), lang: 'ko-KR', emphasis: 'sub' as const }] : []),
-    ];
+    // 예문은 따로 큰 상자로 두지 않고 "예문·표현" 목록 맨 위에 같은 모양으로 (사용자 요청 2026-10-24: 화면이 지저분하다)
+    const items = [...(t('example') ? [{ text: t('example'), ko: t('exampleKo') }] : []), ...parsePhrases(t('phrases'))];
+    const phrases: Block[] = items.length ? [{ kind: 'phrases', items, lang: LANG, highlight: t('word'), label: t('example') ? '예문·표현' : '자주 쓰는 표현' }] : [];
     // 뒷면: 단어 · 뜻 · 영어 뜻 · 꼬리표(위, 가운데) → 예문 · 자주 쓰는 표현 · 메모(아래, 왼쪽)
-    const back: Block[] = [{ kind: 'word', text: t('word'), size: 'back', lang: LANG, ...(pair ? { pair } : {}) }, { kind: 'meaning', text: t('meaning'), size: 'back' }, ...en, ...tags, ...example, ...phrases, ...memo];
+    const back: Block[] = [{ kind: 'word', text: t('word'), size: 'back', lang: LANG, ...(pair ? { pair } : {}) }, { kind: 'meaning', text: t('meaning'), size: 'back' }, ...en, ...tags, ...phrases, ...memo];
     if (templateId === 'reverse') {
       return {
         front: [{ kind: 'meaning', text: t('meaning'), size: 'front' }],
@@ -84,7 +82,8 @@ export const idSpoken: CardType = {
       };
     }
     // 예문 먼저: 뜻이 문맥에 따라 달라지는 연결어·표현은 단어만 보면 떠올리기 어려워서, 예문 속에서 본다 (덱 설정 "예문 먼저 보기")
-    if (ctx.deck.settings.sentenceFirst && t('example')) {
+    // 연결어(pokoknya, supaya …)는 덱 설정과 상관없이 예문 먼저 (연결어 덱을 구어 덱에 다시 합쳐도 그대로, 2026-10-24)
+    if ((ctx.deck.settings.sentenceFirst || isConnector({ typeId: 'id-spoken', fields: f })) && t('example')) {
       return {
         front: [
           { kind: 'prompt', text: `「${t('word')}」는 여기서 무슨 뜻일까?` },

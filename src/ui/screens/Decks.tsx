@@ -6,7 +6,7 @@ import type { CardType } from '../../core/cardTypes/types';
 import type { AutoplaySide, DeckSettings } from '../../core/model/types';
 import { db } from '../../adapters/storage/db';
 import { loadPinyin } from '../../adapters/pinyin/pinyin';
-import { addPackNotes, applyPackChanges, createDeck, deleteDeck, installPack, moveConnectors, updateDeck, updateNote } from '../../adapters/storage/repo';
+import { addPackNotes, applyPackChanges, createDeck, deleteDeck, installPack, mergeConnectorsBack, updateDeck, updateNote } from '../../adapters/storage/repo';
 import { CONNECTOR_DECK_NAME, isConnector } from '../../core/decks/connectors';
 import { packAdditions, packChanges, packMissing } from '../../core/packs/update';
 import { PARTICLE_WORDS } from '../../core/packs/indonesianParticles';
@@ -393,11 +393,11 @@ export function DeckDetail({ id }: { id: string }) {
         </button>
       )}
 
-      {!!connectorCount && deck.name !== CONNECTOR_DECK_NAME && (
+      {deck.name === CONNECTOR_DECK_NAME && (
         <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 20 }}>
-          <span style={{ fontWeight: 600 }}>연결어·표현 {connectorCount}개를 따로 모을 수 있어요</span>
+          <span style={{ fontWeight: 600 }}>인도네시아어 구어체 덱으로 다시 합칠 수 있어요</span>
           <span className="muted small" style={{ lineHeight: 1.6 }}>
-            pokoknya(아무튼), supaya(~하도록), kayaknya(~인 것 같아)처럼 뜻이 문장 속에서 정해지는 말이에요. 새 덱 「{CONNECTOR_DECK_NAME}」으로 옮겨서, 예문을 먼저 보며 하루 3개씩 천천히 익혀요. 복습 기록은 그대로 따라가고 읽기(이야기)에서도 똑같이 쓰여요.
+            이 덱의 단어 {connectorCount ?? 0}개를 구어체 덱으로 옮겨요. 복습 기록과 일정은 그대로예요. 연결어 카드는 구어체 덱에서도 지금처럼 예문을 먼저 보여 줘요. 이 덱은 비면 없어져요.
           </span>
           <button
             type="button"
@@ -405,11 +405,16 @@ export function DeckDetail({ id }: { id: string }) {
             style={{ height: 48 }}
             disabled={moving}
             onClick={async () => {
-              if (!(await ask(`연결어·표현 ${connectorCount}개를 「${CONNECTOR_DECK_NAME}」 덱으로 옮길까요?`, '옮기기'))) return;
+              if (!(await ask('이 덱의 단어를 인도네시아어 구어체 덱으로 옮기고 이 덱은 없앨까요?', '합치기'))) return;
               setMoving(true);
               try {
-                const r = await moveConnectors(deck.id);
-                toast(`${r.moved}개를 「${r.deck.name}」으로 옮겼어요`);
+                const r = await mergeConnectorsBack(deck.id);
+                if (!r) {
+                  toast('합칠 인도네시아어 구어체 덱이 없어요');
+                  setMoving(false);
+                  return;
+                }
+                toast(`${r.moved}개를 「${r.deck.name}」으로 합쳤어요`);
                 go(`decks/${r.deck.id}`);
               } catch {
                 toast('옮기지 못했어요. 다시 시도해 주세요');
@@ -417,7 +422,7 @@ export function DeckDetail({ id }: { id: string }) {
               }
             }}
           >
-            {moving ? '옮기는 중…' : '연결어 따로 모으기'}
+            {moving ? '합치는 중…' : '구어체 덱으로 합치기'}
           </button>
         </div>
       )}

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { formatStoryText } from '../src/core/stories/textFormat';
 
-test('어조 말 덱: 예문 카드로 복습하고, 연결어는 새 덱으로 옮겨 예문 먼저 보며, 읽기(이야기)에 어조 말이 섞인다', async ({ page }) => {
+test('어조 말 덱: 예문 카드로 복습하고, 예전 연결어·표현 덱은 구어체 덱으로 다시 합친다', async ({ page }) => {
   // 1) 어조 말 덱 설치 (예문 60장, 하루 5개)
   await page.goto('/#/decks/new');
   const row = page.locator('.row', { hasText: '인도네시아어 어조 말' });
@@ -26,29 +26,46 @@ test('어조 말 덱: 예문 카드로 복습하고, 연결어는 새 덱으로 
   await page.screenshot({ path: 'test-results/shots/54-particle-back.png' });
   await page.getByRole('button', { name: /알았음/ }).click();
 
-  // 3) 인도네시아어 구어체 덱을 넣고, 연결어를 새 덱으로 옮긴다
+  // 3) 인도네시아어 구어체 덱을 넣는다. 연결어를 따로 모으라는 안내는 더 없다 (2026-10-24, 구어 덱 하나로)
   await page.goto('/#/decks/new');
   await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
   await expect(page.getByText('단어 1500개를 넣었어요')).toBeVisible();
-  await expect(page.getByText(/연결어·표현 \d+개를 따로 모을 수 있어요/)).toBeVisible();
-  await page.screenshot({ path: 'test-results/shots/55-connector-offer.png' });
-  await page.getByRole('button', { name: '연결어 따로 모으기' }).click();
-  await page.getByRole('alertdialog').getByRole('button', { name: '옮기기' }).click();
-  await expect(page.getByText(/개를 「연결어·표현」으로 옮겼어요/)).toBeVisible();
-  await expect(page.getByLabel('덱 이름')).toHaveValue('연결어·표현');
-  // 새 덱 설정: 예문 먼저 보기 켜짐, 하루 3개
-  await expect(page.getByRole('switch', { name: '예문 먼저 보기' })).toHaveAttribute('aria-checked', 'true');
-  await page.screenshot({ path: 'test-results/shots/56-connector-deck.png' });
-  // 옮긴 뒤 구어체 덱에는 새 단어 알림이 다시 뜨지 않는다
-  await page.goto('/#/decks');
-  await page.locator('.deck-row, .row', { hasText: '인도네시아어 구어체' }).first().click();
-  await expect(page.getByText(/준비된 덱에 새 단어/)).toHaveCount(0);
-  await expect(page.getByText(/연결어·표현 \d+개를 따로 모을 수 있어요/)).toHaveCount(0);
+  await expect(page.getByText(/따로 모을 수 있어요/)).toHaveCount(0);
 
-  // 4) 연결어 덱을 복습하면 앞면이 예문
-  await page.getByRole('link', { name: '오늘' }).click();
-  await page.locator('.deck-row', { hasText: '연결어·표현' }).click();
-  await expect(page.getByText(/「[a-z-]+」는 여기서 무슨 뜻일까\?/)).toBeVisible();
+  // 4) 예전에 만든 연결어·표현 덱: 연결어 몇 개를 그 덱에 옮겨 둔 상태를 만든다
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const open = indexedDB.open('flashcards');
+        open.onsuccess = () => {
+          const tx = open.result.transaction(['decks', 'notes', 'cards'], 'readwrite');
+          const words = new Set(['pokoknya', 'supaya', 'kayaknya']);
+          tx.objectStore('decks').put({ id: 'conn', name: '연결어·표현', createdAt: 1, settings: { defaultTypeId: 'id-spoken', reverseEnabled: false, newPerDay: 3, sentenceFirst: true, autoplay: 'front', langs: { front: 'id-ID', back: 'ko-KR' } } });
+          tx.objectStore('notes').getAll().onsuccess = (e) => {
+            const ids = new Set<string>();
+            for (const n of (e.target as IDBRequest).result as { id: string; fields: { word: string } }[]) {
+              if (!words.has(n.fields.word)) continue;
+              ids.add(n.id);
+              tx.objectStore('notes').put({ ...n, deckId: 'conn' });
+            }
+            tx.objectStore('cards').getAll().onsuccess = (ev) => {
+              for (const c of (ev.target as IDBRequest).result as { noteId: string }[]) if (ids.has(c.noteId)) tx.objectStore('cards').put({ ...c, deckId: 'conn' });
+            };
+          };
+          tx.oncomplete = () => resolve();
+        };
+      }),
+  );
+  await page.goto('/#/decks/conn');
+  await page.reload();
+  await expect(page.getByText('인도네시아어 구어체 덱으로 다시 합칠 수 있어요')).toBeVisible();
+  await page.screenshot({ path: 'test-results/shots/55-connector-merge.png' });
+  await page.getByRole('button', { name: '구어체 덱으로 합치기' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: '합치기' }).click();
+  await expect(page.getByText(/3개를 「인도네시아어 구어체」으로 합쳤어요/)).toBeVisible();
+  await expect(page.getByLabel('덱 이름')).toHaveValue('인도네시아어 구어체');
+  await page.goto('/#/decks');
+  await expect(page.locator('.deck-row', { hasText: '연결어·표현' })).toHaveCount(0);
 });
 
 test('읽기: 어조 말이 이야기 만들기 요청에 PARTICLE로 들어가고, 이야기 속 어조 말을 누르면 느낌이 나온다', async ({ page }) => {

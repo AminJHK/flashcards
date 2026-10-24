@@ -128,10 +128,23 @@ function renderBlock(b: Block, i: number, onSpeak?: () => void): ReactNode {
         </span>
       );
     case 'word':
+      // 구어가 주인공: 구어 카드면 표준어를 아래에 작은 회색 한 줄로
+      if (b.pair?.label === '표준어')
+        return (
+          <span key={i} className="b-word-std-wrap">
+            <span lang={b.lang} className={`b-word ${b.size}`}>
+              {b.text}
+            </span>
+            <span className="b-word-std">
+              표준어 <span lang={b.lang}>{b.pair.text}</span>
+            </span>
+          </span>
+        );
+      // 표준어 카드면 이 단어는 회색, 구어 짝을 같은 크기 강조색으로
       if (b.pair)
         return (
           <span key={i} className="b-word-pair">
-            <span lang={b.lang} className={`b-word ${b.size}`}>
+            <span lang={b.lang} className={`b-word ${b.size} b-word-dim`}>
               {b.text}
             </span>
             <span className={`b-word ${b.size} b-word-dot`} aria-hidden="true">
@@ -171,7 +184,7 @@ function renderBlock(b: Block, i: number, onSpeak?: () => void): ReactNode {
     case 'phrases':
       return (
         <span key={i} className="cf-phrases">
-          <span className="cf-label">자주 쓰는 표현</span>
+          <span className="cf-label">{b.label ?? '자주 쓰는 표현'}</span>
           {b.items.map((p, j) => (
             <span key={j} className="cf-phrase">
               <span lang={b.lang} className="cf-phrase-text">

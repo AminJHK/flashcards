@@ -49,10 +49,13 @@ test('인도네시아어: 정답 화면에 영어 뜻과 자주 쓰는 표현이
   await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
   const card = page.locator('.card-sheet.back');
   await expect(card.locator('.b-gloss')).toHaveText('I / me');
-  await expect(card.locator('.cf-phrases')).toContainText('자주 쓰는 표현');
-  await expect(card.locator('.cf-phrase').first()).toContainText('aku juga');
-  await expect(card.locator('.cf-phrase').first()).toContainText('나도');
-  await expect(card.locator('.cf-phrase .cf-mark').first()).toHaveText('aku');
+  // 예문은 따로 상자 없이 "예문·표현" 목록 맨 위, 그다음 자주 쓰는 표현
+  await expect(card.locator('.cf-phrases')).toContainText('예문·표현');
+  await expect(card.locator('.b-sentence')).toHaveCount(0);
+  await expect(card.locator('.cf-phrase').first()).toContainText('Aku capek banget.');
+  await expect(card.locator('.cf-phrase').nth(1)).toContainText('aku juga');
+  await expect(card.locator('.cf-phrase').nth(1)).toContainText('나도');
+  await expect(card.locator('.cf-phrase .cf-mark').first()).toHaveText('Aku');
   await page.screenshot({ path: 'test-results/shots/63-id-english-phrases.png' });
 
   await page.getByRole('button', { name: '복습 닫기' }).click();

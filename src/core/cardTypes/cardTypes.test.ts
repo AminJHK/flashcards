@@ -89,13 +89,17 @@ describe('카드 종류', () => {
     const on = { ...d, settings: { ...d.settings, sentenceFirst: true } };
     const f = { word: 'pokoknya', meaning: '아무튼', example: 'Pokoknya aku ikut!', exampleKo: '아무튼 나도 갈 거야!' };
     expect(t.view('forward', { fields: f, deck: on }).front.map((b) => b.kind)).toEqual(['prompt', 'sentence']);
-    expect(t.view('forward', { fields: f, deck: d }).front.map((b) => b.kind)).toEqual(['word']);
+    // 연결어(pokoknya)는 덱 설정과 상관없이 예문 먼저, 다른 단어는 덱 설정을 따른다
+    expect(t.view('forward', { fields: f, deck: d }).front.map((b) => b.kind)).toEqual(['prompt', 'sentence']);
+    const kurang = { word: 'kurang', meaning: '부족한', example: 'Bisa kurang?', exampleKo: '깎아 줄 수 있어요?' };
+    expect(t.view('forward', { fields: kurang, deck: d }).front.map((b) => b.kind)).toEqual(['word']);
+    expect(t.view('forward', { fields: kurang, deck: on }).front.map((b) => b.kind)).toEqual(['prompt', 'sentence']);
     expect(t.view('forward', { fields: { ...f, example: '' }, deck: on }).front.map((b) => b.kind)).toEqual(['word']);
-    // 뒷면: 단어 · 뜻 · 꼬리표(표준형·어근·사용역) → 예문(배우는 말 강조) · 번역 · 메모
+    // 뒷면: 단어 · 뜻 · 꼬리표(표준형·어근·사용역) → 예문·표현 목록(예문이 맨 위, 배우는 말 강조) · 메모
     const back = t.view('forward', { fields: { ...f, root: 'pokok', register: '구어', note: '말 앞에 온다' }, deck: d }).back;
-    expect(back.map((b) => b.kind)).toEqual(['word', 'meaning', 'tags', 'sentence', 'sentence', 'memo']);
+    expect(back.map((b) => b.kind)).toEqual(['word', 'meaning', 'tags', 'phrases', 'memo']);
     expect(back[2]).toEqual({ kind: 'tags', items: ['어근 pokok', '구어'] });
-    expect(back[3]).toMatchObject({ highlight: 'pokoknya' });
+    expect(back[3]).toMatchObject({ highlight: 'pokoknya', label: '예문·표현', items: [{ text: 'Pokoknya aku ikut!', ko: '아무튼 나도 갈 거야!' }] });
   });
 
   it('인도네시아어 구어: 영어 뜻은 뜻 바로 아래, 자주 쓰는 표현은 예문 다음에 나온다', async () => {
@@ -109,11 +113,12 @@ describe('카드 종류', () => {
     expect(t.migrate!(1, { word: 'kurang' })).toEqual({ word: 'kurang', en: '', phrases: '' });
     const f = { word: 'kurang', meaning: '부족한', en: 'less / not enough', example: 'Bisa kurang?', exampleKo: '깎아 줄 수 있어요?', phrases: 'kurang tidur = 잠이 부족하다', note: '메모' };
     const back = t.view('forward', { fields: f, deck: d }).back;
-    expect(back.map((b) => b.kind)).toEqual(['word', 'meaning', 'gloss', 'sentence', 'sentence', 'phrases', 'memo']);
+    expect(back.map((b) => b.kind)).toEqual(['word', 'meaning', 'gloss', 'phrases', 'memo']);
     expect(back[2]).toEqual({ kind: 'gloss', text: 'less / not enough', lang: 'en-US' });
-    expect(back[5]).toEqual({ kind: 'phrases', items: [{ text: 'kurang tidur', ko: '잠이 부족하다' }], lang: 'id-ID', highlight: 'kurang' });
-    // 예전 단어(빈 칸)는 그대로
-    expect(t.view('forward', { fields: { ...f, en: '', phrases: '' }, deck: d }).back.map((b) => b.kind)).toEqual(['word', 'meaning', 'sentence', 'sentence', 'memo']);
+    // 예문은 따로 상자 없이 목록 맨 위, 그다음 자주 쓰는 표현
+    expect(back[3]).toEqual({ kind: 'phrases', items: [{ text: 'Bisa kurang?', ko: '깎아 줄 수 있어요?' }, { text: 'kurang tidur', ko: '잠이 부족하다' }], lang: 'id-ID', highlight: 'kurang', label: '예문·표현' });
+    // 예전 단어(빈 칸)는 예문만
+    expect(t.view('forward', { fields: { ...f, en: '', phrases: '' }, deck: d }).back.map((b) => b.kind)).toEqual(['word', 'meaning', 'phrases', 'memo']);
   });
 
   it('인도네시아어 구어: 같은 뜻의 짝(표준어 ↔ 구어)은 정답 쪽 단어 옆에만 나오고, 표준어 단어의 사용역은 "표준어"', () => {

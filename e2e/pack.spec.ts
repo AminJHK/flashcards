@@ -187,10 +187,10 @@ test('인도네시아어 구어체: 같은 뜻의 짝(pria · cowok)은 정답 �
         open.onsuccess = () => {
           const tx = open.result.transaction(['notes', 'cards'], 'readwrite');
           tx.objectStore('notes').getAll().onsuccess = (e) => {
-            const pria = ((e.target as IDBRequest).result as { id: string; fields: { word: string } }[]).find((n) => n.fields.word === 'pria')!;
+            const keep = new Set(((e.target as IDBRequest).result as { id: string; fields: { word: string } }[]).filter((n) => n.fields.word === 'pria' || n.fields.word === 'nyari').map((n) => n.id));
             const cards = tx.objectStore('cards');
             cards.getAll().onsuccess = (ev) => {
-              for (const c of (ev.target as IDBRequest).result as { noteId: string; suspended: boolean }[]) if (c.noteId !== pria.id) cards.put({ ...c, suspended: true });
+              for (const c of (ev.target as IDBRequest).result as { noteId: string; suspended: boolean }[]) if (!keep.has(c.noteId)) cards.put({ ...c, suspended: true });
             };
           };
           tx.oncomplete = () => resolve();
@@ -199,6 +199,13 @@ test('인도네시아어 구어체: 같은 뜻의 짝(pria · cowok)은 정답 �
   );
   await page.reload();
   await page.getByRole('button', { name: '이 덱 복습' }).click();
+  // 구어 카드(nyari, 덱에서 먼저 나옴)는 구어가 주인공: 표준어는 아래에 작은 회색 한 줄
+  await expect(page.getByText('nyari', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
+  await expect(page.locator('.b-word-std')).toHaveText('표준어 mencari');
+  await expect(page.locator('.b-word-alt')).toHaveCount(0);
+  await page.screenshot({ path: 'test-results/shots/22d-indonesian-std-small.png' });
+  await page.getByRole('button', { name: /알았음/ }).click();
   await expect(page.getByText('pria', { exact: true })).toBeVisible();
   await expect(page.locator('.b-word-alt')).toHaveCount(0); // 앞면에는 없다
   await page.getByRole('button', { name: '정답 보기', exact: true }).last().click();
