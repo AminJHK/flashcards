@@ -25,6 +25,7 @@ export const SAME_WORDS: Readonly<Record<string, readonly string[]>> = {
   keren: ['mantap'],
   oke: ['sip'],
   ayo: ['yuk'],
+  aja: ['doang'],
   betul: ['bener'],
   aduh: ['waduh', 'ampun', 'astaga'],
   temen: ['sobat', 'kawan'],
