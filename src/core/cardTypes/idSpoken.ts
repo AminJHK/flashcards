@@ -51,12 +51,16 @@ export const idSpoken: CardType = {
     const w = t('word').toLowerCase();
     const spoken = SPOKEN_OF[w];
     const written = Object.keys(SPOKEN_OF).filter((k) => SPOKEN_OF[k] === w);
-    // 구어 단어 하나에 표준어가 여럿이면(kamu ← kau·anda, kalo ← jika·bila) 뜻이 조금씩 달라서 붙이지 않는다
-    const pair = spoken ? { text: spoken, label: '구어' } : written.length === 1 ? { text: written[0]!, label: '표준어' } : undefined;
+    // 구어 단어: 카드의 표준형 칸이 있으면 그것, 없으면 SPOKEN_OF에서 거꾸로 찾는다.
+    // 구어 하나에 표준어가 여럿이면(kamu ← kau·anda, kalo ← jika·bila) 뜻이 조금씩 달라서 붙이지 않는다
+    // 짝을 붙이는 구어 단어는 사용역이 구어·자카르타식·속어인 것만 (sekarang·tahu·beli처럼 그 자체로 표준어인 기본 단어는 짝이 아니다)
+    const casual = ['구어', '자카르타식', '속어'].includes(t('register'));
+    const std = casual && t('standard').toLowerCase() !== w ? t('standard').split('/').map((x) => x.trim()).filter(Boolean).join(' · ') : '';
+    const pair = spoken ? { text: spoken, label: '구어' } : std ? { text: std, label: '표준어' } : casual && written.length === 1 ? { text: written[0]!, label: '표준어' } : undefined;
     // 사용역 꼬리표: 구어형 짝이 있는 단어는 표준어라고 보여 준다 (일반 → 표준어, 격식 → 표준어 · 격식)
     const register = spoken ? (t('register') && t('register') !== '일반' ? `표준어 · ${t('register')}` : '표준어') : t('register');
     const forms = [
-      t('standard') && t('standard') !== t('word') && !written.includes(t('standard').toLowerCase()) ? `표준형 ${t('standard')}` : '',
+
       t('root') && t('root') !== t('word') ? `어근 ${t('root')}` : '',
       register,
     ].filter(Boolean);

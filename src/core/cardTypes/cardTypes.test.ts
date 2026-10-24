@@ -127,8 +127,16 @@ describe('카드 종류', () => {
     // 구어 단어: 표준어 짝, 같은 표준형 꼬리표는 겹치지 않게 뺀다
     const dengerin = t.view('forward', { fields: { word: 'dengerin', meaning: '귀 기울여 듣다', standard: 'mendengarkan', root: 'dengar', register: '구어' }, deck: d });
     expect(dengerin.back[0]).toMatchObject({ pair: { text: 'mendengarkan', label: '표준어' } });
-    expect(dengerin.back.find((b) => b.kind === 'tags')).toEqual({ kind: 'tags', items: ['어근 dengar', '구어'] });
+    expect(dengerin.back.find((b) => b.kind === 'tags')).toEqual({ kind: 'tags', items: ['어근 dengar', '구어'] }); // 표준형 꼬리표는 짝과 겹쳐서 뺀다
     expect(t.view('forward', { fields: { word: 'makan', meaning: '먹다' }, deck: d }).back[0]).not.toHaveProperty('pair');
+    // sehingga(표준어) → jadi(구어) (카드 참고의 "구어는 jadi"를 짝으로)
+    expect(t.view('forward', { fields: { word: 'sehingga', meaning: '그래서', register: '격식' }, deck: d }).back[0]).toMatchObject({ pair: { text: 'jadi', label: '구어' } });
+    // 구어 단어는 표준형 칸이 짝: nyari · mencari
+    expect(t.view('forward', { fields: { word: 'nyari', meaning: '찾다', standard: 'mencari', register: '구어' }, deck: d }).back[0]).toMatchObject({ pair: { text: 'mencari', label: '표준어' } });
+    // 그 자체로 표준어인 기본 단어(sekarang, 사용역 일반)는 짝을 붙이지 않는다 (kini → sekarang은 kini 카드에서만)
+    const sekarang = t.view('forward', { fields: { word: 'sekarang', meaning: '지금', standard: 'sekarang', register: '일반' }, deck: d });
+    expect(sekarang.back[0]).not.toHaveProperty('pair');
+    expect(sekarang.back.find((b) => b.kind === 'tags')).toEqual({ kind: 'tags', items: ['일반'] });
   });
 
   it('어조 말 자리 계산: 문두·문중·문미, 쉼표·문장부호는 단어에 안 센다', async () => {
