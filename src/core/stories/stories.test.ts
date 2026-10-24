@@ -137,6 +137,16 @@ describe('이야기 계획과 요청문', () => {
     expect(p).toContain(plan.seed!.en);
   });
 
+  it('비슷한 말 묶음의 구어(jadi / makanya …)는 상황에 맞게 골고루, 글말은 내레이션에서 조금씩 쓰게 한다', () => {
+    const items = [...Array.from({ length: 40 }, (_, i) => word(`kata${i}`)), word('jadi'), word('makanya'), word('sehingga'), word('tapi'), word('padahal')];
+    const p = userPrompt(planStory(lexOf(items), 'normal'), 'food');
+    expect(p).toContain('SIMILAR WORDS: jadi / makanya; tapi / padahal');
+    expect(p).toContain('vary them across the story');
+    expect(p).toContain('Do use a few WRITTEN FORMS in narration');
+    expect(p).toMatch(/WRITTEN FORMS \(known[^\n]*sehingga→jadi/);
+    expect(p.split('\n').find((l) => l.startsWith('SIMILAR WORDS'))).not.toContain('sehingga');
+  });
+
   it('뜻이 거의 같은 구어(selesai = kelar)는 둘 다 알면 골고루 섞어 쓰라고 한다', () => {
     const items = [...Array.from({ length: 40 }, (_, i) => word(`kata${i}`)), word('selesai'), word('kelar'), word('tanya')];
     const p = userPrompt(planStory(lexOf(items), 'normal'), 'food');

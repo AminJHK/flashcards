@@ -2,6 +2,7 @@ import { DIFFICULTIES, type Coverage, type GlossEntry, type StoryBlock, type Sto
 import { chunkSegments } from './chunks';
 import { pickSeed, type StorySeed } from './seeds';
 import { SAME_WORDS } from '../decks/sameWords';
+import { SYNONYM_GROUPS } from '../decks/synonymGroups';
 import { analyzeText, FALLBACK_MIN_FAMILIAR, isExtraWord, norm, offendingWords, tokenize, type Lexicon, type VocabEntry } from './vocab';
 
 /** 이야기 하나를 만들 때 AI에게 줄 단어 목록 */
@@ -138,9 +139,19 @@ function samePairs(plan: StoryPlan): string[] {
   });
 }
 
+/** 비슷한 말 묶음(synonymGroups.ts) 중 아는 구어 (대표 + 쓰임이 다른 구어). 글말은 WRITTEN FORMS로 따로 간다 */
+function similarGroups(plan: StoryPlan): string[] {
+  const known = new Set(plan.familiar.map((e) => norm(e.word)));
+  return SYNONYM_GROUPS.flatMap((grp) => {
+    const words = grp.members.filter((m) => m.role !== 'written' && known.has(m.word)).map((m) => m.word);
+    return words.length > 1 ? [words.join(' / ')] : [];
+  });
+}
+
 export function userPrompt(plan: StoryPlan, topic: string): string {
   const unknownPct = Math.round((1 - plan.knownTarget) * 100);
   const same = samePairs(plan);
+  const similar = similarGroups(plan);
   const lines = [
     `Topic: ${topic}.`,
     'MOST IMPORTANT: a natural, fun and logically consistent story. Story quality comes before vocabulary: never force a listed word into a line where a native speaker would not say it. Prefer what a Jakarta native would really say in that moment.',
@@ -157,7 +168,8 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     `- Build the story from the KNOWN WORDS below. At least ${Math.round(plan.knownTarget * 100)}% of all word occurrences must be KNOWN WORDS (character names do not count).`,
     '- You may use the forms in brackets, e.g. "nyari(=mencari)" means both nyari and mencari are known: the first is the spoken form for dialogue, the one after = is the standard form for narration. Adding -nya, -lah, -kah, -ku or -mu to a known word is fine. Other affixes (me-, ber-, di-, -kan, -i) make a NEW word.',
     same.length ? '- SAME-MEANING WORDS below are interchangeable spoken words the learner knows. Mix them: use different ones in different lines so the learner hears all of them (do not always pick the first).' : '',
-    '- SPOKEN vs WRITTEN: dialogue lines (LINE: <character>) use spoken forms only. The WRITTEN FORMS below (kau, jika, telah, memberikan …) are known but belong in narration; in dialogue use the spoken form after the arrow.',
+    '- SPOKEN vs WRITTEN: dialogue lines (LINE: <character>) use spoken forms only. The WRITTEN FORMS below (kau, jika, telah, memberikan …) are known but belong in narration; in dialogue use the spoken form after the arrow. Do use a few WRITTEN FORMS in narration where they fit, so the learner meets them too.',
+    similar.length ? '- SIMILAR WORDS below are spoken words with close but different nuances (e.g. jadi / makanya / jadinya). Do not always use the first one: pick the one whose nuance fits each situation, and vary them across the story so the learner hears several.' : '',
     `- NEW WORDS: use the ones that fit the story naturally, once or twice each, where the situation makes the meaning guessable. Leave out any new word that would make a line unnatural (it comes back in a later story). Apart from them, avoid any word that is not listed.`,
     plan.focus.length || plan.reinforce.length
       ? `- ${[plan.focus.length ? 'FOCUS WORDS (hard for the learner, prefer these)' : '', plan.reinforce.length ? 'REVIEW WORDS (still being learned)' : ''].filter(Boolean).join(' and ')}: use the ones that fit naturally, once or twice each. There is no minimum; it is fine to leave some out.`
@@ -175,6 +187,7 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     `KNOWN WORDS: ${plan.familiar.filter((e) => !e.spoken).map(form).join(', ')}`,
     plan.familiar.some((e) => e.spoken) ? `WRITTEN FORMS (known; narration only → spoken form for dialogue): ${plan.familiar.filter((e) => e.spoken).map(formalForm).join(', ')}` : '',
     same.length ? `SAME-MEANING WORDS: ${same.join(', ')}` : '',
+    similar.length ? `SIMILAR WORDS: ${similar.join('; ')}` : '',
     plan.reinforce.length ? `REVIEW WORDS: ${listed(plan.reinforce).join(', ')}` : '',
     plan.focus.length ? `FOCUS WORDS: ${listed(plan.focus).join(', ')}` : '',
     plan.particles.length ? `PARTICLE WORDS (known, weakest first): ${plan.particles.map(form).join(', ')}` : '',
