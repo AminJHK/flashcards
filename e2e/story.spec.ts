@@ -13,7 +13,7 @@ const STORY = {
   ],
   properNouns: ['Jakarta'],
   blocks: [
-    { type: 'line', speaker: 'narrator', text: `${W.join(' ')} bakso.`, ko: '내레이션' },
+    { type: 'line', speaker: 'narrator', text: `${W.slice(2).join(' ')} bakso.`, ko: '내레이션' },
     // 예전 이야기처럼 의미 단위가 남아 있는 줄 (이제는 묶지 않고 단어 하나씩)
     { ...line(1), chunks: [{ text: 'aku kamu', ko: '나 너' }, { text: 'mau makan', ko: '먹고 싶다' }, { text: 'minum', ko: '마시다' }, { text: 'pulang nggak', ko: '집에 안 가' }, { text: 'udah lagi sini', ko: '이미 또 여기' }] },
     line(2),
@@ -176,11 +176,11 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await expect(sheet.getByText('덱에 있어요 · 아직 안 배움')).toBeVisible();
   await sheet.getByRole('button', { name: '읽기 계속하기' }).click();
   // 덱에 있는 단어 → 덱의 뜻
-  await page.locator('.story-narration').getByRole('button', { name: 'aku', exact: true }).click();
-  await expect(page.getByRole('tooltip')).toContainText('나');
-  await page.getByRole('button', { name: 'aku 자세히 보기' }).click();
-  await expect(page.getByRole('dialog', { name: 'aku 뜻' })).toContainText('나');
-  await page.getByRole('dialog', { name: 'aku 뜻' }).getByRole('button', { name: '읽기 계속하기' }).click();
+  await page.locator('.story-narration').getByRole('button', { name: 'makan', exact: true }).click();
+  await expect(page.getByRole('tooltip')).toContainText('먹다');
+  await page.getByRole('button', { name: 'makan 자세히 보기' }).click();
+  await expect(page.getByRole('dialog', { name: 'makan 뜻' })).toContainText('먹다');
+  await page.getByRole('dialog', { name: 'makan 뜻' }).getByRole('button', { name: '읽기 계속하기' }).click();
 
   // 질문이 나오면 답하기 전에는 다음으로 못 간다
   await page.getByRole('button', { name: '다음 문장 읽기' }).click();

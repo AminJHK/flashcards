@@ -202,7 +202,9 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     '- MATCH: 3 to 5 Indonesian words or expressions that appear in the story, each with its Korean meaning.',
     'Every question except MATCH needs a short Korean explanation.',
     '',
-    'FORMAT (one item per line, in story order; answer numbers start at 1; speaker is a character id or narrator):',
+    'FORMAT (one item per line, in story order; answer numbers start at 1):',
+    '- Every LINE starts with narrator or a character id from the CHARACTER lines (a or b), the same id every time. Whatever a character says is that character\'s LINE, never a narrator LINE. Narration is third person: no aku/kamu, no particles, no question or exclamation marks.',
+    '- Questions are written only as CHOICE, TF, GAP or MATCH lines, never as LINE lines.',
     'PLAN: <English planning note>',
     'TITLE: <Indonesian title>',
     'TITLE_KO: <Korean title>',
@@ -262,13 +264,18 @@ export function parseDraft(raw: unknown): { draft?: StoryDraft; problems: string
   const ids = new Set(chars.map((c) => c.id));
   const blocks: StoryBlock[] = [];
   const lineTexts: string[] = [];
+  const unknownSpeakers = new Set<string>();
+  const dialogueAsNarration: string[] = [];
   for (const b of Array.isArray(r.blocks) ? r.blocks : []) {
     const x = (b ?? {}) as Record<string, unknown>;
     const type = str(x.type);
     if (type === 'line') {
       const text = str(x.text);
       if (!text) continue;
-      const speaker = ids.has(str(x.speaker)) ? str(x.speaker) : chars.find((c) => norm(c.name) === norm(str(x.speaker)))?.id ?? 'narrator';
+      const said = speakerOf(str(x.speaker), chars);
+      if (!said) unknownSpeakers.add(str(x.speaker));
+      const speaker = said ?? 'narrator';
+      if (speaker === 'narrator' && looksLikeDialogue(text)) dialogueAsNarration.push(text);
       // 의미 단위: 실제로 문장 안에 있는 것만 (없으면 화면이 단어 단위로 보여 준다)
       const chunks = (Array.isArray(x.chunks) ? x.chunks : [])
         .map((c) => ({ text: str((c as Record<string, unknown>)?.text), ko: str((c as Record<string, unknown>)?.ko) }))
@@ -320,6 +327,10 @@ export function parseDraft(raw: unknown): { draft?: StoryDraft; problems: string
   if (questions < 3) blocking.push(`쓸 수 있는 질문이 너무 적어요 (${questions}개)`);
   if (chars.length < 2) blocking.push('등장인물이 2명보다 적어요');
   if (words < 100 || words > 450) blocking.push(`길이가 맞지 않아요 (${words}단어, 220~320단어 필요)`);
+  // 누가 말했는지 틀리면 듣기·읽기에서 대사가 "나레이션"으로 나온다
+  if (unknownSpeakers.size) blocking.push(`LINE의 말하는 사람이 CHARACTER id가 아니에요: ${[...unknownSpeakers].map((s) => s || '(빈칸)').join(', ')} (narrator 또는 ${[...ids].join(', ')}만 쓰기)`);
+  if (dialogueAsNarration.length)
+    blocking.push(`인물의 대사가 narrator 줄로 되어 있어요 (말하는 인물의 id로 바꾸기): ${dialogueAsNarration.slice(0, 4).map((t) => `"${t}"`).join(' ')}`);
   problems.push(...blocking);
   const glossary: GlossEntry[] = (Array.isArray(r.glossary) ? r.glossary : [])
     .map((g) => {
@@ -342,6 +353,30 @@ export function parseDraft(raw: unknown): { draft?: StoryDraft; problems: string
     blocking,
     fatal,
   };
+}
+
+/** LINE의 말하는 사람 → 인물 id (narrator면 'narrator'). 알 수 없으면 undefined */
+function speakerOf(raw: string, chars: readonly StoryCharacter[]): string | undefined {
+  const k = norm(raw);
+  if (!k || /^(narrator|narator|narasi|narration|narasinya)$/.test(k)) return 'narrator';
+  const hit =
+    chars.find((c) => c.id === raw) ??
+    chars.find((c) => norm(c.id) === k || norm(c.name) === k) ??
+    // "Mas Budi", "Budi (sopir)"처럼 이름에 말이 붙은 것
+    chars.find((c) => k.split(/[^\p{L}]+/u).includes(norm(c.name).split(/\s+/)[0]!));
+  if (hit) return hit.id;
+  // 인물 id를 이름으로 정했는데 a·b로 쓴 경우: 순서대로
+  if (/^[a-d]$/.test(k) && !chars.some((c) => norm(c.id).length === 1)) return chars['abcd'.indexOf(k)]?.id;
+  return undefined;
+}
+
+/** 말할 때만 쓰는 말 (내레이션에는 나오지 않는다): 입말 조사, 나·너 */
+const DIALOGUE_WORDS = new Set(['sih', 'dong', 'deh', 'kok', 'kan', 'lho', 'loh', 'nih', 'tuh', 'yuk', 'aku', 'kamu', 'gue', 'gua', 'lo', 'lu']);
+
+/** 내레이션 줄인데 대사처럼 보이는지: 입말 조사나 나·너가 있거나, 물음표·느낌표로 끝난다 */
+export function looksLikeDialogue(text: string): boolean {
+  if (/[?!][\s"'”’)]*$/.test(text)) return true;
+  return tokenize(text).some((t) => DIALOGUE_WORDS.has(t.text.toLowerCase()));
 }
 
 function toQuestion(type: string, x: Record<string, unknown>, problems: string[]): StoryQuestion | undefined {

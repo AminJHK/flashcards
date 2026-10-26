@@ -294,6 +294,44 @@ describe('줄 형식 읽기', () => {
   });
 });
 
+describe('질문·말하는 사람이 잘못 온 줄 (사용자 화면 2026-10-26)', () => {
+  it('LINE으로 온 질문은 질문으로 읽고, 대사가 narrator로 오거나 모르는 id면 다시 쓰게 한다', async () => {
+    const { parseStoryText } = await import('./textFormat');
+    const { raw } = parseStoryText(
+      [
+        'TITLE: Bis',
+        'CHARACTER: a | Ani',
+        'CHARACTER: b | Budi',
+        'LINE: narrator | Ani naik bis. | 아니가 버스를 탄다.',
+        'LINE: 아니는 늦지 않았다 | false | 늦었다',
+        'LINE: 왜 졸려? | Makan banyak / Lembur / Bangun siang | 2 | 야근',
+        'LINE: narrator | Aku ___ bis. | naik / turun / makan | 1 | 탄다',
+        'LINE: narrator | Mbak tenang dulu deh. | 진정해요.',
+        'LINE: Budi | Iya. | 네.',
+        'LINE: sopir | Ayo turun. | 내려요.',
+        'END',
+      ].join('\n'),
+    );
+    expect(raw.blocks.map((b) => b.type)).toEqual(['line', 'truefalse', 'choice', 'gap', 'line', 'line', 'line']);
+    expect(raw.blocks[1]).toMatchObject({ statement: '아니는 늦지 않았다', answerTrue: false });
+    expect(raw.blocks[2]).toMatchObject({ prompt: '왜 졸려?', answer: 1 });
+    expect(raw.blocks[3]).toMatchObject({ sentence: 'Aku ___ bis.', answer: 0 });
+    const r = parseDraft(raw);
+    const lines = r.draft!.blocks.filter((b) => b.kind === 'line');
+    expect(lines.map((b) => (b as { speaker: string }).speaker)).toEqual(['narrator', 'narrator', 'b', 'narrator']);
+    expect(r.blocking.join(' ')).toContain('sopir');
+    expect(r.blocking.join(' ')).toContain('Mbak tenang dulu deh.');
+  });
+
+  it('내레이션처럼 보이는 대사: 입말 조사·나/너·물음표', async () => {
+    const { looksLikeDialogue } = await import('./plan');
+    expect(looksLikeDialogue('Soalnya bos aku bakal marah.')).toBe(true);
+    expect(looksLikeDialogue('Wah, untung ketemu Mas!')).toBe(true);
+    expect(looksLikeDialogue('Ani mulai nyadar kalo bis ini belok ke arah barat.')).toBe(false);
+    expect(looksLikeDialogue('Bisnya belok ke kanan.')).toBe(false);
+  });
+});
+
 describe('의미 단위', () => {
   it('묶음을 읽고, 문장 안에서 앞에서부터 차례로 겹치지 않게 찾는다 (낱말 중간은 안 맞춘다)', async () => {
     const { parseChunks, chunkSegments } = await import('./chunks');

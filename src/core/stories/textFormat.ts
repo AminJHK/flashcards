@@ -39,6 +39,26 @@ function answerIndex(v: string | undefined, options: string[]): number {
   return i >= 0 ? i : -1;
 }
 
+const BOOL = /^(true|false|benar|salah)$/i;
+
+/**
+ * "LINE: 질문 | false | 설명", "LINE: 질문 | 보기1 / 보기2 / 보기3 | 2 | 설명"처럼 질문이 LINE으로 온 줄.
+ * 앞에 말하는 사람 칸이 하나 더 붙은 모양(LINE: narrator | 질문 | false …)도 본다.
+ */
+function questionInLine(f: string[]): Record<string, unknown> | undefined {
+  for (const i of [1, 2]) {
+    const head = f[i - 1] ?? '';
+    const v = f[i] ?? '';
+    if (BOOL.test(v)) return { type: 'truefalse', statement: head, answerTrue: /^(true|benar)$/i.test(v), explain: f.slice(i + 1).join(' | ') };
+    const options = split(v, /\s+\/\s+/).filter(Boolean);
+    if (options.length >= 2 && /^\d+$/.test(f[i + 1] ?? '')) {
+      const gap = head.includes('___');
+      return { type: gap ? 'gap' : 'choice', [gap ? 'sentence' : 'prompt']: head, options, answer: answerIndex(f[i + 1], options), explain: f.slice(i + 2).join(' | ') };
+    }
+  }
+  return undefined;
+}
+
 /** 받은 글을 이야기 모양으로. complete: END 줄까지 왔는지 */
 export function parseStoryText(text: string): { raw: RawStory; complete: boolean } {
   const raw: RawStory = { characters: [], properNouns: [], blocks: [], glossary: [] };
@@ -64,6 +84,12 @@ export function parseStoryText(text: string): { raw: RawStory; complete: boolean
     else if (tag === 'CHARACTER' && f[1]) raw.characters.push({ id: f[0]!, name: f[1] });
     else if (tag === 'PROPER') raw.properNouns.push(...split(body, /\s*[,/|]\s*/).filter(Boolean));
     else if (tag === 'LINE' && f.length >= 2) {
+      // 질문을 LINE으로 잘못 쓴 줄은 질문으로 읽는다 (그대로 두면 "false"·선택지가 이야기 줄로 나온다)
+      const q = questionInLine(f);
+      if (q) {
+        raw.blocks.push(q);
+        continue;
+      }
       // 말하는 사람이 빠진 줄(문장 | 번역)도 받아 준다. 4번째 칸은 의미 단위
       const [speaker, text, ko, chunks] = f.length >= 3 ? [f[0], f[1], f[2], f.slice(3).join(' / ')] : ['narrator', f[0], f[1], ''];
       raw.blocks.push({ type: 'line', speaker, text, ko, chunks: parseChunks(chunks) });
