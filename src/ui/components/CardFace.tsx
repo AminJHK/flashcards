@@ -172,7 +172,7 @@ function renderBlock(b: Block, i: number, onSpeak?: () => void): ReactNode {
       );
     case 'meaning':
       return (
-        <span key={i} className={`b-meaning ${b.size}`}>
+        <span key={i} lang={b.lang} className={`b-meaning ${b.size}`}>
           {b.text}
         </span>
       );

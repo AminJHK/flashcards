@@ -18,7 +18,8 @@ export interface FieldDef {
   required?: boolean;
   lang?: FieldLang;
   /** 입력칸 모양 */
-  input: 'hanzi' | 'latin' | 'text' | 'sentence' | 'memo';
+  /** check: 체크박스 (켜면 '1', 끄면 빈 칸) */
+  input: 'hanzi' | 'latin' | 'text' | 'sentence' | 'memo' | 'check';
   placeholder?: string;
   /** 다른 필드에서 자동으로 채워지는 필드면 표시 (예: 병음) */
   autoFrom?: string;
@@ -48,7 +49,8 @@ export type Block =
   /** pair: 같은 뜻의 짝 단어 (구어형↔표준어), 같은 크기로 옆에 다른 색으로 보여 준다 */
   /** same: 같은 뜻의 다른 말 (대표 카드 아래 작은 회색 한 줄) */
   | { kind: 'word'; text: string; size: BlockSize; lang: Lang; pair?: { text: string; label: string }; same?: string }
-  | { kind: 'meaning'; text: string; size: BlockSize }
+  /** lang: 뜻이 한국어가 아닐 때 (영어 뜻을 메인으로 고른 카드) */
+  | { kind: 'meaning'; text: string; size: BlockSize; lang?: Lang }
   /** highlight: 문장 안에서 강조할 말 (배우는 단어). 화면이 찾아서 색으로 표시한다 */
   | { kind: 'sentence'; text: string; lang: Lang; emphasis: 'main' | 'sub'; highlight?: string }
   /** 뜻 바로 아래의 작은 보조 뜻 (영어 뜻 등) */

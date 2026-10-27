@@ -111,8 +111,9 @@ describe('카드 종류', () => {
       { text: 'kurang suka', ko: '별로 안 좋아하다' },
     ]);
     const t = getCardType('id-spoken');
-    expect(t.version).toBe(2);
-    expect(t.migrate!(1, { word: 'kurang' })).toEqual({ word: 'kurang', en: '', phrases: '' });
+    expect(t.version).toBe(3);
+    expect(t.migrate!(1, { word: 'kurang' })).toEqual({ word: 'kurang', en: '', phrases: '', enMain: '' });
+    expect(t.migrate!(2, { word: 'kurang', en: 'less' })).toEqual({ word: 'kurang', en: 'less', enMain: '' });
     const f = { word: 'kurang', meaning: '부족한', en: 'less / not enough', example: 'Bisa kurang?', exampleKo: '깎아 줄 수 있어요?', phrases: 'kurang tidur = 잠이 부족하다', note: '메모' };
     const back = t.view('forward', { fields: f, deck: d }).back;
     expect(back.map((b) => b.kind)).toEqual(['word', 'meaning', 'gloss', 'phrases', 'memo']);
@@ -121,6 +122,19 @@ describe('카드 종류', () => {
     expect(back[3]).toEqual({ kind: 'phrases', items: [{ text: 'Bisa kurang?', ko: '깎아 줄 수 있어요?' }, { text: 'kurang tidur', ko: '잠이 부족하다' }], lang: 'id-ID', highlight: 'kurang', label: '예문·표현' });
     // 예전 단어(빈 칸)는 예문만
     expect(t.view('forward', { fields: { ...f, en: '', phrases: '' }, deck: d }).back.map((b) => b.kind)).toEqual(['word', 'meaning', 'phrases', 'memo']);
+  });
+
+  it('인도네시아어 구어: "영어 뜻을 메인으로"를 켜면 영어 뜻이 큰 뜻, 한국어가 아래 작은 뜻 (영어 뜻이 없으면 평소대로)', () => {
+    const t = getCardType('id-spoken');
+    const f = { word: 'kurang', meaning: '부족한, 덜, 별로', en: 'not enough', enMain: '1' };
+    const back = t.view('forward', { fields: f, deck: d }).back;
+    expect(back[1]).toEqual({ kind: 'meaning', text: 'not enough', size: 'back', lang: 'en-US' });
+    expect(back[2]).toEqual({ kind: 'gloss', text: '부족한, 덜, 별로', lang: 'ko-KR' });
+    expect(t.view('reverse', { fields: f, deck: d }).front).toEqual([
+      { kind: 'meaning', text: 'not enough', size: 'front', lang: 'en-US' },
+      { kind: 'gloss', text: '부족한, 덜, 별로', lang: 'ko-KR' },
+    ]);
+    expect(t.view('forward', { fields: { ...f, en: '' }, deck: d }).back[1]).toEqual({ kind: 'meaning', text: '부족한, 덜, 별로', size: 'back' });
   });
 
   it('인도네시아어 구어: 같은 뜻의 짝(표준어 ↔ 구어)은 정답 쪽 단어 옆에만 나오고, 표준어 단어의 사용역은 "표준어"', () => {

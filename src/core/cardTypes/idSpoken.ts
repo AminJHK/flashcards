@@ -22,7 +22,7 @@ export function parsePhrases(text: string): { text: string; ko: string }[] {
 
 export const idSpoken: CardType = {
   id: 'id-spoken',
-  version: 2,
+  version: 3,
   name: '인도네시아어 구어',
   shortName: '구어',
   description: '현지인이 말하는 형태를 보고 뜻을 떠올려요. 표준형·어근·예문을 함께 봐요.',
@@ -31,6 +31,8 @@ export const idSpoken: CardType = {
     { key: 'word', label: '말하는 형태', required: true, lang: LANG, input: 'latin', placeholder: '예: nyari' },
     { key: 'meaning', label: '뜻', required: true, lang: 'ko-KR', input: 'text', placeholder: '예: 찾다' },
     { key: 'en', label: '영어 뜻', lang: 'en-US', input: 'text', placeholder: '예: to look for' },
+    // 한국어로는 뜻이 여러 갈래인데 영어로 딱 떨어지는 단어: 켜면 영어 뜻을 크게, 한국어 뜻을 아래 작게 (사용자 요청 2026-10-27)
+    { key: 'enMain', label: '영어 뜻을 메인으로', input: 'check' },
     { key: 'standard', label: '표준형', lang: LANG, input: 'latin', placeholder: '예: mencari' },
     { key: 'root', label: '어근', lang: LANG, input: 'latin', placeholder: '예: cari' },
     { key: 'example', label: '예문', lang: LANG, input: 'sentence', placeholder: '예: Lagi nyari apa?' },
@@ -40,7 +42,8 @@ export const idSpoken: CardType = {
     { key: 'note', label: '주의', input: 'memo', placeholder: '쓰임새, 비슷한 말' },
   ],
   // version 2: 영어 뜻(en)·자주 쓰는 표현(phrases) 칸 추가. 예전 단어는 빈 칸으로 둔다
-  migrate: (from, f) => (from < 2 ? { ...f, en: f.en ?? '', phrases: f.phrases ?? '' } : f),
+  // version 3: 영어 뜻을 메인으로(enMain) 칸 추가. 예전 단어는 꺼진 채(빈 칸)
+  migrate: (from, f) => ({ ...f, ...(from < 2 ? { en: f.en ?? '', phrases: f.phrases ?? '' } : {}), ...(from < 3 ? { enMain: f.enMain ?? '' } : {}) }),
   templates: [
     { id: 'forward', label: '구어 보고 뜻 떠올리기', answer: 'reveal' },
     { id: 'reverse', label: '뜻 보고 구어 떠올리기', optional: true, answer: 'reveal' },
@@ -74,15 +77,18 @@ export const idSpoken: CardType = {
     const memo: Block[] = t('note') ? [{ kind: 'memo', text: t('note') }] : [];
     const group = synonymGroupOf(t('word'));
     const similar: Block[] = group ? [{ kind: 'similar', title: group.title, current: w, items: group.members, lang: LANG }] : [];
-    const en: Block[] = t('en') ? [{ kind: 'gloss', text: t('en'), lang: 'en-US' }] : [];
+    // 영어 뜻을 메인으로: 큰 뜻 자리에 영어, 그 아래 작은 뜻 자리에 한국어 (영어 뜻이 비어 있으면 평소대로)
+    const enMain = !!t('enMain') && !!t('en');
+    const main: Block = enMain ? { kind: 'meaning', text: t('en'), size: 'back', lang: 'en-US' } : { kind: 'meaning', text: t('meaning'), size: 'back' };
+    const en: Block[] = enMain ? (t('meaning') ? [{ kind: 'gloss', text: t('meaning'), lang: 'ko-KR' }] : []) : t('en') ? [{ kind: 'gloss', text: t('en'), lang: 'en-US' }] : [];
     // 예문은 따로 큰 상자로 두지 않고 "예문·표현" 목록 맨 위에 같은 모양으로 (사용자 요청 2026-10-24: 화면이 지저분하다)
     const items = [...(t('example') ? [{ text: t('example'), ko: t('exampleKo') }] : []), ...parsePhrases(t('phrases'))];
     const phrases: Block[] = items.length ? [{ kind: 'phrases', items, lang: LANG, highlight: t('word'), label: t('example') ? '예문·표현' : '자주 쓰는 표현' }] : [];
     // 뒷면: 단어 · 뜻 · 영어 뜻 · 꼬리표(위, 가운데) → 예문 · 자주 쓰는 표현 · 메모(아래, 왼쪽)
-    const back: Block[] = [{ kind: 'word', text: t('word'), size: 'back', lang: LANG, ...(pair ? { pair } : {}), ...(same ? { same } : {}) }, { kind: 'meaning', text: t('meaning'), size: 'back' }, ...en, ...tags, ...phrases, ...similar, ...memo];
+    const back: Block[] = [{ kind: 'word', text: t('word'), size: 'back', lang: LANG, ...(pair ? { pair } : {}), ...(same ? { same } : {}) }, main, ...en, ...tags, ...phrases, ...similar, ...memo];
     if (templateId === 'reverse') {
       return {
-        front: [{ kind: 'meaning', text: t('meaning'), size: 'front' }],
+        front: enMain ? [{ kind: 'meaning', text: t('en'), size: 'front', lang: 'en-US' }, { kind: 'gloss', text: t('meaning'), lang: 'ko-KR' }] : [{ kind: 'meaning', text: t('meaning'), size: 'front' }],
         back,
         tts: { front: [], back: [sayWord, ...sayExample] },
         autoplay: ctx.deck.settings.autoplay === 'off' ? 'off' : 'back',

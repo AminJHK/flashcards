@@ -223,6 +223,16 @@ function Editor(props: Props & { decks: Deck[]; note?: Note }) {
             onChange: (e: { target: { value: string } }) => onField(f, e.target.value),
             ref: i === 0 ? firstRef : undefined,
           };
+          if (f.input === 'check')
+            return (
+              <label key={f.key} className="field-check">
+                <input type="checkbox" id={`f-${f.key}`} checked={!!(fields[f.key] ?? '').trim()} onChange={(e) => onField(f, e.target.checked ? '1' : '')} />
+                <span>
+                  {label}
+                  {f.key === 'enMain' && <span className="faint small"> · 카드에 영어 뜻이 크게, 한국어 뜻이 아래 작게 나와요</span>}
+                </span>
+              </label>
+            );
           return (
             <div key={f.key} className="field">
               <div className="field-label">
