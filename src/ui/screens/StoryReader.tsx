@@ -1081,7 +1081,7 @@ function StoryResult({ story, progress, lex, onRestart, onListen, onPick }: { st
         </span>
         <h2 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>{story.title} 끝</h2>
         <span className="muted" style={{ fontSize: 15 }}>
-          질문 {qs.length}개 중 {right}개 맞힘 · 아는 단어 {Math.round(story.coverage.familiar * 100)}%
+          {qs.length > 0 && `질문 ${qs.length}개 중 ${right}개 맞힘 · `}아는 단어 {Math.round(story.coverage.familiar * 100)}%
         </span>
         {story.usedDeckFallback && <span className="faint small">아는 단어가 아직 적어서 덱의 다음 단어를 섞었어요.</span>}
         {story.warning && <span className="faint small" style={{ lineHeight: 1.5 }}>{story.warning}</span>}
@@ -1130,7 +1130,7 @@ function StoryResult({ story, progress, lex, onRestart, onListen, onPick }: { st
           이야기 다시 듣기
         </button>
         <button type="button" className="btn btn-plain" onClick={onRestart}>
-          처음부터 다시 (문제 풀기)
+          {qs.length > 0 ? '처음부터 다시 (문제 풀기)' : '처음부터 다시 읽기'}
         </button>
         <button type="button" className="btn btn-plain" onClick={() => go('read')}>
           목록으로

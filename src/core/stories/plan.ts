@@ -30,7 +30,14 @@ export interface StoryPlan {
 
 export class StoryPlanError extends Error {}
 
-const NEW_WORDS: Record<StoryDifficulty, number> = { easy: 2, normal: 4, challenge: 6 };
+/**
+ * 사용자 요청 2026-10-27: 만드는 시간을 줄이고 규칙을 덜어 이야기가 자연스럽게 나오게, 질문·새 단어·복습 단어를 껐다.
+ * 이야기는 덱에서 아는 단어로만 쓴다. 다시 켜려면 아래 숫자·값을 되돌리면 된다 (예전: 새 단어 2·4·6, 복습 단어 6, 질문 켜짐).
+ */
+const NEW_WORDS: Record<StoryDifficulty, number> = { easy: 0, normal: 0, challenge: 0 };
+const REVIEW_WORDS = 0;
+/** 이야기에 읽기 질문(CHOICE·TF·GAP·MATCH)을 넣을지. 꺼도 AI가 보낸 질문은 버리지 않는다 */
+export const WITH_QUESTIONS = false;
 
 /** 최근 이야기에서 쓴 것 (다음 이야기는 피한다) */
 export interface StoryHistory {
@@ -64,7 +71,13 @@ function shuffle<T>(items: readonly T[], rng: () => number): T[] {
  */
 export const KNOWN_LIST_MAX = 1500;
 
-export function planStory(lex: Lexicon, difficulty: StoryDifficulty, history: StoryHistory = NO_HISTORY, topicKey?: string, rng: () => number = Math.random): StoryPlan {
+/** 새 단어·복습 단어 개수를 바꿔서 계획한다 (기본은 위의 NEW_WORDS·REVIEW_WORDS) */
+export interface PlanOptions {
+  newWords?: number;
+  reviewWords?: number;
+}
+
+export function planStory(lex: Lexicon, difficulty: StoryDifficulty, history: StoryHistory = NO_HISTORY, topicKey?: string, rng: () => number = Math.random, opts: PlanOptions = {}): StoryPlan {
   const allParticles = lex.entries.filter((e) => e.kind === 'particle');
   // 어조 말 덱에 있는 말은 단어 목록에서 뺀다 (구어체 덱에 같은 말이 있어도 어조 말로만 다룬다)
   const particleWords = new Set(allParticles.map((e) => norm(e.word)));
@@ -82,7 +95,7 @@ export function planStory(lex: Lexicon, difficulty: StoryDifficulty, history: St
   // 새 단어: 덱의 다음 단어 24개 중 최근 이야기에서 소개하지 않은 것부터 (모자라면 소개했던 것도)
   const recentNew = seen(history.newWords);
   const window = deckNew.slice(0, 24);
-  const n = NEW_WORDS[difficulty];
+  const n = opts.newWords ?? NEW_WORDS[difficulty];
   const newWords = [...window.filter((e) => !recentNew.has(norm(e.word))), ...window.filter((e) => recentNew.has(norm(e.word)))].slice(0, n).sort((a, b) => a.order - b.order);
   // 어려운 단어(최대 3)와 복습 단어(최대 6): 바로 전 이야기에서 쓴 것은 쉬게 하고 약한 것 중에서 섞어 고른다
   const lastReview = seen(history.reinforce);
@@ -90,7 +103,8 @@ export function planStory(lex: Lexicon, difficulty: StoryDifficulty, history: St
   const weakFirst = (a: VocabEntry, b: VocabEntry) => (a.recall ?? 0) - (b.recall ?? 0);
   const focus = shuffle(rested(familiar.filter((e) => e.hard).sort(weakFirst).slice(0, 10)), rng).slice(0, 3);
   const focusSet = new Set(focus);
-  const reinforce = shuffle(rested(familiar.filter((e) => e.status === 'learning' && !focusSet.has(e)).sort(weakFirst).slice(0, 15)), rng).slice(0, 6);
+  const reviewN = opts.reviewWords ?? REVIEW_WORDS;
+  const reinforce = reviewN ? shuffle(rested(familiar.filter((e) => e.status === 'learning' && !focusSet.has(e)).sort(weakFirst).slice(0, 15)), rng).slice(0, reviewN) : [];
   return {
     difficulty,
     knownTarget: DIFFICULTIES[difficulty].known,
@@ -124,8 +138,8 @@ export function systemPrompt(): string {
   return [
     'You write short graded reading stories for a Korean adult learning everyday spoken Indonesian (Jakarta-style but widely understood: aku/kamu, nggak, udah, gimana).',
     'Write natural conversational Indonesian, not textbook Indonesian. Keep sentences short.',
-    'The story is a sequence of blocks: narration, dialogue lines and comprehension questions placed between story parts (never all at the end).',
-    'Korean is used for translations, questions and explanations. English is used only in glossary meanings.',
+    'The story is a sequence of narration and dialogue lines.',
+    'Korean is used for translations. Korean is also used for questions and explanations when questions are asked. English is used only in glossary meanings.',
     'Write the story in the exact line format the user gives (one item per line, fields separated by " | "). No JSON, no markdown, no extra commentary. Finish with a line containing only END.',
   ].join(' ');
 }
@@ -148,7 +162,7 @@ function similarGroups(plan: StoryPlan): string[] {
   });
 }
 
-export function userPrompt(plan: StoryPlan, topic: string): string {
+export function userPrompt(plan: StoryPlan, topic: string, questions: boolean = WITH_QUESTIONS): string {
   const unknownPct = Math.round((1 - plan.knownTarget) * 100);
   const same = samePairs(plan);
   const similar = similarGroups(plan);
@@ -170,7 +184,9 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     same.length ? '- SAME-MEANING WORDS below are interchangeable spoken words the learner knows. Mix them: use different ones in different lines so the learner hears all of them (do not always pick the first).' : '',
     '- SPOKEN vs WRITTEN: dialogue lines (LINE: <character>) use spoken forms only. The WRITTEN FORMS below (kau, jika, telah, memberikan …) are known but belong in narration; in dialogue use the spoken form after the arrow. Do use a few WRITTEN FORMS in narration where they fit, so the learner meets them too.',
     similar.length ? '- SIMILAR WORDS below are spoken words with close but different nuances (e.g. jadi / makanya / jadinya). Do not always use the first one: pick the one whose nuance fits each situation, and vary them across the story so the learner hears several.' : '',
-    `- NEW WORDS: use the ones that fit the story naturally, once or twice each, where the situation makes the meaning guessable. Leave out any new word that would make a line unnatural (it comes back in a later story). Apart from them, avoid any word that is not listed.`,
+    plan.newWords.length
+      ? `- NEW WORDS: use the ones that fit the story naturally, once or twice each, where the situation makes the meaning guessable. Leave out any new word that would make a line unnatural (it comes back in a later story). Apart from them, avoid any word that is not listed.`
+      : '- Avoid any word that is not listed.',
     plan.focus.length || plan.reinforce.length
       ? `- ${[plan.focus.length ? 'FOCUS WORDS (hard for the learner, prefer these)' : '', plan.reinforce.length ? 'REVIEW WORDS (still being learned)' : ''].filter(Boolean).join(' and ')}: use the ones that fit naturally, once or twice each. There is no minimum; it is fine to leave some out.`
       : '',
@@ -181,7 +197,7 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
       : '',
     plan.fallback
       ? `- The learner knows few words yet. If a sentence is impossible with KNOWN WORDS, you may use DECK WORDS. Words outside all lists must stay under ${unknownPct}% of word occurrences.`
-      : `- Apart from the NEW WORDS, words that are not KNOWN WORDS must stay under ${unknownPct}% of word occurrences.`,
+      : `- ${plan.newWords.length ? 'Apart from the NEW WORDS, words' : 'Words'} that are not KNOWN WORDS must stay under ${unknownPct}% of word occurrences.`,
     '- GLOSS lines: only for words or expressions that are in none of the lists below (the app already knows the meanings of listed words). Usually 0 to 8. Multi-word entries are fine for expressions like "nggak apa-apa".',
     '',
     `KNOWN WORDS: ${plan.familiar.filter((e) => !e.spoken).map(form).join(', ')}`,
@@ -192,19 +208,23 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     plan.focus.length ? `FOCUS WORDS: ${listed(plan.focus).join(', ')}` : '',
     plan.particles.length ? `PARTICLE WORDS (known, weakest first): ${plan.particles.map(form).join(', ')}` : '',
     plan.newParticle ? `NEW PARTICLE: ${plan.newParticle.word}` : '',
-    `NEW WORDS: ${listed(plan.newWords).join(', ') || '(none)'}`,
+    plan.newWords.length ? `NEW WORDS: ${listed(plan.newWords).join(', ')}` : '',
     plan.fallback && plan.deckPool.length ? `DECK WORDS (only when necessary): ${plan.deckPool.map(form).join(', ')}` : '',
     '',
-    'QUESTIONS: 5 to 7 questions in Korean, placed right after the part of the story they ask about. Use at least three types:',
-    '- CHOICE: a comprehension question with exactly 3 options and one clearly correct answer.',
-    '- TF: a Korean statement about the story, true or false.',
-    '- GAP: copy one story line exactly, replace one word or short phrase with ___, and give 3 Indonesian options (the removed text is correct).',
-    '- MATCH: 3 to 5 Indonesian words or expressions that appear in the story, each with its Korean meaning.',
-    'Every question except MATCH needs a short Korean explanation.',
+    ...(questions
+      ? [
+          'QUESTIONS: 5 to 7 questions in Korean, placed right after the part of the story they ask about. Use at least three types:',
+          '- CHOICE: a comprehension question with exactly 3 options and one clearly correct answer.',
+          '- TF: a Korean statement about the story, true or false.',
+          '- GAP: copy one story line exactly, replace one word or short phrase with ___, and give 3 Indonesian options (the removed text is correct).',
+          '- MATCH: 3 to 5 Indonesian words or expressions that appear in the story, each with its Korean meaning.',
+          'Every question except MATCH needs a short Korean explanation.',
+        ]
+      : ['NO QUESTIONS: write only the story lines. Do not write CHOICE, TF, GAP or MATCH lines.']),
     '',
     'FORMAT (one item per line, in story order; answer numbers start at 1):',
     '- Every LINE starts with narrator or a character id from the CHARACTER lines (a or b), the same id every time. Whatever a character says is that character\'s LINE, never a narrator LINE. Narration is third person: no aku/kamu, no particles, no question or exclamation marks.',
-    '- Questions are written only as CHOICE, TF, GAP or MATCH lines, never as LINE lines.',
+    questions ? '- Questions are written only as CHOICE, TF, GAP or MATCH lines, never as LINE lines.' : '',
     'PLAN: <English planning note>',
     'TITLE: <Indonesian title>',
     'TITLE_KO: <Korean title>',
@@ -213,10 +233,14 @@ export function userPrompt(plan: StoryPlan, topic: string): string {
     'PROPER: <place names and other proper nouns, comma separated>',
     'LINE: narrator | <Indonesian> | <Korean translation>',
     'LINE: a | <Indonesian> | <Korean translation>',
-    'CHOICE: <Korean question> | <option 1> / <option 2> / <option 3> | <correct number> | <Korean explanation>',
-    'TF: <Korean statement> | true | <Korean explanation>',
-    'GAP: <story line with ___> | <option 1> / <option 2> / <option 3> | <correct number> | <Korean explanation>',
-    'MATCH: <word> = <Korean> / <word> = <Korean> / <word> = <Korean>',
+    ...(questions
+      ? [
+          'CHOICE: <Korean question> | <option 1> / <option 2> / <option 3> | <correct number> | <Korean explanation>',
+          'TF: <Korean statement> | true | <Korean explanation>',
+          'GAP: <story line with ___> | <option 1> / <option 2> / <option 3> | <correct number> | <Korean explanation>',
+          'MATCH: <word> = <Korean> / <word> = <Korean> / <word> = <Korean>',
+        ]
+      : []),
     'GLOSS: <word or expression> | <Korean meaning> | <English meaning> | <root>',
     'END',
   ];
@@ -253,7 +277,7 @@ function cleanOptions(v: unknown): string[] | undefined {
  * - 틀린 질문(정답 번호가 없음, 빈칸 문장이 이야기에 없음, 짝 맞추기 단어가 이야기에 없음 등)은 빼고 problems에 적는다.
  * - fatal이면 쓸 수 없는 결과 (줄이나 질문이 너무 적음).
  */
-export function parseDraft(raw: unknown): { draft?: StoryDraft; problems: string[]; blocking: string[]; fatal: boolean } {
+export function parseDraft(raw: unknown, questionsWanted: boolean = WITH_QUESTIONS): { draft?: StoryDraft; problems: string[]; blocking: string[]; fatal: boolean } {
   const problems: string[] = [];
   if (!raw || typeof raw !== 'object') return { problems: ['이야기 형식이 아니에요'], blocking: ['이야기 형식이 아니에요'], fatal: true };
   const r = raw as Record<string, unknown>;
@@ -324,7 +348,7 @@ export function parseDraft(raw: unknown): { draft?: StoryDraft; problems: string
   // 여기까지는 질문 하나를 빼면 되는 작은 문제. 아래는 이야기 전체를 다시 써야 하는 문제 (blocking)
   const blocking: string[] = [];
   if (lines < 6) blocking.push(`줄이 너무 적어요 (${lines}줄)`);
-  if (questions < 3) blocking.push(`쓸 수 있는 질문이 너무 적어요 (${questions}개)`);
+  if (questionsWanted && questions < 3) blocking.push(`쓸 수 있는 질문이 너무 적어요 (${questions}개)`);
   if (chars.length < 2) blocking.push('등장인물이 2명보다 적어요');
   if (words < 100 || words > 450) blocking.push(`길이가 맞지 않아요 (${words}단어, 220~320단어 필요)`);
   // 누가 말했는지 틀리면 듣기·읽기에서 대사가 "나레이션"으로 나온다

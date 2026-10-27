@@ -34,7 +34,7 @@ const STORY = {
   glossary: [{ text: 'bakso', ko: '바소 (미트볼 수프)', en: 'meatball soup' }],
 };
 
-async function mockGemini(page: Page, calls: { story: number; prompts: string[] }, delayMs = 0) {
+async function mockGemini(page: Page, calls: { story: number; prompts: string[] }, delayMs = 0, story: typeof STORY = STORY) {
   await page.context().route('https://generativelanguage.googleapis.com/**', async (route) => {
     const url = route.request().url();
     if (url.includes('/models?')) return route.fulfill({ json: { models: [{ name: 'models/gemini-flash-latest' }, { name: 'models/gemini-3.8-flash-tts' }] } });
@@ -45,7 +45,7 @@ async function mockGemini(page: Page, calls: { story: number; prompts: string[] 
     calls.story++;
     if (delayMs) await new Promise((r) => setTimeout(r, delayMs));
     calls.prompts.push(route.request().postDataJSON().contents[0].parts[0].text);
-    const body = { candidates: [{ content: { parts: [{ text: formatStoryText(STORY) }] } }] };
+    const body = { candidates: [{ content: { parts: [{ text: formatStoryText(story) }] } }] };
     if (url.includes(':streamGenerateContent')) return route.fulfill({ contentType: 'text/event-stream', body: `data: ${JSON.stringify(body)}\r\n\r\n` });
     return route.fulfill({ json: body });
   });
@@ -257,6 +257,33 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await menu.getByRole('button', { name: '지우기' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: '지우기' }).click();
   await expect(page.getByText(/^만든 이야기/)).toHaveCount(0);
+});
+
+test('읽기: 질문 없이 만든 이야기는 질문·새 단어·복습 단어를 요청하지 않고, 끝까지 읽으면 결과에 질문 점수가 없다', async ({ page }) => {
+  const calls = { story: 0, prompts: [] as string[] };
+  await mockGemini(page, calls, 0, { ...STORY, blocks: STORY.blocks.filter((b) => b.type === 'line') });
+  await page.goto('/#/settings/voice');
+  await page.getByLabel('Gemini API 키').fill('FAKE-KEY');
+  await page.getByRole('button', { name: '연결' }).click();
+  await expect(page.getByText('연결됨 · gemini-3.8-flash-tts')).toBeVisible();
+  await page.goto('/#/decks/new');
+  await page.getByRole('button', { name: /^인도네시아어 구어체.* 추가하기$/ }).click();
+  await expect(page.getByText('단어 1500개를 넣었어요')).toBeVisible();
+  await page.getByRole('navigation', { name: '메인 메뉴' }).getByRole('link', { name: '읽기' }).click();
+  await page.getByRole('button', { name: '이야기 만들기' }).click();
+  await page.locator('.story-row', { hasText: 'Bakso Malam' }).click();
+  expect(calls.story).toBe(1);
+  expect(calls.prompts[0]).toContain('At least 93%');
+  expect(calls.prompts[0]).toContain('NO QUESTIONS');
+  expect(calls.prompts[0]).not.toContain('NEW WORDS');
+  expect(calls.prompts[0]).not.toContain('REVIEW WORDS');
+  expect(calls.prompts[0]).not.toContain('CHOICE:');
+  for (let i = 0; i < 12; i++) await page.getByRole('button', { name: '다음 문장 읽기' }).click();
+  await page.getByRole('button', { name: '다 읽었어요' }).click();
+  await expect(page.getByText('Bakso Malam 끝')).toBeVisible();
+  await expect(page.getByText(/아는 단어 \d+%/)).toBeVisible();
+  await expect(page.getByText(/질문 \d+개/)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '처음부터 다시 읽기' })).toBeVisible();
 });
 
 test('읽기: Gemini 키가 없으면 연결하라고 안내한다', async ({ page }) => {

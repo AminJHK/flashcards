@@ -90,7 +90,7 @@ describe('비율 목표 (단어 등장 횟수 기준)', () => {
 describe('이야기 계획과 요청문', () => {
   it('아는 단어가 300개 미만이면 덱의 다음 단어를 대체용으로 넣고, 새 단어는 덱 순서(빈도순)대로 고른다', () => {
     const items = [...Array.from({ length: 30 }, (_, i) => word(`kata${i}`)), ...Array.from({ length: 20 }, (_, i) => word(`baru${i}`, {}, 'new'))];
-    const plan = planStory(lexOf(items), 'normal');
+    const plan = planStory(lexOf(items), 'normal', undefined, undefined, undefined, { newWords: 4 });
     expect(plan.fallback).toBe(true);
     expect(plan.newWords.map((e) => e.word)).toEqual(['baru0', 'baru1', 'baru2', 'baru3']);
     expect(plan.deckPool[0]!.word).toBe('baru4');
@@ -98,7 +98,7 @@ describe('이야기 계획과 요청문', () => {
     expect(p).toMatch(/KNOWN WORDS: .*kata0/);
     expect(p).toContain('NEW WORDS: baru0, baru1, baru2, baru3');
     expect(p).toContain('DECK WORDS (only when necessary): baru4');
-    expect(p).toContain('At least 95%');
+    expect(p).toContain('At least 93%');
   });
 
   it('새 단어는 최근 이야기에서 소개한 것을 건너뛰고, 어려운 단어는 FOCUS로, 상황 씨앗은 최근 것을 피한다', () => {
@@ -116,7 +116,7 @@ describe('이야기 계획과 요청문', () => {
     const lex = lexOf(items);
     expect(lex.entries.find((e) => e.word === 'susah0')!.hard).toBe(true);
     const rng = () => 0.3;
-    const plan = planStory(lex, 'normal', { newWords: ['baru0', 'baru1'], reinforce: [], seeds: [] }, 'food', rng);
+    const plan = planStory(lex, 'normal', { newWords: ['baru0', 'baru1'], reinforce: [], seeds: [] }, 'food', rng, { newWords: 4, reviewWords: 6 });
     expect(plan.newWords.map((e) => e.word)).toEqual(['baru2', 'baru3', 'baru4', 'baru5']);
     expect(plan.focus.map((e) => e.word).sort()).toEqual(['susah0', 'susah1']);
     expect(plan.reinforce.every((e) => e.word.startsWith('lemah'))).toBe(true);
@@ -241,7 +241,7 @@ describe('AI 결과 검사', () => {
     raw.blocks[3] = { ...raw.blocks[3]!, answer: 5 };
     raw.blocks[5] = { ...raw.blocks[5]!, sentence: 'Mau ___ apa?' };
     raw.blocks[9] = { type: 'match', pairs: [{ id: 'kopi', ko: '커피' }, { id: 'bakso', ko: '미트볼' }, { id: 'teh', ko: '차' }] };
-    const r = parseDraft(raw);
+    const r = parseDraft(raw, true);
     expect(r.draft!.blocks.filter((b) => b.kind !== 'line')).toHaveLength(1);
     expect(r.fatal).toBe(false); // 질문이 모자라면 고쳐 달라고 할 뿐, 이야기는 쓸 수 있다
     expect(r.problems.join(' ')).toMatch(/질문이 너무 적어요 \(1개\)/);
@@ -291,6 +291,25 @@ describe('줄 형식 읽기', () => {
     const again = parseStoryText(formatStoryText(raw));
     expect(again.complete).toBe(true);
     expect(again.raw.blocks).toEqual(raw.blocks);
+  });
+});
+
+describe('기본 설정: 질문·새 단어·복습 단어 없음 (2026-10-27)', () => {
+  it('기본 요청문은 질문·새 단어·복습 단어를 부르지 않고, 질문이 없어도 쓸 수 있는 이야기다', () => {
+    const items = [...Array.from({ length: 330 }, (_, i) => word(`kata${i}`)), ...Array.from({ length: 10 }, (_, i) => word(`lemah${i}`, {}, 'learning', 0.6)), ...Array.from({ length: 20 }, (_, i) => word(`baru${i}`, {}, 'new'))];
+    const plan = planStory(lexOf(items), 'normal');
+    expect(plan.newWords).toEqual([]);
+    expect(plan.reinforce).toEqual([]);
+    const p = userPrompt(plan, 'food');
+    expect(p).toContain('At least 93%');
+    expect(p).toContain('NO QUESTIONS');
+    for (const t of ['NEW WORDS', 'REVIEW WORDS', 'QUESTIONS: 5', 'CHOICE:', 'TF:', 'MATCH:']) expect(p).not.toContain(t);
+    expect(userPrompt(plan, 'food', true)).toContain('QUESTIONS: 5 to 7');
+    const raw = goodRaw();
+    raw.blocks = raw.blocks.filter((b) => b.type === 'line');
+    const r = parseDraft(raw);
+    expect(r.blocking.join(' ')).not.toMatch(/질문/);
+    expect(parseDraft(raw, true).blocking.join(' ')).toMatch(/질문이 너무 적어요/);
   });
 });
 

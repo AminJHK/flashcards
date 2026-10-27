@@ -10,7 +10,7 @@ export type StoryDifficulty = 'easy' | 'normal' | 'challenge';
 /** 난이도별 아는 단어 비율 목표 (단어 등장 횟수 기준) */
 export const DIFFICULTIES: Record<StoryDifficulty, { label: string; known: number }> = {
   easy: { label: '쉬움', known: 0.98 },
-  normal: { label: '보통', known: 0.95 },
+  normal: { label: '보통', known: 0.93 },
   challenge: { label: '도전', known: 0.9 },
 };
 
