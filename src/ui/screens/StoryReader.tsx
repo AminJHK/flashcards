@@ -1011,6 +1011,11 @@ function StoryListening({ story, lex, names, tipKey, tipLine, onTip, showKo, onS
   onBack: () => void;
 }) {
   const lines = story.blocks.filter((block): block is StoryLine => block.kind === 'line');
+  // 전체 듣기 중에는 지금 읽는 줄이 화면 가운데에 오도록 따라 내려간다
+  const activeRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (playingAll && activeLine !== undefined) activeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [playingAll, activeLine]);
   return (
     <div className="screen story-body story-listening">
       <div className="story-listening-heading">
@@ -1034,7 +1039,7 @@ function StoryListening({ story, lex, names, tipKey, tipLine, onTip, showKo, onS
         {lines.map((line, i) => {
           const actor = story.characters.find((c) => c.id === line.speaker);
           return (
-            <div className={`story-listening-line${activeLine === i ? ' active' : ''}`} key={i}>
+            <div className={`story-listening-line${activeLine === i ? ' active' : ''}`} key={i} ref={activeLine === i ? activeRef : undefined}>
               <div className="story-listening-line-body">
                 <span className="story-sheet-eyebrow">{actor?.name ?? '나레이션'}</span>
                 <p>

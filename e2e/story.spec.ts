@@ -222,6 +222,19 @@ test('읽기: 내 덱의 단어로 이야기를 만들고, 한 줄씩 읽으며 
   await expect(page.getByText('듣기 복습 · 문제 없이 다시 듣기')).toBeVisible();
   await expect(page.locator('.story-listening-line')).toHaveCount(13);
   await expect(page.getByRole('button', { name: '전체 다시 듣기' })).toBeVisible();
+  // 전체 듣기: 읽는 줄이 화면 안으로 따라 내려온다 (가짜 음성이라 금방 끝나므로, 읽는 동안 가장 아래까지 갔는지만 본다)
+  await page.evaluate(() => {
+    const w = window as unknown as { __maxScroll: number };
+    w.__maxScroll = 0;
+    const el = document.querySelector('.story-listening')!;
+    el.addEventListener('scroll', () => { w.__maxScroll = Math.max(w.__maxScroll, el.scrollTop); });
+  });
+  await page.getByRole('button', { name: '전체 다시 듣기' }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __maxScroll: number }).__maxScroll), { timeout: 20_000 }).toBeGreaterThan(100);
+  await expect(page.getByRole('button', { name: '전체 다시 듣기' })).toBeVisible({ timeout: 30_000 });
+  // 이어지는 확인은 맨 위에서 (스크롤하면 단어 설명창이 닫히므로, 스크롤이 멈춘 뒤에 누른다)
+  await page.evaluate(() => document.querySelector('.story-listening')!.scrollTo({ top: 0, behavior: 'instant' }));
+  await expect.poll(() => page.evaluate(() => document.querySelector('.story-listening')!.scrollTop)).toBe(0);
   await expect(page.getByText(/저장된 AI 음성만 재사용해요/)).toBeVisible();
   await expect(page.getByRole('button', { name: '1번째 문장 다시 듣기', exact: true })).toBeVisible();
   await page.screenshot({ path: 'test-results/shots/47-story-relisten.png' });
