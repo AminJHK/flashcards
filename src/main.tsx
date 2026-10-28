@@ -15,9 +15,11 @@ import { createRoot } from 'react-dom/client';
 import { App } from './ui/App';
 import { applyCachedTheme } from './ui/theme';
 import { cleanVersionParam } from './adapters/update/update';
+import { installNativeBack } from './adapters/native/back';
 
 applyCachedTheme();
 cleanVersionParam();
+installNativeBack();
 
 // 안드로이드 앱이 알림에서 받은 답을 처리하려고 화면 없이 켠 경우 (HeadlessRunner.java): 화면은 그리지 않는다
 const headlessRun = 'FlashcardsHeadless' in window;
