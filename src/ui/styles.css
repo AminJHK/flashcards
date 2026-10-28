@@ -2769,13 +2769,28 @@ textarea.input-sentence {
   box-shadow: inset 0 0 0 1.5px var(--again);
 }
 
+/* 동기화 중: 구름이 돌지 않고 은은하게 숨 쉬듯 깜빡인다 */
 .sync-spin svg {
-  animation: sync-spin 1.2s linear infinite;
+  animation: sync-pulse 1.6s ease-in-out infinite;
 }
 
+/* 탭바의 작은 도는 표시(.tab-spin)가 쓴다 */
 @keyframes sync-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes sync-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sync-spin svg {
+    animation: none;
+    opacity: 0.6;
   }
 }
 
