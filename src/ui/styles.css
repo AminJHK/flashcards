@@ -852,6 +852,15 @@ svg.icon {
   font-size: calc(26px * var(--scale));
 }
 
+/* 영어 뜻을 메인으로 고른 카드: 영어 글자는 같은 크기의 한글보다 작아 보여서 조금 키운다 */
+.b-meaning[lang^='en'].front {
+  font-size: calc(37px * var(--scale));
+}
+
+.b-meaning[lang^='en'].back {
+  font-size: calc(30px * var(--scale));
+}
+
 .b-sentence {
   line-height: 1.45;
   max-width: 360px;
@@ -2008,6 +2017,14 @@ textarea.input-sentence {
 
   .b-meaning.back {
     font-size: calc(34px * var(--scale));
+  }
+
+  .b-meaning[lang^='en'].front {
+    font-size: calc(55px * var(--scale));
+  }
+
+  .b-meaning[lang^='en'].back {
+    font-size: calc(39px * var(--scale));
   }
 
   .b-sentence.main {
