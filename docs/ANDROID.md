@@ -77,3 +77,9 @@
 - 브라우저 음성 인식(webkitSpeechRecognition)은 WebView에 없다 → 말해서 답하기는 Gemini 받아쓰기로만.
 - 복습 알림, Fish Audio 등은 다음 단계.
 - 실제 기기에서 아직 확인 못 함.
+
+## 볼륨키 한 손 모드 (2026-11-01)
+
+- `ReviewKeysPlugin.java`를 MainActivity에서 등록하고 `dispatchKeyEvent`에서 전달한다. 복습 화면이 setEnabled(true)로 요청한 경우만 소비한다. 기본/다른 화면/편집/창 포커스가 없으면 일반 볼륨 조절.
+- 짧은 동작은 ACTION_UP, 아래 길게는 700ms 타이머. 반복 ACTION_DOWN 무시, 취소·앱 pause 때 타이머 제거. 조작마다 시스템 햅틱. 아래 길게를 계속 누르고 있어도 한 번만 취소.
+- 새 APK를 기존과 같은 키로 서명해야 한다. 실제 기기의 키·진동·화면 전환 동작은 설치 후 확인 필요.

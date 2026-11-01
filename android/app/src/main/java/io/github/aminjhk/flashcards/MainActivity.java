@@ -1,6 +1,7 @@
 package io.github.aminjhk.flashcards;
 
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.webkit.WebView;
 
 import androidx.activity.OnBackPressedCallback;
@@ -15,6 +16,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(NativeGooglePlugin.class);
         registerPlugin(ReviewNotifyPlugin.class);
         registerPlugin(BackgroundJobPlugin.class);
+        registerPlugin(ReviewKeysPlugin.class);
         super.onCreate(savedInstanceState);
         // 뒤로 가기 버튼: Capacitor는 App 플러그인이 없으면 앱을 바로 닫아 버린다. 앱 안에서 앞 화면으로 돌아가게 한다
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -23,6 +25,16 @@ public class MainActivity extends BridgeActivity {
                 goBackInApp();
             }
         });
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (hasWindowFocus() && getBridge() != null) {
+            com.getcapacitor.PluginHandle handle = getBridge().getPlugin("ReviewKeys");
+            if (handle != null && handle.getInstance() instanceof ReviewKeysPlugin
+                    && ((ReviewKeysPlugin) handle.getInstance()).consume(event)) return true;
+        }
+        return super.dispatchKeyEvent(event);
     }
 
     /**
