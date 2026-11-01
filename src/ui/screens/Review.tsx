@@ -20,6 +20,9 @@ import { NoteEditor } from './NoteEditor';
 import { withTimeout } from '../../adapters/net';
 import { noVoiceMessage } from '../langs';
 
+import { supportsReviewKeys } from '../../adapters/native/reviewKeys';
+import { useReviewKeys } from '../useReviewKeys';
+
 const warned = new Set<string>();
 
 const LABELS: Record<Rating, string> = { 1: '다시', 2: '어려움', 3: '알았음', 4: '쉬움' };
@@ -49,6 +52,9 @@ export function Review({ deckId }: { deckId?: string }) {
    * 대기열을 만들 때 "답한 것"으로 간주한다 (assumeAnswered).
    */
   const [answered, setAnswered] = useState<Record<string, number>>({});
+  const [oneHanded, setOneHanded] = useState(() => localStorage.getItem('review-one-handed') === 'true');
+  const keysSupported = supportsReviewKeys();
+  const keyCooldown = useRef(0);
   const [editing, setEditing] = useState(false);
   const [answer, setAnswer] = useState('');
   const [checked, setChecked] = useState<AnswerComparison>();
@@ -245,6 +251,22 @@ export function Review({ deckId }: { deckId?: string }) {
     }
   }, [history, show, toast]);
 
+  useReviewKeys(oneHanded && keysSupported && !editing, (key) => {
+    if (document.hidden || document.querySelector('[role="dialog"], dialog[open]') || isBusy() || Date.now() < keyCooldown.current) return;
+    if (key === 'undo') {
+      keyCooldown.current = Date.now() + 300;
+      void undo();
+    } else if (card && view) {
+      keyCooldown.current = Date.now() + 300;
+      if (!flipped) flip();
+      else rate(key === 'up' ? 3 : 1);
+    }
+  }, () => {
+    setOneHanded(false);
+    localStorage.setItem('review-one-handed', 'false');
+    toast('볼륨키를 연결하지 못했어요. 앱을 다시 열어 주세요');
+  });
+
   const buttons = settings?.buttons === 4 ? ([1, 2, 3, 4] as Rating[]) : ([1, 3] as Rating[]);
 
   // PC 키보드: 스페이스/엔터 = 뒤집기, 1~4 = 답, R = 발음 듣기
@@ -292,6 +314,7 @@ export function Review({ deckId }: { deckId?: string }) {
   const againCount = history.filter((h) => h.rating === 1).length;
 
   const topBar = (
+    <>
     <div className="review-top">
       <button type="button" className="icon-btn" aria-label="복습 닫기" onClick={close}>
         <Icon name="close" />
@@ -314,6 +337,23 @@ export function Review({ deckId }: { deckId?: string }) {
         <Icon name="speaker" size={22} />
       </button>
     </div>
+    <div className="review-controls">
+      {oneHanded && keysSupported && <span className="faint small" title="볼륨 아래 0.7초 길게: 되돌리기">↑ 알아요 · ↓ 몰라요</span>}
+      <button type="button" className="one-hand-toggle" aria-pressed={oneHanded && keysSupported}
+        onClick={() => {
+          if (!keysSupported) {
+            toast('볼륨키 한 손 모드는 새 안드로이드 APK를 설치하면 사용할 수 있어요');
+            return;
+          }
+          const next = !oneHanded;
+          setOneHanded(next);
+          localStorage.setItem('review-one-handed', String(next));
+          if (next) toast('정답 보기 전에는 볼륨키 아무거나 · 아래 0.7초는 되돌리기');
+        }}>
+        한 손 모드 <span>{oneHanded && keysSupported ? 'ON' : 'OFF'}</span>
+      </button>
+    </div>
+    </>
   );
 
   if (!card || !view || !note) {
