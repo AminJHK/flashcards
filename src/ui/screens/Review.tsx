@@ -338,7 +338,7 @@ export function Review({ deckId }: { deckId?: string }) {
       </button>
     </div>
     <div className="review-controls">
-      {oneHanded && keysSupported && <span className="faint small">↑ 알아요 · ↓ 몰라요 · ↓ 길게 되돌리기</span>}
+      {oneHanded && keysSupported && <span className="faint small" title="볼륨 아래 0.7초 길게: 되돌리기">↑ 알아요 · ↓ 몰라요</span>}
       <button type="button" className="one-hand-toggle" aria-pressed={oneHanded && keysSupported}
         onClick={() => {
           if (!keysSupported) {
