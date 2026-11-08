@@ -1532,5 +1532,12 @@ export const indonesianColloquial: Pack = {
     w('jarang', '드물게, 좀처럼 ~않는', 'jarang', '', 'Aku jarang masak.', '나는 요리를 잘 안 해.', '일반', 'sering(이미 덱에 있음)의 반대', ['부사']),
     w('asap', '연기', 'asap', '', 'Ada asap dari dapur.', '부엌에서 연기가 나.', '일반', 'asap rokok = 담배 연기', ['명사']),
     w('menyewa', '빌리다 (돈 내고)', 'menyewa', 'sewa', 'Kita menyewa mobil di Bali.', '우리는 발리에서 차를 빌렸어.', '일반', 'pinjem(이미 덱에 있음)은 공짜로 빌림, sewa는 돈 내고', ['동사']),
+    // 2026-11-08: 사용자가 요청한 표현. 기존 단어 뒤에만 추가한다.
+    w('gemas', '너무 귀여워서 어쩔 줄 모르는', 'gemas', '', 'Kucingnya lucu banget, aku gemas!', '고양이가 너무 귀여워서 어쩔 줄 모르겠어!', '일반', '귀여워서 깨물어 주고 싶은 느낌. 상황에 따라 답답하거나 얄미운 느낌도 있다.', ['형용사']),
+    w('nanggung', '어중간한, 이도 저도 아닌', '', '', 'Udah nanggung, lanjut aja.', '여기서 그만두기엔 어중간하니까 그냥 계속하자.', '구어', '하다 만 상태라 마저 하는 편이 낫다는 뜻으로도 쓴다.', ['형용사']),
+    w('sungkan', '상대에게 폐가 될까 봐 조심스러운', 'sungkan', '', 'Aku sungkan minta tolong lagi.', '또 도와 달라고 부탁하기가 미안하고 조심스러워.', '일반', '상대에 대한 예의나 부담 때문에 망설이는 마음.', ['형용사']),
+    w('masuk angin', '몸이 으슬으슬하고 감기 기운이 있는', 'masuk angin', '', 'Kayaknya aku masuk angin.', '나 몸살 기운이 있는 것 같아.', '일반', '더부룩함 등 여러 증상에도 쓰는 인도네시아의 일상적 표현. 특정 의학적 진단명은 아니다.', ['표현']),
+    w('ngabuburit', '라마단 해 질 때까지 금식하며 시간을 보내다', '', '', 'Kita ngabuburit sambil jalan-jalan.', '우리 금식 끝날 때까지 산책하면서 시간 보내자.', '구어', '라마단에 해 질 무렵 금식을 끝내는 이프타르(iftar)를 기다리며 시간을 보낸다.', ['동사']),
+    w('rezeki', '복, 생계나 뜻밖의 좋은 기회', 'rezeki', '', 'Alhamdulillah, dapat rezeki hari ini.', '감사하게도 오늘 좋은 기회가 생겼어.', '일반', '재물뿐 아니라 일자리·건강 등 주어진 복이나 생계도 뜻한다. rejeki라고도 쓴다.', ['명사']),
   ],
 };
