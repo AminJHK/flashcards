@@ -1504,4 +1504,10 @@ export const EXTRA: Readonly<Record<string, readonly string[]>> = {
   'jarang': ['rarely', 'jarang banget = 거의 안 해', 'jarang-jarang = 드문드문'],
   'asap': ['smoke', 'asap rokok = 담배 연기', 'berasap = 연기가 나다'],
   'menyewa': ['to rent', 'menyewa motor = 오토바이를 빌리다'],
+  'gemas': ['adorably overwhelmed / exasperated', 'gemas banget = 너무 귀여워서 어쩔 줄 모르겠어'],
+  'nanggung': ['awkwardly halfway / too far to stop', 'udah nanggung = 여기서 그만두기엔 어중간해'],
+  'sungkan': ['hesitant out of consideration', 'sungkan minta tolong = 부탁하기가 미안하고 조심스러워'],
+  'masuk angin': ['feeling under the weather', 'kayaknya masuk angin = 몸살 기운이 있는 것 같아'],
+  'ngabuburit': ['passing time before breaking the Ramadan fast', 'ngabuburit bareng = 금식이 끝날 때까지 함께 시간 보내기'],
+  'rezeki': ['blessing / livelihood / good fortune', 'dapat rezeki = 복이나 좋은 기회를 얻다'],
 };
