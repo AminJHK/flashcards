@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Settings } from '../../core/model/types';
 import { forgetToken } from '../../adapters/google/auth';
 import type { DriveFile } from '../../adapters/google/drive';
-import { saveSettings } from '../../adapters/storage/repo';
+import { getSettings, saveSettings } from '../../adapters/storage/repo';
 import { Row, Switch } from '../components/Controls';
 import { syncWithDrive } from '../driveSync';
 import { backupToDrive, connectDrive, driveErrorMessage, listDriveBackups, restoreFromDrive } from '../driveBackup';
@@ -160,12 +160,32 @@ function Connected({ s }: { s: Settings }) {
           onClick={() =>
             run('sync', async () => {
               const r = await syncWithDrive({ interactive: true });
+              if (r?.practiceExportFailed) {
+                toast('동기화했지만 연습 파일을 갱신하지 못했어요. 다시 시도해 주세요');
+                return;
+              }
               toast(r?.hadRemote ? `동기화했어요 · 단어 ${r.notes}개` : 'Drive에 올렸어요. 다른 기기에서 불러올 수 있어요');
             })
           }
         >
           {busy === 'sync' ? '동기화 중…' : '지금 동기화'}
         </button>
+      </Row>
+      <Row
+        title="ChatGPT용 인도네시아어 연습 파일"
+        desc={`켜면 동기화할 때 한국어 뜻, 인도네시아어 표현과 카드별 복습 상태를 Drive의 flashcards-indonesian-practice.json에 저장해요. 끄면 갱신을 멈춰요. 마지막 저장 ${when(d.lastPracticeExportAt)}.`}
+      >
+        <Switch
+          label="ChatGPT용 인도네시아어 연습 파일"
+          checked={d.exportIndonesianPractice === true}
+          onChange={(enabled) => void run('practice', async () => {
+            if (enabled === d.exportIndonesianPractice) return;
+            const current = (await getSettings()).googleDrive;
+            if (!current || current.clientId !== d.clientId || current.email !== d.email) return;
+            await saveSettings({ googleDrive: { ...current, exportIndonesianPractice: enabled } });
+            toast(enabled ? '「지금 동기화」를 누르면 연습 파일을 만들어요' : '자동 갱신을 껐어요. 저장된 파일은 Drive에서 지울 수 있어요');
+          })}
+        />
       </Row>
       <Row title="처음 누를 때 자동 로그인" desc="꺼 두면 로그인 창이 마음대로 뜨지 않아요. 복습을 마치고 배지(왼쪽 메뉴·오늘 화면)를 누르거나 「지금 동기화」를 누를 때만 맞춰요. 켜면 앱을 연 뒤 처음 누를 때 창이 잠깐 떴다 닫혀요.">
         <Switch label="처음 누를 때 자동 로그인" checked={d.syncOnStart === true} onChange={(v) => void saveSettings({ googleDrive: { ...d, syncOnStart: v } })} />
