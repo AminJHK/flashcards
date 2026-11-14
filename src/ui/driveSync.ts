@@ -1,13 +1,15 @@
+import { makeIndonesianPracticeFile, PRACTICE_FILE_NAME } from '../core/io/indonesianPractice';
 import { makeSyncFile, parseSyncFile, SYNC_FILE_NAME } from '../core/io/sync';
 import { clearTokenCache, getAccessToken, silentToken } from '../adapters/google/auth';
 import { DriveError, downloadText, ensureFolder, findFile, updateText, uploadJson } from '../adapters/google/drive';
-import { exportSyncData, getSettings, mergeIntoLocal, saveSettings } from '../adapters/storage/repo';
+import { exportSyncData, getSettings, mergeIntoLocal, saveSettings, schedulerFor } from '../adapters/storage/repo';
 
 export interface SyncResult {
   /** 합친 뒤 이 기기에 있는 단어 수 */
   notes: number;
   /** Drive에 동기화 파일이 이미 있었는지 (없으면 이 기기 것을 처음 올린 것) */
   hadRemote: boolean;
+  practiceExportFailed?: boolean;
 }
 
 let running: Promise<SyncResult | undefined> | undefined;
@@ -78,8 +80,31 @@ async function run({ interactive }: { interactive: boolean }): Promise<SyncResul
     if (file) await updateText(t, file.id, text);
     else await uploadJson(t, folderId, SYNC_FILE_NAME, text);
     const cur = await getSettings();
-    await saveSettings({ googleDrive: { ...cur.googleDrive!, folderId, lastSyncAt: Date.now() } });
-    return { notes: merged.notes.length, hadRemote };
+    const syncedAt = Date.now();
+    let practiceExportAt: number | undefined;
+    let practiceExportFailed = false;
+    if (cur.googleDrive?.clientId === drive.clientId && cur.googleDrive.email === drive.email && cur.googleDrive.exportIndonesianPractice) {
+      try {
+        const practice = makeIndonesianPracticeFile(merged, schedulerFor(cur), syncedAt);
+        const existing = await findFile(t, folderId, PRACTICE_FILE_NAME);
+        const content = JSON.stringify(practice);
+        if (existing) await updateText(t, existing.id, content);
+        else await uploadJson(t, folderId, PRACTICE_FILE_NAME, content);
+        practiceExportAt = syncedAt;
+      } catch {
+        practiceExportFailed = true;
+      }
+    }
+    const latest = (await getSettings()).googleDrive;
+    if (latest?.clientId === drive.clientId && latest.email === drive.email) {
+      await saveSettings({ googleDrive: {
+        ...latest,
+        folderId,
+        lastSyncAt: syncedAt,
+        lastPracticeExportAt: practiceExportAt ?? latest.lastPracticeExportAt,
+      } });
+    }
+    return { notes: merged.notes.length, hadRemote, practiceExportFailed };
   };
   try {
     return await attempt(token);

@@ -174,6 +174,9 @@ export interface GoogleDriveSettings {
   email?: string;
   folderId?: string;
   lastDriveBackupAt?: Millis;
+  /** 이 기기에서 동기화할 때 인도네시아어 연습용 파일도 갱신 */
+  exportIndonesianPractice?: boolean;
+  lastPracticeExportAt?: Millis;
   /** 마지막으로 다른 기기와 동기화한 시각 */
   lastSyncAt?: Millis;
   /** 앱을 연 뒤 화면을 처음 누를 때 로그인 창을 띄워 자동으로 동기화할지 (없으면 꺼짐 — 동기화는 사용자가 누를 때) */
