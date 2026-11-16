@@ -45,18 +45,34 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
     };
     fit();
 
-    // 지그재그는 짧고 날카롭게. 가지 길이가 화면 폭을 가로지르지 않도록 제한한다.
-    const zigzag = (from: Point, to: Point, segments: number, wobble: number): Point[] => {
-      const result = [from];
-      for (let i = 1; i < segments; i++) {
-        const t = i / segments;
-        const wiggle = Math.sin(t * Math.PI) * wobble;
-        result.push(point(
-          from.x + (to.x - from.x) * t + random(-wiggle, wiggle),
-          from.y + (to.y - from.y) * t,
-        ));
+    // 큰 방향 전환(주 굴곡) + 짧은 예리한 꺾임(잔 굴곡)을 중첩한다.
+    // 직선에 작은 흔들림만 붙이는 대신, 실제 번개처럼 20~50도 각도로 튀는 줄기를 만든다.
+    const jagged = (from: Point, to: Point, sections: number, swing: number, detail: number): Point[] => {
+      const anchors: Point[] = [from];
+      let previousX = from.x;
+      const minX = Math.max(9, width * 0.15);
+      const maxX = Math.min(width - 9, width * 0.85);
+      for (let i = 1; i < sections; i++) {
+        const t = i / sections;
+        const centre = from.x + (to.x - from.x) * t;
+        const x = clamp(previousX * 0.42 + centre * 0.58 + random(-swing, swing), minX, maxX);
+        anchors.push(point(x, from.y + (to.y - from.y) * t));
+        previousX = x;
       }
-      return [...result, to];
+      anchors.push(to);
+      const result: Point[] = [from];
+      for (let i = 1; i < anchors.length; i++) {
+        const p = anchors[i - 1]!;
+        const q = anchors[i]!;
+        const dx = q.x - p.x;
+        const dy = q.y - p.y;
+        result.push(
+          point(clamp(p.x + dx * 0.35 + random(-detail, detail), 4, width - 4), p.y + dy * 0.35),
+          point(clamp(p.x + dx * 0.72 + random(-detail, detail), 4, width - 4), p.y + dy * 0.72),
+          q,
+        );
+      }
+      return result;
     };
 
     const bar = document.querySelector('.review-progress-row .progress-track')?.getBoundingClientRect();
@@ -64,46 +80,48 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
       bar ? bar.left + bar.width * 0.5 : width * 0.5,
       bar ? bar.top + bar.height / 2 : height * 0.15,
     );
-    const start = point(clamp(impact.x + random(-width * 0.10, width * 0.10), width * 0.2, width * 0.8), -16);
-    const finish = point(clamp(impact.x + random(-width * 0.08, width * 0.08), width * 0.2, width * 0.8), height + 8);
-    const upper = zigzag(start, impact, 8, 14);
-    const lower = zigzag(impact, finish, 23, 24);
+    const start = point(clamp(impact.x + random(-width * 0.09, width * 0.09), width * 0.2, width * 0.8), -16);
+    const finish = point(clamp(impact.x + random(-width * 0.16, width * 0.16), width * 0.2, width * 0.8), height + 8);
+    const upper = jagged(start, impact, 3, Math.min(42, width * 0.12), 9);
+    const lower = jagged(impact, finish, Math.max(7, Math.ceil((height - impact.y) / 95)), Math.min(92, width * 0.26), 16);
     const main = [...upper, ...lower.slice(1)];
     const arcs: Arc[] = [{
       path: main,
-      width: trigger.level === 1 ? 3.8 : trigger.level === 2 ? 4.8 : 5.8,
+      // 이전보다 흰 코어와 중간 파란/보라색 선을 굵게.
+      width: trigger.level === 1 ? 6.2 : trigger.level === 2 ? 8.0 : 10.2,
       delay: 0,
     }];
 
-    // '빗자루'처럼 한 지점에서 사방으로 뻗지 않고 주 줄기 전체에 가지를 흩뿌린다.
-    const count = trigger.level === 1 ? 5 : trigger.level === 2 ? 7 : 9;
+    // 짧은 잔가지는 메인 줄기 전체에 분산. 한 점에서 빗자루처럼 퍼지지 않는다.
+    const count = trigger.level === 1 ? 5 : trigger.level === 2 ? 6 : 7;
     for (let i = 0; i < count; i++) {
-      // 충격부뿐 아니라 카드 한가운데, 화면 하단에서도 튄다.
-      const fraction = (i + 0.6 + random(-0.2, 0.2)) / count;
-      const index = clamp(Math.floor(6 + fraction * (main.length - 9)), 4, main.length - 3);
+      const index = clamp(
+        Math.floor((i + 1) / (count + 1) * (main.length - 1) + random(-1.5, 1.5)),
+        4,
+        main.length - 4,
+      );
       const from = main[index] ?? impact;
       const direction = i % 2 ? 1 : -1;
-      const maxReach = Math.min(88, width * 0.20);
-      const reach = random(27, maxReach);
+      const reach = random(18, Math.min(66, width * 0.17));
       const tip = point(
         clamp(from.x + direction * reach, 5, width - 5),
-        Math.min(height - 4, from.y + random(24, 79)),
+        Math.min(height - 3, from.y + random(15, 55)),
       );
-      const branch = zigzag(from, tip, 4 + Math.floor(random(0, 3)), 9);
-      const delay = random(12, 85);
-      arcs.push({ path: branch, width: random(0.95, 1.55), delay });
+      const branch = jagged(from, tip, 2, 10, 5);
+      const delay = random(11, 72);
+      arcs.push({ path: branch, width: random(0.9, 1.45), delay });
 
-      // 가지에서 다시 1개의 짧은 가는 스파크만 튄다.
-      if (trigger.level >= 2 || i % 2 === 0) {
+      // 큰 번개가 아닌 고주파로 짧게 튀는 잔불꽃.
+      if (trigger.level >= 2 && i % 2 === 0) {
         const fork = branch[Math.floor(branch.length * 0.6)] ?? tip;
-        const smallTip = point(
-          clamp(fork.x + direction * random(12, 31), 4, width - 4),
-          Math.min(height - 3, fork.y + random(12, 31)),
+        const end = point(
+          clamp(fork.x + direction * random(9, 23), 4, width - 4),
+          Math.min(height - 3, fork.y + random(9, 25)),
         );
         arcs.push({
-          path: zigzag(fork, smallTip, 3, 5),
-          width: random(0.45, 0.75),
-          delay: delay + random(9, 32),
+          path: jagged(fork, end, 2, 4, 2),
+          width: random(0.4, 0.7),
+          delay: delay + random(12, 32),
         });
       }
     }
@@ -133,26 +151,26 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
       if (alpha <= 0) return;
       ctx.beginPath();
       arc.path.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
-      ctx.lineJoin = 'miter';
+      ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
 
       // 굵은 본체에 네온 외곽 광, 좁은 안쪽 광, 하얀 코어 세 겹.
-      ctx.shadowBlur = 19;
+      ctx.shadowBlur = 26;
       ctx.shadowColor = edge;
       ctx.strokeStyle = edge;
-      ctx.lineWidth = arc.width * 5.2;
+      ctx.lineWidth = arc.width * 5.7;
       ctx.globalAlpha = alpha * 0.28;
       ctx.stroke();
 
       ctx.shadowBlur = 7;
       ctx.strokeStyle = edge;
-      ctx.lineWidth = arc.width * 1.9;
+      ctx.lineWidth = arc.width * 2.2;
       ctx.globalAlpha = alpha * 0.94;
       ctx.stroke();
 
       ctx.shadowBlur = 0;
       ctx.strokeStyle = core;
-      ctx.lineWidth = Math.max(0.65, arc.width * 0.70);
+      ctx.lineWidth = Math.max(0.8, arc.width * 0.82);
       ctx.globalAlpha = alpha;
       ctx.stroke();
       ctx.globalAlpha = 1;
