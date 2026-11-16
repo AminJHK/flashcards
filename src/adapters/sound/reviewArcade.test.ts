@@ -50,7 +50,7 @@ describe('review arcade combo', () => {
 
   it('allows combo to be reconstructed after Undo', () => {
     const ratings = [3, 4, 3, 1, 4, 4, 3] as const;
-    const calculate = (answers: readonly (1 | 2 | 3 | 4)[]) => answers.reduce(advanceCombo, 0);
+    const calculate = (answers: readonly (1 | 2 | 3 | 4)[]) => answers.reduce((combo, rating) => advanceCombo(combo, rating), 0);
     expect(calculate(ratings)).toBe(3);
     expect(calculate(ratings.slice(0, -1))).toBe(2);
   });
