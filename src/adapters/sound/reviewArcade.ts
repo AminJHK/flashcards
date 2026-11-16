@@ -1,10 +1,15 @@
-import type { Rating } from '../../core/model/types';
+import type { Card, Rating } from '../../core/model/types';
 
-/** 성공은 연속으로 쌓고, 어려움은 이전 단계로 내려가며, 다시는 초기화한다. */
-export function advanceCombo(combo: number, rating: Rating): number {
+/**
+ * 새 카드/학습 중 카드: 성공(Good/Easy)은 보상, 틀림(Again/Hard)은 감점 없이 유지.
+ * 복습 카드: 기존처럼 Again은 초기화, Hard는 한 단계 하락.
+ * 답변 '전'의 phase를 사용해야 첫 학습에서 Review로 전환돼도 감점하지 않는다.
+ */
+export function advanceCombo(combo: number, rating: Rating, phase: Card['phase'] = 'review'): number {
+  if (rating >= 3) return combo + 1;
+  if (phase !== 'review') return combo;
   if (rating === 1) return 0;
-  if (rating === 2) return [0, 0, 2, 4, 7][comboTier(combo)] ?? 0;
-  return combo + 1;
+  return [0, 0, 2, 4, 7][comboTier(combo)] ?? 0;
 }
 
 export function comboTier(combo: number): 0 | 1 | 2 | 3 | 4 {
