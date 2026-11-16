@@ -10,8 +10,9 @@ interface Arc { path: Point[]; width: number; delay: number }
 interface Spark { x: number; y: number; vx: number; vy: number; radius: number; hue: number }
 
 /**
- * 화면 전체를 덮는 번개. 입력을 가로채지 않고 한 번의 충격(최대 1.15초) 뒤
- * requestAnimationFrame을 완전히 멈춘다. 콤보 중 충전된 진행 바는 CSS가 담당한다.
+ * 굵은 주 번개 한 줄이 화면 상단부터 하단까지 관통하고,
+ * 본체 곳곳에서 짧은 잔가지와 전기 불꽃만 튄다.
+ * 화면 입력을 가리지 않으며 짧게 재생한 뒤 애니메이션 프레임을 정리한다.
  */
 export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -20,32 +21,20 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
     if (!trigger || !ref.current) return;
     const canvas = ref.current;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) return;
     const style = getComputedStyle(document.documentElement);
-    const bright = style.getPropertyValue('--lightning-bright').trim();
-    const blue = style.getPropertyValue('--lightning-blue').trim();
-    const violet = style.getPropertyValue('--lightning-violet').trim();
-    const core = bright || '#efffff';
-    const edge = trigger.level >= 3 ? (violet || '#ba83ff') : (blue || '#42c5ff');
+    const core = style.getPropertyValue('--lightning-bright').trim() || '#efffff';
+    const blue = style.getPropertyValue('--lightning-blue').trim() || '#42c5ff';
+    const violet = style.getPropertyValue('--lightning-violet').trim() || '#ba83ff';
+    const edge = trigger.level >= 3 ? violet : blue;
     let width = 0;
     let height = 0;
     let frame = 0;
-    const rng = (min: number, max: number) => min + Math.random() * (max - min);
+    const random = (a: number, b: number) => a + Math.random() * (b - a);
+    const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
     const point = (x: number, y: number): Point => ({ x, y });
-    const path = (from: Point, to: Point, steps: number, spread: number): Point[] => {
-      const result = [from];
-      for (let i = 1; i < steps; i++) {
-        const t = i / steps;
-        const bend = Math.sin(t * Math.PI) * spread;
-        result.push(point(from.x + (to.x - from.x) * t + rng(-bend, bend),
-          from.y + (to.y - from.y) * t + rng(-bend, bend)));
-      }
-      result.push(to);
-      return result;
-    };
+
     const fit = () => {
       width = window.innerWidth;
       height = window.innerHeight;
@@ -55,98 +44,164 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     fit();
+
+    // 지그재그는 짧고 날카롭게. 가지 길이가 화면 폭을 가로지르지 않도록 제한한다.
+    const zigzag = (from: Point, to: Point, segments: number, wobble: number): Point[] => {
+      const result = [from];
+      for (let i = 1; i < segments; i++) {
+        const t = i / segments;
+        const wiggle = Math.sin(t * Math.PI) * wobble;
+        result.push(point(
+          from.x + (to.x - from.x) * t + random(-wiggle, wiggle),
+          from.y + (to.y - from.y) * t,
+        ));
+      }
+      return [...result, to];
+    };
+
     const bar = document.querySelector('.review-progress-row .progress-track')?.getBoundingClientRect();
-    const impact = point(bar ? bar.left + bar.width * 0.72 : width * 0.5, bar ? bar.top + bar.height / 2 : height * 0.16);
-    const arcs: Arc[] = [];
-    const primary = path(point(impact.x + rng(-width * 0.14, width * 0.14), -18), impact, 15, 18);
-    arcs.push({ path: primary, width: 3.2, delay: 0 });
-    const branches = trigger.level === 1 ? 6 : trigger.level === 2 ? 10 : 14;
-    // 상단 바에서 끝나지 않고 화면 좌우/카드 아래까지 갈라져 퍼지는 번개
-    for (let i = 0; i < branches; i++) {
-      const from = i < 3 ? primary[Math.floor(rng(4, 13))] ?? impact : impact;
-      const side = i % 2 ? 1 : -1;
-      const end = point(Math.max(4, Math.min(width - 4, impact.x + side * rng(width * 0.18, width * 0.75))),
-        rng(height * 0.28, height * 0.88));
-      const ray = path(from, end, 9 + Math.floor(rng(0, 7)), 14 + trigger.level * 4);
-      const delay = rng(18, 115);
-      arcs.push({ path: ray, width: rng(1.05, 1.85), delay });
-      const tiny = trigger.level >= 2 ? 2 : 1;
-      for (let j = 0; j < tiny; j++) {
-        const at = ray[Math.floor(rng(3, ray.length - 2))] ?? end;
-        const tip = point(at.x + rng(-width * 0.25, width * 0.25), Math.min(height - 6, at.y + rng(18, height * 0.15)));
-        arcs.push({ path: path(at, tip, 5, 10), width: rng(0.55, 0.9), delay: delay + rng(8, 55) });
+    const impact = point(
+      bar ? bar.left + bar.width * 0.5 : width * 0.5,
+      bar ? bar.top + bar.height / 2 : height * 0.15,
+    );
+    const start = point(clamp(impact.x + random(-width * 0.10, width * 0.10), width * 0.2, width * 0.8), -16);
+    const finish = point(clamp(impact.x + random(-width * 0.08, width * 0.08), width * 0.2, width * 0.8), height + 8);
+    const upper = zigzag(start, impact, 8, 14);
+    const lower = zigzag(impact, finish, 23, 24);
+    const main = [...upper, ...lower.slice(1)];
+    const arcs: Arc[] = [{
+      path: main,
+      width: trigger.level === 1 ? 3.8 : trigger.level === 2 ? 4.8 : 5.8,
+      delay: 0,
+    }];
+
+    // '빗자루'처럼 한 지점에서 사방으로 뻗지 않고 주 줄기 전체에 가지를 흩뿌린다.
+    const count = trigger.level === 1 ? 5 : trigger.level === 2 ? 7 : 9;
+    for (let i = 0; i < count; i++) {
+      // 충격부뿐 아니라 카드 한가운데, 화면 하단에서도 튄다.
+      const fraction = (i + 0.6 + random(-0.2, 0.2)) / count;
+      const index = clamp(Math.floor(6 + fraction * (main.length - 9)), 4, main.length - 3);
+      const from = main[index] ?? impact;
+      const direction = i % 2 ? 1 : -1;
+      const maxReach = Math.min(88, width * 0.20);
+      const reach = random(27, maxReach);
+      const tip = point(
+        clamp(from.x + direction * reach, 5, width - 5),
+        Math.min(height - 4, from.y + random(24, 79)),
+      );
+      const branch = zigzag(from, tip, 4 + Math.floor(random(0, 3)), 9);
+      const delay = random(12, 85);
+      arcs.push({ path: branch, width: random(0.95, 1.55), delay });
+
+      // 가지에서 다시 1개의 짧은 가는 스파크만 튄다.
+      if (trigger.level >= 2 || i % 2 === 0) {
+        const fork = branch[Math.floor(branch.length * 0.6)] ?? tip;
+        const smallTip = point(
+          clamp(fork.x + direction * random(12, 31), 4, width - 4),
+          Math.min(height - 3, fork.y + random(12, 31)),
+        );
+        arcs.push({
+          path: zigzag(fork, smallTip, 3, 5),
+          width: random(0.45, 0.75),
+          delay: delay + random(9, 32),
+        });
       }
     }
-    const sparks: Spark[] = Array.from({ length: trigger.level === 1 ? 55 : trigger.level === 2 ? 90 : 125 },
-      () => {
-        const a = rng(0, Math.PI * 2);
-        const speed = rng(0.6, 5.2) * (trigger.level === 3 ? 1.4 : 1);
-        return { x: impact.x, y: impact.y, vx: Math.cos(a) * speed,
-          vy: Math.sin(a) * speed + rng(0, 2), radius: rng(0.7, 2.4), hue: rng(0, 1) };
-      });
 
-    const start = performance.now();
-    const duration = trigger.level === 1 ? 800 : 1150;
+    // 진행 바, 주 줄기, 하단 충격 지점에 작은 불꽃을 분산한다.
+    const sparks: Spark[] = Array.from({
+      length: trigger.level === 1 ? 35 : trigger.level === 2 ? 50 : 66,
+    }, (_, i) => {
+      const source = i % 4 === 0 ? impact : i % 4 === 1 ? finish :
+        main[Math.floor(random(4, main.length - 2))] ?? impact;
+      const angle = random(0, Math.PI * 2);
+      const speed = random(0.5, 3.2);
+      return {
+        x: source.x,
+        y: source.y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        radius: random(0.6, 1.85),
+        hue: random(0, 1),
+      };
+    });
+
+    const startTime = performance.now();
+    const duration = trigger.level === 1 ? 720 : trigger.level === 2 ? 890 : 1060;
+
     const drawLine = (arc: Arc, alpha: number) => {
       if (alpha <= 0) return;
       ctx.beginPath();
       arc.path.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
-      ctx.lineJoin = 'round';
+      ctx.lineJoin = 'miter';
       ctx.lineCap = 'round';
-      ctx.shadowBlur = 24;
+
+      // 굵은 본체에 네온 외곽 광, 좁은 안쪽 광, 하얀 코어 세 겹.
+      ctx.shadowBlur = 19;
       ctx.shadowColor = edge;
       ctx.strokeStyle = edge;
-      ctx.lineWidth = arc.width * 7;
-      ctx.globalAlpha = alpha * 0.29;
+      ctx.lineWidth = arc.width * 5.2;
+      ctx.globalAlpha = alpha * 0.28;
       ctx.stroke();
-      ctx.shadowBlur = 8;
+
+      ctx.shadowBlur = 7;
       ctx.strokeStyle = edge;
-      ctx.lineWidth = arc.width * 2.2;
-      ctx.globalAlpha = alpha * 0.85;
+      ctx.lineWidth = arc.width * 1.9;
+      ctx.globalAlpha = alpha * 0.94;
       ctx.stroke();
+
       ctx.shadowBlur = 0;
       ctx.strokeStyle = core;
-      ctx.lineWidth = Math.max(0.65, arc.width * 0.6);
+      ctx.lineWidth = Math.max(0.65, arc.width * 0.70);
       ctx.globalAlpha = alpha;
       ctx.stroke();
       ctx.globalAlpha = 1;
     };
+
     const draw = (now: number) => {
-      if (document.hidden) return;
-      const elapsed = now - start;
+      if (document.hidden) {
+        ctx.clearRect(0, 0, width, height);
+        return;
+      }
+      const elapsed = now - startTime;
       const t = Math.min(1, elapsed / duration);
       ctx.clearRect(0, 0, width, height);
-      // 전체 화면의 빛이 두 차례 반짝이되 눈부심을 줄이기 위해 밝기를 제한한다.
-      const burst = Math.max(0, 1 - elapsed / 215);
-      const echo = Math.max(0, 1 - Math.abs(elapsed - 185) / 90) * 0.5;
-      const light = Math.max(burst, echo);
-      if (light > 0) {
+
+      // 충격 순간 짧게 화면 전체를 비추되 눈부심은 억제.
+      const burst = Math.max(0, 1 - elapsed / 170);
+      const echo = Math.max(0, 1 - Math.abs(elapsed - 175) / 90) * 0.38;
+      const glow = Math.max(burst, echo);
+      if (glow > 0) {
         ctx.fillStyle = edge;
-        ctx.globalAlpha = light * (trigger.level === 3 ? 0.17 : 0.11);
+        ctx.globalAlpha = glow * (trigger.level === 3 ? 0.13 : 0.08);
         ctx.fillRect(0, 0, width, height);
         ctx.globalAlpha = 1;
       }
+
       for (const arc of arcs) {
         const age = elapsed - arc.delay;
-        const alpha = age < 0 ? 0 : age < 90 ? 1 : Math.max(0, 1 - (age - 90) / 200);
+        const alpha = age < 0 ? 0 : age < 100 ? 1 : Math.max(0, 1 - (age - 100) / 230);
         drawLine(arc, alpha);
       }
-      sparks.forEach((s) => {
-        const age = Math.max(0, elapsed - 70);
+
+      for (const spark of sparks) {
+        const age = Math.max(0, elapsed - 55);
         const k = age / 16;
-        const x = s.x + s.vx * k;
-        const y = s.y + s.vy * k + k * k * 0.028;
-        const opacity = Math.max(0, (1 - t * 1.12) * (s.hue > 0.7 ? 1 : 0.8));
-        ctx.fillStyle = s.hue > 0.8 ? core : edge;
-        ctx.globalAlpha = opacity;
+        const x = spark.x + spark.vx * k;
+        const y = spark.y + spark.vy * k + k * k * 0.025;
+        const alpha = Math.max(0, (1 - t * 1.13) * (spark.hue > 0.75 ? 1 : 0.75));
+        if (!alpha) continue;
+        ctx.fillStyle = spark.hue > 0.8 ? core : edge;
+        ctx.globalAlpha = alpha;
         ctx.beginPath();
-        ctx.arc(x, y, s.radius * (1 - t * 0.55), 0, Math.PI * 2);
+        ctx.arc(x, y, spark.radius * (1 - t * 0.45), 0, Math.PI * 2);
         ctx.fill();
-      });
+      }
       ctx.globalAlpha = 1;
       if (elapsed < duration) frame = requestAnimationFrame(draw);
       else ctx.clearRect(0, 0, width, height);
     };
+
     frame = requestAnimationFrame(draw);
     window.addEventListener('resize', fit);
     return () => {
