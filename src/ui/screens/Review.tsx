@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { compareAnswer, type AnswerComparison } from '../../core/answer/compare';
 import { getCardType } from '../../core/cardTypes/registry';
-import type { Rating } from '../../core/model/types';
+import type { Card, Rating } from '../../core/model/types';
 import { formatInterval } from '../../core/scheduler/format';
 import { assumeAnswered, buildQueue, hasUnsavedAnswers, stateOf } from '../../core/scheduler/queue';
 import { recordReview, undoReview } from '../../adapters/storage/repo';
 import { play, stopAll } from '../../adapters/speech/speech';
 import { advanceCombo, comboTier, lightningBurstLevel, playReviewArcadeSound } from '../../adapters/sound/reviewArcade';
 import { ReviewLightning, type LightningTrigger } from '../components/ReviewLightning';
+import { ReviewProgressArc } from '../components/ReviewProgressArc';
 import { CardFace } from '../components/CardFace';
 import { WordFamilyPanel } from '../components/WordFamilyPanel';
 import { Icon } from '../components/Icon';
@@ -34,6 +35,8 @@ interface Done {
   logId?: string;
   cardId: string;
   rating: Rating;
+  /** 사용자가 평가 버튼을 누르기 직전의 학습 단계 */
+  phase: Card['phase'];
 }
 
 export function Review({ deckId }: { deckId?: string }) {
@@ -50,7 +53,7 @@ export function Review({ deckId }: { deckId?: string }) {
   const [shownAt, setShownAt] = useState(() => Date.now());
   const [history, setHistory] = useState<Done[]>([]);
   // ReviewLog와 별개로 화면에 보이는 답 기록에서 계산한다. Undo/저장 실패 시 자동 복원된다.
-  const combo = useMemo(() => history.reduce((count, item) => advanceCombo(count, item.rating), 0), [history]);
+  const combo = useMemo(() => history.reduce((count, item) => advanceCombo(count, item.rating, item.phase), 0), [history]);
   const [arcadeSound, setArcadeSound] = useState(() => localStorage.getItem('review-arcade-sound') !== 'false');
   const [toolsOpen, setToolsOpen] = useState(false);
   const [lightning, setLightning] = useState<LightningTrigger>();
@@ -211,14 +214,14 @@ export function Review({ deckId }: { deckId?: string }) {
         /* 무시 */
       }
       // 버튼·PC 단축키·안드로이드 볼륨키 모두 같은 효과음을 낸다. 기다리지 않고 다음 카드로 넘어간다.
-      const nextCombo = advanceCombo(combo, r);
+      const nextCombo = advanceCombo(combo, r, card.phase);
       if (arcadeSound) playReviewArcadeSound(r, nextCombo);
       // 사운드를 꺼도 번개 연출은 유지한다. 애니메이션은 카드 이동과 독립적으로 재생된다.
       const burst = r >= 3 ? lightningBurstLevel(nextCombo) : 0;
       if (burst) setLightning((previous) => ({ id: (previous?.id ?? 0) + 1, level: burst }));
       saving.current.add(id);
       setAnswered((a) => ({ ...a, [id]: at }));
-      setHistory((h) => [...h, { cardId: id, rating: r }]);
+      setHistory((h) => [...h, { cardId: id, rating: r, phase: card.phase }]);
       show(undefined);
       withTimeout(recordReview(id, r, Math.min(at - shownAt, 120_000)), 30_000, '저장이 너무 오래 걸려요. 앱을 완전히 닫았다가 다시 열어 주세요')
         .then((logId) => setHistory((h) => h.map((d) => (d.cardId === id && !d.logId ? { ...d, logId } : d))))
@@ -348,6 +351,7 @@ export function Review({ deckId }: { deckId?: string }) {
         <div className="progress-track" role="progressbar" aria-valuenow={pct}
           aria-valuemin={0} aria-valuemax={100} aria-label="오늘 진행률">
           <div className="progress-fill" style={{ width: `${pct}%` }} />
+          <ReviewProgressArc level={combo >= 8 ? 'violet' : combo >= 3 ? 'blue' : 'off'} />
         </div>
         <span className="faint small review-remaining">{remaining}장 남음</span>
       </div>
