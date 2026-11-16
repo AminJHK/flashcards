@@ -25,6 +25,9 @@
   --arcade-ink-hard: #4b3300;
   --arcade-ink-good: #103e24;
   --arcade-ink-easy: #28154d;
+  --lightning-bright: #f0ffff;
+  --lightning-blue: #32bbff;
+  --lightning-violet: #ad77ff;
   --toast-bg: #1b1e23;
   --toast-fg: #f3f4f6;
   --toast-accent: #8ea8ff;
@@ -3301,4 +3304,131 @@ textarea.input-sentence {
 }
 @media (prefers-reduced-motion: reduce) {
   .grade:active:not(:disabled) { transform: none; }
+}
+
+
+/* ---------- 복습: 정돈된 2열 상단 + 전체 화면 번개 ---------- */
+.review-top .review-combo {
+  flex: 1;
+  margin-inline-start: 12px;
+  min-width: 0;
+}
+.review-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 17px 10px;
+  width: 100%;
+  flex-shrink: 0;
+}
+.review-progress-row .progress-track {
+  height: 11px;
+  min-width: 0;
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  border-radius: 999px;
+  transition: box-shadow 170ms ease, background 170ms ease;
+}
+.review-progress-row .progress-fill {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+  transition: width 200ms ease;
+}
+.review-remaining {
+  flex: none;
+  min-width: 56px;
+  text-align: right;
+  white-space: nowrap;
+}
+.review-progress-row[data-electric='blue'] .progress-track {
+  box-shadow: 0 0 12px var(--lightning-blue), 0 0 3px var(--lightning-blue);
+}
+.review-progress-row[data-electric='blue'] .progress-fill {
+  background: linear-gradient(90deg, var(--accent), var(--lightning-blue), var(--lightning-bright));
+}
+.review-progress-row[data-electric='violet'] .progress-track {
+  box-shadow: 0 0 17px var(--lightning-violet), 0 0 5px var(--lightning-violet);
+}
+.review-progress-row[data-electric='violet'] .progress-fill {
+  background: linear-gradient(90deg, var(--lightning-blue), var(--lightning-violet), var(--lightning-bright));
+}
+.review-progress-row[data-electric='blue'] .progress-fill::after,
+.review-progress-row[data-electric='violet'] .progress-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 5%, rgb(255 255 255 / 0.7) 50%, transparent 95%);
+  transform: translateX(-110%);
+  animation: review-charge-flow 1.05s linear infinite;
+}
+@keyframes review-charge-flow {
+  to { transform: translateX(110%); }
+}
+/* 페이지 전체를 휩쓰는 일시적인 이펙트. 카드/버튼은 항상 클릭 가능 */
+.review-lightning {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  display: block;
+  pointer-events: none;
+  z-index: 45;
+}
+.review-tools-panel {
+  position: absolute;
+  top: calc(var(--safe-top) + 54px);
+  right: 14px;
+  width: min(305px, calc(100% - 28px));
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 12px 35px rgb(0 0 0 / 0.24);
+  border-radius: 17px;
+  z-index: 55;
+}
+.review-tool-choice {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  text-align: left;
+}
+.review-tool-choice:active:not(:disabled) {
+  background: var(--surface2);
+}
+.review-tool-choice strong {
+  color: var(--accent);
+  font-size: 12px;
+}
+.review-tool-choice[aria-pressed='false'] strong {
+  color: var(--text3);
+}
+.review-tool-choice:disabled {
+  opacity: .45;
+}
+.review-tool-hint {
+  display: block;
+  padding: 8px 12px;
+}
+@media (min-width: 900px) {
+  .review-tools-panel { top: calc(var(--safe-top) + 64px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .review-progress-row .progress-track,
+  .review-progress-row .progress-fill { transition: none; }
+  .review-progress-row .progress-fill::after { animation: none; display: none; }
 }

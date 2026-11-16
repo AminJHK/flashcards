@@ -6,7 +6,8 @@ import { formatInterval } from '../../core/scheduler/format';
 import { assumeAnswered, buildQueue, hasUnsavedAnswers, stateOf } from '../../core/scheduler/queue';
 import { recordReview, undoReview } from '../../adapters/storage/repo';
 import { play, stopAll } from '../../adapters/speech/speech';
-import { advanceCombo, comboTier, playReviewArcadeSound } from '../../adapters/sound/reviewArcade';
+import { advanceCombo, comboTier, lightningBurstLevel, playReviewArcadeSound } from '../../adapters/sound/reviewArcade';
+import { ReviewLightning, type LightningTrigger } from '../components/ReviewLightning';
 import { CardFace } from '../components/CardFace';
 import { WordFamilyPanel } from '../components/WordFamilyPanel';
 import { Icon } from '../components/Icon';
@@ -51,6 +52,8 @@ export function Review({ deckId }: { deckId?: string }) {
   // ReviewLog와 별개로 화면에 보이는 답 기록에서 계산한다. Undo/저장 실패 시 자동 복원된다.
   const combo = useMemo(() => history.reduce((count, item) => advanceCombo(count, item.rating), 0), [history]);
   const [arcadeSound, setArcadeSound] = useState(() => localStorage.getItem('review-arcade-sound') !== 'false');
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const [lightning, setLightning] = useState<LightningTrigger>();
   /**
    * 방금 답한 카드 → 답한 시각. 저장소 목록이 갱신되기 전(폰이 느릴 때)에도 같은 카드를 다시 고르지 않게
    * 대기열을 만들 때 "답한 것"으로 간주한다 (assumeAnswered).
@@ -208,7 +211,11 @@ export function Review({ deckId }: { deckId?: string }) {
         /* 무시 */
       }
       // 버튼·PC 단축키·안드로이드 볼륨키 모두 같은 효과음을 낸다. 기다리지 않고 다음 카드로 넘어간다.
-      if (arcadeSound) playReviewArcadeSound(r, advanceCombo(combo, r));
+      const nextCombo = advanceCombo(combo, r);
+      if (arcadeSound) playReviewArcadeSound(r, nextCombo);
+      // 사운드를 꺼도 번개 연출은 유지한다. 애니메이션은 카드 이동과 독립적으로 재생된다.
+      const burst = r >= 3 ? lightningBurstLevel(nextCombo) : 0;
+      if (burst) setLightning((previous) => ({ id: (previous?.id ?? 0) + 1, level: burst }));
       saving.current.add(id);
       setAnswered((a) => ({ ...a, [id]: at }));
       setHistory((h) => [...h, { cardId: id, rating: r }]);
@@ -258,7 +265,7 @@ export function Review({ deckId }: { deckId?: string }) {
   }, [history, show, toast]);
 
   useReviewKeys(oneHanded && keysSupported && !editing, (key) => {
-    if (document.hidden || document.querySelector('[role="dialog"], dialog[open]') || isBusy() || Date.now() < keyCooldown.current) return;
+    if (toolsOpen || document.hidden || document.querySelector('[role="dialog"], dialog[open]') || isBusy() || Date.now() < keyCooldown.current) return;
     if (key === 'undo') {
       keyCooldown.current = Date.now() + 300;
       void undo();
@@ -278,7 +285,7 @@ export function Review({ deckId }: { deckId?: string }) {
   // PC 키보드: 스페이스/엔터 = 뒤집기, 1~4 = 답, R = 발음 듣기
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (editing || e.ctrlKey || e.metaKey || e.altKey || (e.target as HTMLElement).closest('input, textarea, select')) return;
+      if (editing || toolsOpen || e.ctrlKey || e.metaKey || e.altKey || (e.target as HTMLElement).closest('input, textarea, select')) return;
       if (e.key === 'r' || e.key === 'R') {
         say(flipped ? 'back' : 'front');
       } else if (!flipped && (e.key === ' ' || e.key === 'Enter')) {
@@ -295,7 +302,7 @@ export function Review({ deckId }: { deckId?: string }) {
     };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
-  }, [flipped, flip, rate, editing, settings?.buttons, say]);
+  }, [flipped, flip, rate, editing, settings?.buttons, say, toolsOpen]);
 
   // 복습을 다 끝내면 Google Drive와 바로 맞춘다 (로그인 창 없이, 받아 둔 토큰이 있을 때만)
   const finished = !!q && !card && !q.waiting && !unsaved && history.length > 0;
@@ -321,56 +328,63 @@ export function Review({ deckId }: { deckId?: string }) {
 
   const topBar = (
     <>
-    <div className="review-top">
-      <button type="button" className="icon-btn" aria-label="복습 닫기" onClick={close}>
-        <Icon name="close" />
-      </button>
-      <div className="progress">
-        <div className="progress-track" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="오늘 진행률">
+      <div className="review-top">
+        <button type="button" className="icon-btn" aria-label="복습 닫기" onClick={close}>
+          <Icon name="close" />
+        </button>
+        <span className="review-combo" data-tier={comboTier(combo)} aria-label={`연속 성공 ${combo}콤보`}>
+          <span className="review-combo-count">{combo}</span> COMBO
+        </span>
+        <button type="button" className="icon-btn" aria-label="되돌리기" onClick={undo} disabled={!history.length}>
+          <Icon name="undo" size={22} />
+        </button>
+        <button type="button" className="icon-btn" aria-label="복습 도구 설정"
+          aria-expanded={toolsOpen} aria-controls="review-tools-panel"
+          onClick={() => setToolsOpen((open) => !open)}>
+          <Icon name="settings" size={22} />
+        </button>
+      </div>
+      <div className="review-progress-row" data-electric={combo >= 20 ? 'violet' : combo >= 5 ? 'blue' : 'off'}>
+        <div className="progress-track" role="progressbar" aria-valuenow={pct}
+          aria-valuemin={0} aria-valuemax={100} aria-label="오늘 진행률">
           <div className="progress-fill" style={{ width: `${pct}%` }} />
         </div>
-        <span className="faint small" style={{ minWidth: 32, textAlign: 'right' }}>
-          {remaining}
-        </span>
+        <span className="faint small review-remaining">{remaining}장 남음</span>
       </div>
-      <button type="button" className="icon-btn" aria-label="되돌리기" onClick={undo} disabled={!history.length}>
-        <Icon name="undo" size={22} />
-      </button>
-      <button type="button" className="icon-btn" aria-label="카드 편집" onClick={() => setEditing(true)} disabled={!note}>
-        <Icon name="edit" size={22} />
-      </button>
-      <button type="button" className="icon-btn" aria-label="발음 듣기" title="발음 듣기 (R)" onClick={() => say(flipped ? 'back' : 'front')} disabled={!view}>
-        <Icon name="speaker" size={22} />
-      </button>
-    </div>
-    <div className="review-controls">
-      <span className="review-combo" data-tier={comboTier(combo)} aria-label={`연속 성공 ${combo}콤보`}>
-        <span className="review-combo-count">{combo}</span> COMBO
-      </span>
-      <button type="button" className="sound-toggle" aria-pressed={arcadeSound}
-        aria-label={arcadeSound ? '복습 효과음 끄기' : '복습 효과음 켜기'}
-        onClick={() => {
-          const next = !arcadeSound;
-          setArcadeSound(next);
-          localStorage.setItem('review-arcade-sound', String(next));
-        }}>
-        ♫ {arcadeSound ? 'ON' : 'OFF'}
-      </button>
-      {oneHanded && keysSupported && <span className="faint small" title="볼륨 아래 0.7초 길게: 되돌리기">↑ 알아요 · ↓ 몰라요</span>}
-      <button type="button" className="one-hand-toggle" aria-pressed={oneHanded && keysSupported}
-        onClick={() => {
-          if (!keysSupported) {
-            toast('볼륨키 한 손 모드는 새 안드로이드 APK를 설치하면 사용할 수 있어요');
-            return;
-          }
-          const next = !oneHanded;
-          setOneHanded(next);
-          localStorage.setItem('review-one-handed', String(next));
-          if (next) toast('정답 보기 전에는 볼륨키 아무거나 · 아래 0.7초는 되돌리기');
-        }}>
-        한 손 모드 <span>{oneHanded && keysSupported ? 'ON' : 'OFF'}</span>
-      </button>
-    </div>
+      {toolsOpen && (
+        <div className="review-tools-panel" id="review-tools-panel" role="group" aria-label="복습 도구">
+          <button type="button" className="review-tool-choice" aria-pressed={arcadeSound}
+            onClick={() => {
+              const next = !arcadeSound;
+              setArcadeSound(next);
+              localStorage.setItem('review-arcade-sound', String(next));
+            }}>
+            아케이드·번개 소리 <strong>{arcadeSound ? 'ON' : 'OFF'}</strong>
+          </button>
+          <button type="button" className="review-tool-choice" aria-pressed={oneHanded && keysSupported}
+            onClick={() => {
+              if (!keysSupported) {
+                toast('볼륨키 한 손 모드는 새 안드로이드 APK를 설치하면 사용할 수 있어요');
+                return;
+              }
+              const next = !oneHanded;
+              setOneHanded(next);
+              localStorage.setItem('review-one-handed', String(next));
+            }}>
+            한 손 모드 <strong>{oneHanded && keysSupported ? 'ON' : 'OFF'}</strong>
+          </button>
+          <button type="button" className="review-tool-choice" onClick={() => { setToolsOpen(false); setEditing(true); }} disabled={!note}>
+            현재 카드 편집 <Icon name="edit" size={18} />
+          </button>
+          <button type="button" className="review-tool-choice" onClick={() => { setToolsOpen(false); say(flipped ? 'back' : 'front'); }} disabled={!view}>
+            발음 다시 듣기 <Icon name="speaker" size={18} />
+          </button>
+          {oneHanded && keysSupported && (
+            <span className="faint small review-tool-hint">볼륨 ↑ 알았음 · ↓ 다시 · ↓ 길게 되돌리기</span>
+          )}
+        </div>
+      )}
+      <ReviewLightning trigger={lightning} />
     </>
   );
 
