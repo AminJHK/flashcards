@@ -1,3 +1,4 @@
+import { indexNotes, normalizeSearch, searchNotes } from '../../core/cardTypes/search';
 import { ScreenSync } from '../components/ScreenSync';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
@@ -41,6 +42,7 @@ export function DeckList() {
       <ScreenSync />
       <div className="screen-head">
         <h1 className="title">덱</h1>
+        <button type="button" className="btn-plain" onClick={() => go('decks/search')}>전체 덱 검색</button>
       </div>
       {decks.length > 0 && (
         <div>
@@ -627,6 +629,59 @@ function LangSelect({ value, onChange, label }: { value: string; onChange: (v: s
   );
 }
 
+export function AllDeckSearch() {
+  const decks = useDecks();
+  const notes = useLiveQuery(() => db.notes.toArray(), []);
+  return (
+    <div className="screen">
+      <button type="button" className="back-btn" onClick={() => go('decks')}>
+        <Icon name="chevronLeft" size={20} /> 덱
+      </button>
+      <h1 className="title">전체 덱 검색</h1>
+      {notes && decks && <NoteSearch notes={notes} deckNames={new Map(decks.map((d) => [d.id, d.name]))} />}
+    </div>
+  );
+}
+
+function NoteSearch({ notes, deckNames, onActive }: {
+  notes: Note[];
+  deckNames?: ReadonlyMap<string, string>;
+  onActive?: (active: boolean) => void;
+}) {
+  const [query, setQuery] = useState('');
+  const index = useMemo(() => indexNotes(notes), [notes]);
+  const { matches, suggestions } = useMemo(() => searchNotes(index, query), [index, query]);
+  const active = !!normalizeSearch(query);
+  const row = (note: Note) => {
+    const { title, sub } = getCardType(note.typeId).summary(note.fields);
+    const terms = normalizeSearch(query).split(' ');
+    const visible = normalizeSearch(`${title} ${sub}`);
+    const extra = Object.values(note.fields).find((value) =>
+      terms.some((term) => !visible.includes(term) && normalizeSearch(value).includes(term)));
+    const back = deckNames ? 'decks/search' : `decks/${note.deckId}/notes`;
+    return (
+      <button key={note.id} type="button" className="list-row" onClick={() => go(`notes/${note.id}/edit/${back}`)}>
+        <span className="row-text">
+          <span className="list-title">{title}</span>
+          <span className="faint small">{sub}</span>
+          {extra && <span className="faint small">{extra}</span>}
+          {deckNames && <span className="faint small">{deckNames.get(note.deckId)}</span>}
+        </span>
+      </button>
+    );
+  };
+  return (
+    <>
+      <input className="input search" type="search" placeholder="단어, 뜻, 예문 찾기" aria-label="단어 찾기" value={query} onChange={(e) => { setQuery(e.target.value); onActive?.(!!normalizeSearch(e.target.value)); }} />
+      {active && <>
+        <p className="faint small" role="status">{matches.length ? `검색 결과 ${matches.length}개` : '일치하는 단어가 없어요'}</p>
+        {matches.map(row)}
+        {suggestions.length > 0 && <div><h2 className="small">혹시 이 단어?</h2>{suggestions.map(row)}</div>}
+      </>}
+    </>
+  );
+}
+
 /** 단어 목록. hard면 어려운 단어(여러 번 틀린 단어)만 많이 틀린 순으로 보여주고, 그 자리에서 참고 메모를 쓸 수 있다. */
 export function NoteList({ deckId, hard = false }: { deckId: string; hard?: boolean }) {
   const decks = useDecks();
@@ -634,7 +689,7 @@ export function NoteList({ deckId, hard = false }: { deckId: string; hard?: bool
   const cards = useLiveQuery(() => db.cards.where('deckId').equals(deckId).toArray(), [deckId]);
   const scheduler = useScheduler(useSettings());
   const now = useNow(60_000);
-  const [query, setQuery] = useState('');
+  const [searching, setSearching] = useState(false);
   const [order, setOrder] = useState<'recent' | 'weak' | 'strong'>('recent');
   const deck = decks?.find((d) => d.id === deckId);
 
@@ -646,11 +701,10 @@ export function NoteList({ deckId, hard = false }: { deckId: string; hard?: bool
 
   const shown = useMemo(() => {
     if (!notes) return [];
-    const qy = query.trim().toLowerCase();
     // 약한 순: 본 단어 중 단계가 낮고, 기억할 확률이 낮고, 다음 복습이 가까운 것부터. 새 카드는 맨 뒤
     const strength = (m: WordMemory | undefined) =>
       !m || m.recall === undefined ? Infinity : LEVELS.indexOf(m.level) * 10 + Math.round(m.recall * 100) / 100 + Math.min(m.due ?? 0, now + 3650 * 86_400_000) / 1e15;
-    const found = notes.filter((n) => !qy || Object.values(n.fields).some((v) => v.toLowerCase().includes(qy)));
+    const found = [...notes];
     if (hard) {
       // 많이 틀린 순, 같으면 기억이 약한 순
       return found.filter((n) => isHard(memory.get(n.id))).sort((a, b) => memory.get(b.id)!.lapses - memory.get(a.id)!.lapses || strength(memory.get(a.id)) - strength(memory.get(b.id)));
@@ -665,7 +719,7 @@ export function NoteList({ deckId, hard = false }: { deckId: string; hard?: bool
         if (sb === Infinity) return -1;
         return order === 'weak' ? sa - sb : sb - sa;
       });
-  }, [notes, query, order, memory, now, hard]);
+  }, [notes, order, memory, now, hard]);
 
   if (!decks || !notes || !cards) return <div className="screen" />;
 
@@ -692,8 +746,8 @@ export function NoteList({ deckId, hard = false }: { deckId: string; hard?: bool
         </div>
       ) : (
         <>
-          <input className="input search" type="search" placeholder="찾기" aria-label="단어 찾기" value={query} onChange={(e) => setQuery(e.target.value)} />
-          <Segmented
+          <NoteSearch notes={notes} onActive={setSearching} />
+          {!searching && <Segmented
             label="정렬"
             options={[
               ['recent', '최근 추가'],
@@ -702,10 +756,10 @@ export function NoteList({ deckId, hard = false }: { deckId: string; hard?: bool
             ]}
             value={order}
             onChange={setOrder}
-          />
+          />}
         </>
       )}
-      <div>
+      {!searching && <div>
         {shown.map((n) => {
           if (hard) return <HardRow key={n.id} note={n} lapses={memory.get(n.id)!.lapses} deckId={deckId} />;
           const t = getCardType(n.typeId);
@@ -724,7 +778,7 @@ export function NoteList({ deckId, hard = false }: { deckId: string; hard?: bool
           );
         })}
         {shown.length === 0 && <div className="faint" style={{ textAlign: 'center', padding: 24 }}>{hard ? '아직 어려운 단어가 없어요' : notes.length ? '찾는 단어가 없어요' : '아직 단어가 없어요'}</div>}
-      </div>
+      </div>}
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { enterFullscreen, exitFullscreen } from '../adapters/display/fullscreen'
 import { TabBar } from './components/TabBar';
 import { useSettings } from './hooks';
 import { go, useRoute } from './router';
-import { DeckDetail, DeckList, DeckNew, NoteList } from './screens/Decks';
+import { AllDeckSearch, DeckDetail, DeckList, DeckNew, NoteList } from './screens/Decks';
 import { Home } from './screens/Home';
 import { NoteEditor } from './screens/NoteEditor';
 import { Review } from './screens/Review';
@@ -122,6 +122,7 @@ export function App() {
   else if (a === 'read') screen = <Stories />;
   else if (editingNote && b) screen = <NoteEditor mode="edit" noteId={b} onDone={() => go(rest.join('/') || 'decks')} />;
   else if (a === 'add') screen = <NoteEditor mode="add" />;
+  else if (a === 'decks' && b === 'search') screen = <AllDeckSearch />;
   else if (a === 'decks' && b === 'new') screen = <DeckNew />;
   else if (a === 'decks' && b && c === 'notes') screen = <NoteList deckId={b} />;
   else if (a === 'decks' && b && c === 'hard') screen = <NoteList key="hard" deckId={b} hard />;
