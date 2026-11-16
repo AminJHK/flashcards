@@ -3,23 +3,23 @@ import type { Rating } from '../../core/model/types';
 /** 성공은 연속으로 쌓고, 어려움은 이전 단계로 내려가며, 다시는 초기화한다. */
 export function advanceCombo(combo: number, rating: Rating): number {
   if (rating === 1) return 0;
-  if (rating === 2) return [0, 0, 2, 5, 9][comboTier(combo)] ?? 0;
+  if (rating === 2) return [0, 0, 2, 4, 7][comboTier(combo)] ?? 0;
   return combo + 1;
 }
 
 export function comboTier(combo: number): 0 | 1 | 2 | 3 | 4 {
   if (combo < 1) return 0;
   if (combo <= 2) return 1;
-  if (combo <= 5) return 2;
-  if (combo <= 9) return 3;
+  if (combo <= 4) return 2;
+  if (combo <= 7) return 3;
   return 4;
 }
 
 /** 중요 콤보에서만 대형 번개/천둥. 그 외에는 평소 아케이드 음만 재생한다. */
 export function lightningBurstLevel(combo: number): 0 | 1 | 2 | 3 {
-  if (combo === 5) return 1;
-  if (combo === 10) return 2;
-  if (combo >= 20 && combo % 10 === 0) return 3;
+  if (combo === 3) return 1;
+  if (combo === 5) return 2;
+  if (combo >= 8 && (combo - 8) % 5 === 0) return 3;
   return 0;
 }
 

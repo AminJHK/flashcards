@@ -344,7 +344,7 @@ export function Review({ deckId }: { deckId?: string }) {
           <Icon name="settings" size={22} />
         </button>
       </div>
-      <div className="review-progress-row" data-electric={combo >= 20 ? 'violet' : combo >= 5 ? 'blue' : 'off'}>
+      <div className="review-progress-row" data-electric={combo >= 8 ? 'violet' : combo >= 3 ? 'blue' : 'off'}>
         <div className="progress-track" role="progressbar" aria-valuenow={pct}
           aria-valuemin={0} aria-valuemax={100} aria-label="오늘 진행률">
           <div className="progress-fill" style={{ width: `${pct}%` }} />
