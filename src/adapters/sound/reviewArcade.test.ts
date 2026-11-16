@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { advanceCombo, comboTier, lightningBurstLevel } from './reviewArcade';
+import { advanceCombo, comboTier, lightningBurstLevel, thunderMilestoneLevel } from './reviewArcade';
 
 describe('review arcade combo', () => {
   it('increases for Good and Easy and caps the sound stage at 10', () => {
@@ -25,9 +25,14 @@ describe('review arcade combo', () => {
     expect(calculate(ratings)).toBe(3);
     expect(calculate(ratings.slice(0, -1))).toBe(2);
   });
-  it('fires thunder only at milestone combos', () => {
+  it('shows lightning for every consecutive success from 3 onward', () => {
+    expect([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 20]
+      .map(lightningBurstLevel)).toEqual([0, 0, 0, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3]);
+  });
+
+  it('keeps heavy thunder only at reward milestones', () => {
     expect([2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 17, 18, 23, 24]
-      .map(lightningBurstLevel)).toEqual([0, 1, 0, 2, 0, 0, 3, 0, 0, 3, 0, 3, 3, 0]);
+      .map(thunderMilestoneLevel)).toEqual([0, 1, 0, 2, 0, 0, 3, 0, 0, 3, 0, 3, 3, 0]);
   });
 
 });
