@@ -6,6 +6,7 @@ import { formatInterval } from '../../core/scheduler/format';
 import { assumeAnswered, buildQueue, hasUnsavedAnswers, stateOf } from '../../core/scheduler/queue';
 import { recordReview, undoReview } from '../../adapters/storage/repo';
 import { play, stopAll } from '../../adapters/speech/speech';
+import { advanceCombo, comboTier, playReviewArcadeSound } from '../../adapters/sound/reviewArcade';
 import { CardFace } from '../components/CardFace';
 import { WordFamilyPanel } from '../components/WordFamilyPanel';
 import { Icon } from '../components/Icon';
@@ -47,6 +48,9 @@ export function Review({ deckId }: { deckId?: string }) {
   const [flipped, setFlipped] = useState(false);
   const [shownAt, setShownAt] = useState(() => Date.now());
   const [history, setHistory] = useState<Done[]>([]);
+  // ReviewLog와 별개로 화면에 보이는 답 기록에서 계산한다. Undo/저장 실패 시 자동 복원된다.
+  const combo = useMemo(() => history.reduce((count, item) => advanceCombo(count, item.rating), 0), [history]);
+  const [arcadeSound, setArcadeSound] = useState(() => localStorage.getItem('review-arcade-sound') !== 'false');
   /**
    * 방금 답한 카드 → 답한 시각. 저장소 목록이 갱신되기 전(폰이 느릴 때)에도 같은 카드를 다시 고르지 않게
    * 대기열을 만들 때 "답한 것"으로 간주한다 (assumeAnswered).
@@ -203,6 +207,8 @@ export function Review({ deckId }: { deckId?: string }) {
       } catch {
         /* 무시 */
       }
+      // 버튼·PC 단축키·안드로이드 볼륨키 모두 같은 효과음을 낸다. 기다리지 않고 다음 카드로 넘어간다.
+      if (arcadeSound) playReviewArcadeSound(r, advanceCombo(combo, r));
       saving.current.add(id);
       setAnswered((a) => ({ ...a, [id]: at }));
       setHistory((h) => [...h, { cardId: id, rating: r }]);
@@ -220,7 +226,7 @@ export function Review({ deckId }: { deckId?: string }) {
         })
         .finally(() => saving.current.delete(id));
     },
-    [card, shownAt, show, toast, voice],
+    [card, shownAt, show, toast, voice, arcadeSound, combo],
   );
 
   const undo = useCallback(async () => {
@@ -338,6 +344,18 @@ export function Review({ deckId }: { deckId?: string }) {
       </button>
     </div>
     <div className="review-controls">
+      <span className="review-combo" data-tier={comboTier(combo)} aria-label={`연속 성공 ${combo}콤보`}>
+        <span className="review-combo-count">{combo}</span> COMBO
+      </span>
+      <button type="button" className="sound-toggle" aria-pressed={arcadeSound}
+        aria-label={arcadeSound ? '복습 효과음 끄기' : '복습 효과음 켜기'}
+        onClick={() => {
+          const next = !arcadeSound;
+          setArcadeSound(next);
+          localStorage.setItem('review-arcade-sound', String(next));
+        }}>
+        ♫ {arcadeSound ? 'ON' : 'OFF'}
+      </button>
       {oneHanded && keysSupported && <span className="faint small" title="볼륨 아래 0.7초 길게: 되돌리기">↑ 알아요 · ↓ 몰라요</span>}
       <button type="button" className="one-hand-toggle" aria-pressed={oneHanded && keysSupported}
         onClick={() => {

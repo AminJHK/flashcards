@@ -16,6 +16,15 @@
   --on-accent: #ffffff;
   --again: #b45309;
   --again-soft: #fcefe3;
+  /* 복습 평가 버튼: 아케이드 미리보기와 같은 고정 팔레트 (라이트/다크 공용) */
+  --arcade-again: #f87171;
+  --arcade-hard: #fbbf24;
+  --arcade-good: #4ade80;
+  --arcade-easy: #a78bfa;
+  --arcade-ink-again: #401414;
+  --arcade-ink-hard: #4b3300;
+  --arcade-ink-good: #103e24;
+  --arcade-ink-easy: #28154d;
   --toast-bg: #1b1e23;
   --toast-fg: #f3f4f6;
   --toast-accent: #8ea8ff;
@@ -700,45 +709,57 @@ svg.icon {
 
 .grade {
   flex: 1;
-  height: 64px;
+  min-width: 0;
+  height: 68px;
   border: none;
-  border-radius: 18px;
+  border-radius: 13px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   padding: 0 4px;
+  box-shadow: 0 4px 0 rgb(0 0 0 / 0.22);
+  transition: transform 90ms ease-out, box-shadow 90ms ease-out, filter 90ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.grade:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.22);
 }
 
 .grade-label {
   font-size: 17px;
-  font-weight: 600;
+  font-weight: 800;
 }
 
 .grade-iv {
-  font-size: 13px;
-  opacity: 0.85;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.8;
 }
 
 .grade-1 {
-  background: var(--again-soft);
-  color: var(--again);
+  background: var(--arcade-again);
+  color: var(--arcade-ink-again);
 }
 
 .grade-2 {
-  background: var(--surface);
-  color: var(--text);
+  background: var(--arcade-hard);
+  color: var(--arcade-ink-hard);
 }
 
 .grade-3 {
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--arcade-good);
+  color: var(--arcade-ink-good);
 }
 
 .grade-4 {
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--arcade-easy);
+  color: var(--arcade-ink-easy);
 }
 
 .reveal {
@@ -3232,11 +3253,29 @@ textarea.input-sentence {
   justify-content: flex-end;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px 12px;
+  gap: 4px 8px;
   padding: 0 16px;
   flex-shrink: 0;
 }
-.one-hand-toggle {
+.review-combo {
+  flex: 1;
+  min-width: 77px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--text3);
+}
+.review-combo-count {
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+.review-combo[data-tier='1'] { color: #3289c6; }
+.review-combo[data-tier='2'] { color: #19844a; }
+.review-combo[data-tier='3'] { color: #be8500; }
+.review-combo[data-tier='4'] { color: #9864e2; }
+.one-hand-toggle,
+.sound-toggle {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -3250,7 +3289,16 @@ textarea.input-sentence {
   font-size: 13px;
   cursor: pointer;
 }
-.one-hand-toggle[aria-pressed="true"] {
+.one-hand-toggle[aria-pressed="true"],
+.sound-toggle[aria-pressed="true"] {
   border-color: var(--accent);
   color: var(--accent);
+}
+.sound-toggle {
+  min-height: 40px;
+  padding-inline: 10px;
+  font-weight: 700;
+}
+@media (prefers-reduced-motion: reduce) {
+  .grade:active:not(:disabled) { transform: none; }
 }
