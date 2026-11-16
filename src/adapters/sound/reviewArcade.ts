@@ -15,8 +15,16 @@ export function comboTier(combo: number): 0 | 1 | 2 | 3 | 4 {
   return 4;
 }
 
-/** 중요 콤보에서만 대형 번개/천둥. 그 외에는 평소 아케이드 음만 재생한다. */
+/** 3콤보부터 Good/Easy를 누를 때마다 전 화면 번개가 발동한다. */
 export function lightningBurstLevel(combo: number): 0 | 1 | 2 | 3 {
+  if (combo < 3) return 0;
+  if (combo < 5) return 1;
+  if (combo < 8) return 2;
+  return 3;
+}
+
+/** 큰 천둥은 별도 간격으로: 빠른 복습 중 연속 '쾅' 소리가 겹치지 않게 한다. */
+export function thunderMilestoneLevel(combo: number): 0 | 1 | 2 | 3 {
   if (combo === 3) return 1;
   if (combo === 5) return 2;
   if (combo >= 8 && (combo - 8) % 5 === 0) return 3;
@@ -162,8 +170,13 @@ export function playReviewArcadeSound(rating: Rating, combo: number): void {
       tone(ctx, mix, transpose(base, 19), t + 0.15, 0.18, 0.10);
       tone(ctx, mix, base * 0.75, t + 0.045, 0.33, 0.08, 'triangle');
     }
-    const lightning = lightningBurstLevel(combo);
-    if (lightning) thunder(ctx, mix, t, lightning);
+    const milestone = thunderMilestoneLevel(combo);
+    if (milestone) thunder(ctx, mix, t, milestone);
+    else if (lightningBurstLevel(combo)) {
+      // 중간 콤보는 짧은 전기음: 매번 대형 천둥을 재생하면 과도하게 시끄럽다.
+      tone(ctx, mix, 1260, t + 0.055, 0.06, 0.045, 'sawtooth');
+      tone(ctx, mix, 1780, t + 0.085, 0.04, 0.024, 'triangle');
+    }
   } catch {
     // 음향 오류는 FSRS 저장이나 다음 카드 이동에 영향을 주지 않는다.
   }
