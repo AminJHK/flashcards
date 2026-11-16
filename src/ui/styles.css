@@ -3367,6 +3367,59 @@ textarea.input-sentence {
 @keyframes review-charge-flow {
   to { transform: translateX(110%); }
 }
+/* 작은 전기 스파크가 충전된 진행 바의 위/아래 테두리를 간헐적으로 스친다.
+   전체 테두리를 깜빡이지 않고, 가는 빛이 가장자리를 따라 실제로 움직이게 한다. */
+.review-progress-row[data-electric='blue'] .progress-track {
+  --review-edge-zap: var(--lightning-blue);
+}
+.review-progress-row[data-electric='violet'] .progress-track {
+  --review-edge-zap: var(--lightning-violet);
+}
+.review-progress-row[data-electric='blue'] .progress-track::before,
+.review-progress-row[data-electric='blue'] .progress-track::after,
+.review-progress-row[data-electric='violet'] .progress-track::before,
+.review-progress-row[data-electric='violet'] .progress-track::after {
+  content: '';
+  position: absolute;
+  left: 2%;
+  width: 38px;
+  height: 3px;
+  border-radius: 100%;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  background: linear-gradient(90deg, transparent, var(--review-edge-zap), var(--lightning-bright), var(--review-edge-zap), transparent);
+  box-shadow: 0 0 5px 1px var(--review-edge-zap), 0 0 12px var(--review-edge-zap);
+}
+.review-progress-row[data-electric='blue'] .progress-track::before,
+.review-progress-row[data-electric='violet'] .progress-track::before {
+  top: -2px;
+  animation: review-edge-zap-top 3.6s linear infinite;
+}
+.review-progress-row[data-electric='blue'] .progress-track::after,
+.review-progress-row[data-electric='violet'] .progress-track::after {
+  bottom: -2px;
+  animation: review-edge-zap-bottom 4.9s linear -1.7s infinite;
+}
+@keyframes review-edge-zap-top {
+  0%, 10% { left: 2%; opacity: 0; }
+  12% { left: 8%; opacity: .95; }
+  20% { left: 49%; opacity: .8; }
+  27%, 60% { left: calc(100% - 38px); opacity: 0; }
+  63% { left: 14%; opacity: 0; }
+  65% { left: 20%; opacity: .7; }
+  73% { left: 65%; opacity: 1; }
+  79%, 100% { left: calc(100% - 38px); opacity: 0; }
+}
+@keyframes review-edge-zap-bottom {
+  0%, 29% { left: calc(100% - 38px); opacity: 0; }
+  32% { left: 76%; opacity: .95; }
+  39% { left: 35%; opacity: .85; }
+  46%, 82% { left: 2%; opacity: 0; }
+  85% { left: 52%; opacity: .85; }
+  91% { left: 25%; opacity: .6; }
+  96%, 100% { left: 2%; opacity: 0; }
+}
 /* 페이지 전체를 휩쓰는 일시적인 이펙트. 카드/버튼은 항상 클릭 가능 */
 .review-lightning {
   position: fixed;
@@ -3431,4 +3484,6 @@ textarea.input-sentence {
   .review-progress-row .progress-track,
   .review-progress-row .progress-fill { transition: none; }
   .review-progress-row .progress-fill::after { animation: none; display: none; }
+  .review-progress-row .progress-track::before,
+  .review-progress-row .progress-track::after { animation: none; display: none; }
 }
