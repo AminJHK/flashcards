@@ -323,3 +323,13 @@ npm run dev        # 개발 서버
 - `src/ui/styles.css`: 전류 충전 상태(3콤보 이상)에서 `progress-track::before/::after`의 38px짜리 빛나는 스파크가 윗변/아랫변을 서로 다른 속도와 비정기 구간으로 이동. 진행률 숫자/길이 유지. 모션 최소화 설정에서 꺼짐.
 - `src/adapters/sound/reviewArcade.ts`: `lightningBurstLevel`은 1~2→없음, 3~4→약, 5~7→중, 8+→강으로 **매 연속 성공마다** 실행. `thunderMilestoneLevel`을 별도로 유지해 큰 천둥은 3/5/8/13/18...콤보에서만, 그 사이 콤보에서는 아주 짧은 zap을 재생해 중첩 소음 완화. Again/Hard 후 새 콤보 기준 재계산, 기존 FSRS/ReviewLog 보존.
 - `src/adapters/sound/reviewArcade.test.ts`: 매 콤보의 화면 번개 단계와 큰 천둥 간격을 별도로 검증. 실제 Galaxy/Capacitor에서 UI 감각·사운드는 직접 사용 확인 필요. 네이티브 APK 빌드 변경 없음.
+
+
+## 2026-11-17 · 학습 응원 콤보와 진행 바 가장자리 번개 업그레이드 (5차)
+
+- 사용자 결정: 상단 표시는 계속 `COMBO`. **새 카드(New)와 학습 중(Learning)**은 `알았음/쉬움` 성공 시 +1, `다시/어려움`은 콤보를 깎거나 초기화하지 않음(감점 없는 학습 격려). 이미 배운 `Review` 카드에는 기존처럼 Hard 단계 하락 / Again 리셋. FSRS 평가는 변경하지 않는다.
+- `src/adapters/sound/reviewArcade.ts`: `advanceCombo(combo, rating, phase = 'review')`로 단계 구분. 성공은 무조건 +1; 실패는 `new`/`learning`이면 그대로, `review`만 이전 페널티 적용. 3콤보부터 Good/Easy 매번 번개, 3/5/8/13...에서 대형 천둥 규칙 유지.
+- `src/ui/screens/Review.tsx`: `Done` 임시 기록에 평가 **직전**의 `phase` 저장. 콤보 계산, 소리, 번개가 동일한 새 규칙을 사용하고 Undo/저장 실패에서도 정확히 이전 값 복원. 상단 텍스트는 `COMBO` 그대로. 진행 바에는 `ReviewProgressArc` 추가.
+- `src/ui/components/ReviewProgressArc.tsx`: CSS 그라디언트 형태의 '소심한 빛' 대신 Web Canvas 2D에서 타원형 트랙 테두리의 상단→오른쪽 곡면→하단→왼쪽 곡면을 따라 **굵은 흰 코어 + 파랑/보라 번개 + 바깥쪽 짧은 잔가지**가 빠르게 흐르는 효과. 반대쪽에도 보조 전류. 약 0.86초 폭발 후 0.76~1.74초 휴식, Android CPU/배터리 부담 제한. reduced-motion, visibility pause, ResizeObserver 및 입력 미차단 지원. 실제 진행률 길이를 변경하지 않음.
+- `src/ui/styles.css`: 기존 약한 `progress-track::before/after` 글로우 선 애니메이션을 삭제하고 `.review-progress-arc` 캔버스 스타일로 교체. 진짜 테두리를 따라 상하좌우 움직임. 전류 비활성화는 3콤보 미만. 네이티브 APK·데이터 모델 변경 없음.
+- `src/adapters/sound/reviewArcade.test.ts`: 새/학습의 패널티 없음·보상 계산, 복습 상태 페널티 유지, 혼합 기록 Undo 재계산 테스트 추가. 휴대폰 실기기에서 Canvas와 전류 시각 비교 필요.
