@@ -6,13 +6,15 @@ describe('review arcade combo', () => {
     let n = 0;
     for (let i = 0; i < 12; i++) n = advanceCombo(n, i % 2 ? 4 : 3);
     expect(n).toBe(12);
-    expect([0, 1, 2, 3, 5, 6, 9, 10, 12].map(comboTier)).toEqual([0, 1, 1, 2, 2, 3, 3, 4, 4]);
+    expect([0, 1, 2, 3, 5, 6, 9, 10, 12].map(comboTier)).toEqual([0, 1, 1, 2, 3, 3, 4, 4, 4]);
   });
 
   it('drops one stage on Hard, resets on Again', () => {
-    expect(advanceCombo(10, 2)).toBe(9);
-    expect(advanceCombo(9, 2)).toBe(5);
-    expect(advanceCombo(5, 2)).toBe(2);
+    expect(advanceCombo(10, 2)).toBe(7);
+    expect(advanceCombo(8, 2)).toBe(7);
+    expect(advanceCombo(7, 2)).toBe(4);
+    expect(advanceCombo(5, 2)).toBe(4);
+    expect(advanceCombo(4, 2)).toBe(2);
     expect(advanceCombo(2, 2)).toBe(0);
     expect(advanceCombo(10, 1)).toBe(0);
   });
@@ -24,8 +26,8 @@ describe('review arcade combo', () => {
     expect(calculate(ratings.slice(0, -1))).toBe(2);
   });
   it('fires thunder only at milestone combos', () => {
-    expect([4, 5, 6, 9, 10, 11, 19, 20, 21, 29, 30, 40]
-      .map(lightningBurstLevel)).toEqual([0, 1, 0, 0, 2, 0, 0, 3, 0, 0, 3, 3]);
+    expect([2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 17, 18, 23, 24]
+      .map(lightningBurstLevel)).toEqual([0, 1, 0, 2, 0, 0, 3, 0, 0, 3, 0, 3, 3, 0]);
   });
 
 });
