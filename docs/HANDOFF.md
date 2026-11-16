@@ -295,3 +295,13 @@ npm run dev        # 개발 서버
 - `src/adapters/sound/reviewArcade.ts`: Web Audio API로 효과음을 기기에서 바로 합성 (외부 파일·네트워크·유료 API 없음). Again은 하강음, Hard는 낮은 두 음, Good/Easy는 서로 다른 음색/음높이. 성공 1~2, 3~5, 6~9, 10+콤보에서 화음·베이스를 점점 풍성하게 만들되 음량은 컴프레서로 제한. 소리 재생을 기다리지 않고 다음 카드로 넘어간다.
 - `src/ui/screens/Review.tsx`: 모든 답변 경로(화면 터치, PC 키보드, 안드로이드 볼륨키)가 공통 `rate()`를 통해 효과음을 낸다. 연속 Good/Easy는 +1, Hard는 이전 단계 하한으로 후퇴, Again은 0. 콤보는 현재 세션 `history`에서 계산하므로 Undo 또는 저장 실패 때 이전 값이 자연히 복구됨. 복습 상단에 COMBO 표시와 소리 ON/OFF 토글 추가(`localStorage['review-arcade-sound']`, 기본 ON). FSRS, 복습 로그 및 음성 저장 구조 변경 없음.
 - 순수 콤보 전이 로직 단위 테스트: `src/adapters/sound/reviewArcade.test.ts`. 실제 Android WebView 효과음 출력·시각/접근성은 기기에서 추가 확인 필요.
+
+
+## 2026-11-17 · 전 화면 번개 + 중저음 천둥 콤보 (2차)
+
+- 사용자 피드백: 진행 바에만 번개를 표시하면 좁아서 어색함. 화면 전체에 갈라지는 번개, 불꽃, 충격을 주고 천둥 소리를 더 웅장하게. 상단의 잡다한 아이콘은 하나의 설정키 아래로 정리하고 진행 바가 가로 한 줄을 차지해야 함.
+- `src/ui/components/ReviewLightning.tsx`: 수십 갈래 메인/보조 번개를 위에서 진행 바로 내리친 뒤 화면 좌우·카드 아래까지 갈라지게 하는 Canvas 2D 오버레이. 전체 화면 + 파티클 + 짧은 광량 플래시, `pointer-events: none`, 0.8~1.15초 뒤 RAF 중지, reduced-motion일 땐 재생하지 않음.
+- `src/ui/screens/Review.tsx`: 5콤보부터 전기 충전, 5/10/20/30...콤보에 차등 번개 이펙트. 기존 아케이드 버튼·FSRS·빠른 이동·Undo 유지. 상단은 나가기, COMBO, Undo, 복습 도구 설정 버튼만 유지. 효과음/한 손 모드/카드 편집/음성 다시 듣기를 메뉴로 이동. 진행 바는 별도의 전체 가로줄에 유지(충전 발광은 복습량과 독립).
+- `src/adapters/sound/reviewArcade.ts`: 기존 아케이드 징글을 유지하며 지정된 콤보에만 낮은 전자 드럼 피치 스윕 + 고역 크랙 + 저역 럼블 노이즈와 2~3연타 천둥을 합성. 기존 다이내믹 컴프레서로 출력 제한, 소리·네트워크 파일 추가 없음. 기존 효과음 OFF 설정이 천둥에도 적용됨.
+- `src/ui/styles.css`: 두 줄 복습 상단, 파랑/보라 진행 바 충전, 전체 화면 번개 캔버스 및 메뉴. CSS 테마 토큰 사용, 동작 줄이기 접근성 존중.
+- `src/adapters/sound/reviewArcade.test.ts`: 5/10/20/30콤보 이벤트 판정 추가. 실제 Android 기기에서 Canvas 프레임·음량 체감 확인 필요.
