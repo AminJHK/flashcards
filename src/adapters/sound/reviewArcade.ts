@@ -3,7 +3,7 @@ import type { Rating } from '../../core/model/types';
 /** 성공은 연속으로 쌓고, 어려움은 이전 단계로 내려가며, 다시는 초기화한다. */
 export function advanceCombo(combo: number, rating: Rating): number {
   if (rating === 1) return 0;
-  if (rating === 2) return [0, 0, 2, 5, 9][comboTier(combo)];
+  if (rating === 2) return [0, 0, 2, 5, 9][comboTier(combo)] ?? 0;
   return combo + 1;
 }
 
