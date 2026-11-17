@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 
+const SWEEP_MS = 1500;
+
 type ElectricLevel = 'off' | 'blue' | 'violet';
 
 interface EdgePoint {
@@ -12,7 +14,7 @@ interface EdgePoint {
 /**
  * 진짜 번개처럼 꺾이는 굵은 전류가 진행 바의 타원형 테두리를 한 바퀴 따라간다.
  * CSS 그라디언트를 옆으로 움직이는 대신 캔버스에 매 프레임 지그재그 경로를 그린다.
- * Android 배터리를 아끼려고 0.85초 정도만 재생하고 다음 파동까지 프레임을 쉬게 한다.
+ * Android 배터리를 아끼려고 1.5초만 재생하고 다음 파동까지 프레임을 쉬게 한다.
  */
 export function ReviewProgressArc({ level }: { level: ElectricLevel }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -83,13 +85,13 @@ export function ReviewProgressArc({ level }: { level: ElectricLevel }) {
     const draw = (now: number) => {
       if (cancelled || document.hidden) { raf = 0; return; }
       const elapsed = now - began;
-      const progress = Math.min(elapsed / 860, 1);
+      const progress = Math.min(elapsed / SWEEP_MS, 1);
       ctx.clearRect(0, 0, w, h);
       const { at, length } = perimeter();
       const head = progress * (length + Math.min(150, w * 0.35));
       const trail = clamp(w * 0.45, 80, 185);
-      const visibility = clamp(elapsed / 80, 0, 1) * clamp((860 - elapsed) / 145, 0, 1);
-      const shimmer = Math.floor(elapsed / 48);
+      const visibility = clamp(elapsed / 80, 0, 1) * clamp((SWEEP_MS - elapsed) / 240, 0, 1);
+      const shimmer = Math.floor(elapsed / 90);
 
       const arc = (end: number, amount: number, opacity: number, offset: number) => {
         const start = Math.max(0, end - amount);
@@ -164,11 +166,11 @@ export function ReviewProgressArc({ level }: { level: ElectricLevel }) {
       const secondary = (head * 0.9 + length * 0.53) % length;
       arc(secondary, trail * 0.48, visibility * 0.67, 2);
 
-      if (elapsed < 860) raf = requestAnimationFrame(draw);
+      if (elapsed < SWEEP_MS) raf = requestAnimationFrame(draw);
       else {
         raf = 0;
         ctx.clearRect(0, 0, w, h);
-        schedule(rand(760, 1740));
+        scheduleNextPulse();
       }
     };
 
@@ -176,7 +178,7 @@ export function ReviewProgressArc({ level }: { level: ElectricLevel }) {
       timeout = undefined;
       if (cancelled || document.hidden) return;
       fit();
-      if (w < 55) { schedule(750); return; }
+      if (w < 55) { scheduleNextPulse(); return; }
       pulse++;
       began = performance.now();
       raf = requestAnimationFrame(draw);
@@ -186,6 +188,7 @@ export function ReviewProgressArc({ level }: { level: ElectricLevel }) {
       if (timeout !== undefined) window.clearTimeout(timeout);
       timeout = window.setTimeout(startPulse, delay);
     };
+    const scheduleNextPulse = () => schedule(rand(5000, 8000));
     const onVisibility = () => {
       if (document.hidden) {
         if (timeout !== undefined) window.clearTimeout(timeout);
@@ -193,7 +196,7 @@ export function ReviewProgressArc({ level }: { level: ElectricLevel }) {
         cancelAnimationFrame(raf);
         raf = 0;
         ctx.clearRect(0, 0, w, h);
-      } else if (!raf && timeout === undefined) schedule(300);
+      } else if (!raf && timeout === undefined) scheduleNextPulse();
     };
 
     fit();
@@ -201,7 +204,7 @@ export function ReviewProgressArc({ level }: { level: ElectricLevel }) {
     if (observer) observer.observe(canvas.parentElement ?? canvas);
     else window.addEventListener('resize', fit);
     document.addEventListener('visibilitychange', onVisibility);
-    schedule(340);
+    scheduleNextPulse();
 
     return () => {
       cancelled = true;

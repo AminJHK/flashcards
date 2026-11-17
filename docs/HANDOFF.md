@@ -333,3 +333,7 @@ npm run dev        # 개발 서버
 - `src/ui/components/ReviewProgressArc.tsx`: CSS 그라디언트 형태의 '소심한 빛' 대신 Web Canvas 2D에서 타원형 트랙 테두리의 상단→오른쪽 곡면→하단→왼쪽 곡면을 따라 **굵은 흰 코어 + 파랑/보라 번개 + 바깥쪽 짧은 잔가지**가 빠르게 흐르는 효과. 반대쪽에도 보조 전류. 약 0.86초 폭발 후 0.76~1.74초 휴식, Android CPU/배터리 부담 제한. reduced-motion, visibility pause, ResizeObserver 및 입력 미차단 지원. 실제 진행률 길이를 변경하지 않음.
 - `src/ui/styles.css`: 기존 약한 `progress-track::before/after` 글로우 선 애니메이션을 삭제하고 `.review-progress-arc` 캔버스 스타일로 교체. 진짜 테두리를 따라 상하좌우 움직임. 전류 비활성화는 3콤보 미만. 네이티브 APK·데이터 모델 변경 없음.
 - `src/adapters/sound/reviewArcade.test.ts`: 새/학습의 패널티 없음·보상 계산, 복습 상태 페널티 유지, 혼합 기록 Undo 재계산 테스트 추가. 휴대폰 실기기에서 Canvas와 전류 시각 비교 필요.
+
+## 2026-11-17 · 진행 바 번개 간격 조정
+
+- 진행 바 테두리의 한 바퀴를 0.86초에서 1.5초로 늦추고 5~8초 간격으로 쉰다. 처음 활성화되거나 앱으로 돌아올 때도 같은 간격을 적용한다. 안쪽의 무한 반복 광택을 없애고 충전 색은 유지한다.
