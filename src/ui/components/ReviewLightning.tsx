@@ -1,8 +1,10 @@
+import { STRIKE_TIMES_MS } from '../../adapters/sound/reviewArcade';
 import { useEffect, useRef } from 'react';
 
 export interface LightningTrigger {
   id: number;
   level: 1 | 2 | 3;
+  strikes: 0 | 1 | 2;
 }
 
 interface Point { x: number; y: number }
@@ -84,13 +86,22 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
     const finish = point(clamp(impact.x + random(-width * 0.16, width * 0.16), width * 0.2, width * 0.8), height + 8);
     const upper = jagged(start, impact, 3, Math.min(42, width * 0.12), 9);
     const lower = jagged(impact, finish, Math.max(7, Math.ceil((height - impact.y) / 95)), Math.min(92, width * 0.26), 16);
+    const firstStrike = trigger.strikes ? STRIKE_TIMES_MS[0] : 0;
     const main = [...upper, ...lower.slice(1)];
     const arcs: Arc[] = [{
       path: main,
       // 이전보다 흰 코어와 중간 파란/보라색 선을 굵게.
       width: trigger.level === 1 ? 6.2 : trigger.level === 2 ? 8.0 : 10.2,
-      delay: 0,
+      delay: firstStrike,
     }];
+
+    if (trigger.strikes === 2) {
+      const secondImpact = point(clamp(impact.x + width * 0.14, 12, width - 12), impact.y);
+      const secondUpper = jagged(point(secondImpact.x + 18, -16), secondImpact, 3, width * 0.12, 9);
+      const secondLower = jagged(secondImpact, point(secondImpact.x - 28, height + 8), 8, width * 0.24, 16);
+      arcs[0]!.width *= 0.72;
+      arcs.push({ path: [...secondUpper, ...secondLower.slice(1)], width: 11.6, delay: STRIKE_TIMES_MS[1] });
+    }
 
     // 짧은 잔가지는 메인 줄기 전체에 분산. 한 점에서 빗자루처럼 퍼지지 않는다.
     const count = trigger.level === 1 ? 5 : trigger.level === 2 ? 6 : 7;
@@ -108,7 +119,7 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
         Math.min(height - 3, from.y + random(15, 55)),
       );
       const branch = jagged(from, tip, 2, 10, 5);
-      const delay = random(11, 72);
+      const delay = firstStrike + random(11, 72);
       arcs.push({ path: branch, width: random(0.9, 1.45), delay });
 
       // 큰 번개가 아닌 고주파로 짧게 튀는 잔불꽃.
@@ -182,12 +193,13 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
         return;
       }
       const elapsed = now - startTime;
-      const t = Math.min(1, elapsed / duration);
+      const ageSinceStrike = elapsed - firstStrike;
+      const t = Math.min(1, Math.max(0, ageSinceStrike) / duration);
       ctx.clearRect(0, 0, width, height);
 
       // 충격 순간 짧게 화면 전체를 비추되 눈부심은 억제.
-      const burst = Math.max(0, 1 - elapsed / 170);
-      const echo = Math.max(0, 1 - Math.abs(elapsed - 175) / 90) * 0.38;
+      const burst = ageSinceStrike < 0 ? 0 : Math.max(0, 1 - ageSinceStrike / 170);
+      const echo = Math.max(0, 1 - Math.abs(elapsed - (trigger.strikes === 2 ? STRIKE_TIMES_MS[1] : firstStrike + 175)) / 90) * 0.38;
       const glow = Math.max(burst, echo);
       if (glow > 0) {
         ctx.fillStyle = edge;
@@ -202,8 +214,8 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
         drawLine(arc, alpha);
       }
 
-      for (const spark of sparks) {
-        const age = Math.max(0, elapsed - 55);
+      for (const spark of ageSinceStrike < 0 ? [] : sparks) {
+        const age = Math.max(0, ageSinceStrike - 55);
         const k = age / 16;
         const x = spark.x + spark.vx * k;
         const y = spark.y + spark.vy * k + k * k * 0.025;
