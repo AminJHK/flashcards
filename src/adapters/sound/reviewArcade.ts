@@ -40,7 +40,7 @@ export function thunderMilestoneLevel(combo: number): 0 | 1 | 2 | 3 {
 
 /** 높은 콤보의 축하 타격. 일반 성공은 기존 짧은 전기음을 쓴다. */
 export function comboStrike(combo: number): 0 | 1 | 2 {
-  if (combo >= 10 && combo % 10 === 0) return combo >= 20 ? 2 : 1;
+  if (combo >= 5 && combo % 5 === 0) return 2;
   return thunderMilestoneLevel(combo) ? 1 : 0;
 }
 
