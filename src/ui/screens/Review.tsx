@@ -445,6 +445,7 @@ export function Review({ deckId }: { deckId?: string }) {
 
   const deckLine = [cardDeck?.name, card.isNew ? '새 카드' : undefined, template?.optional ? '역방향' : undefined].filter(Boolean).join(' · ');
   const faceBlocks = flipped ? view.back : view.front;
+  const cardAreaClass = !flipped && history.length > 0 ? 'card-area card-area-enter' : 'card-area';
   // 앞면에 버튼이 있는 카드(듣기)는 카드 전체를 탭 버튼으로 만들 수 없다
   const hasControls = view.front.some((b) => b.kind === 'listen');
 
@@ -460,7 +461,7 @@ export function Review({ deckId }: { deckId?: string }) {
       {topBar}
       <div className="deck-line">{deckLine}</div>
       {(produce || hasControls) && !flipped ? (
-        <div className="card-area" data-flipped="false" style={{ cursor: 'default' }}>
+        <div key={card.id} className={cardAreaClass} data-flipped="false" style={{ cursor: 'default' }}>
           {cardInner}
           {produce && (
           <div className="produce">
@@ -502,7 +503,7 @@ export function Review({ deckId }: { deckId?: string }) {
           )}
         </div>
       ) : (
-        <button type="button" className="card-area" data-flipped={flipped} onClick={flip} aria-label={flipped ? '정답' : '정답 보기'}>
+        <button key={card.id} type="button" className={cardAreaClass} data-flipped={flipped} onClick={flip} aria-label={flipped ? '정답' : '정답 보기'}>
           {cardInner}
         </button>
       )}
