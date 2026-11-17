@@ -3355,18 +3355,6 @@ textarea.input-sentence {
 .review-progress-row[data-electric='violet'] .progress-fill {
   background: linear-gradient(90deg, var(--lightning-blue), var(--lightning-violet), var(--lightning-bright));
 }
-.review-progress-row[data-electric='blue'] .progress-fill::after,
-.review-progress-row[data-electric='violet'] .progress-fill::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(100deg, transparent 5%, rgb(255 255 255 / 0.7) 50%, transparent 95%);
-  transform: translateX(-110%);
-  animation: review-charge-flow 1.05s linear infinite;
-}
-@keyframes review-charge-flow {
-  to { transform: translateX(110%); }
-}
 /* 강한 번개가 진행 바 타원형 테두리 전체를 돌아가는 Canvas 레이어.
    보이는 충전량(progress-fill)은 그대로이며, 전류는 트랙 외곽만 감싼다. */
 .review-progress-arc {
