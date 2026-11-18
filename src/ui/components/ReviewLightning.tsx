@@ -204,20 +204,36 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
     const ivory = style.getPropertyValue('--eruption-core').trim();
     const beamShards = [-0.47, -0.36, -0.27, 0.25, 0.35, 0.47];
     const drawBeam = (age: number) => {
-      if (age < 0 || age >= 620) return;
+      if (age < 0 || age >= 740) return;
       const growth = 1 - (1 - Math.min(1, age / 170)) ** 3;
-      const fade = 1 - Math.max(0, (age - 220) / 400);
+      const fade = 1 - Math.max(0, (age - 270) / 470);
       const top = vent.y - (vent.y + 20) * growth;
       const card = document.querySelector('.card-area .card-sheet')?.getBoundingClientRect();
 
+      const opacity = fade * Math.min(1, age / 30);
       ctx.save();
+      // Keep a visible gold spine through the card at lower opacity.
       if (card) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(card.left, card.top, card.width, card.height);
+        ctx.clip();
+        ctx.globalAlpha = opacity * 0.24;
+        ctx.fillStyle = gold;
+        ctx.beginPath();
+        ctx.moveTo(vent.x, vent.y);
+        ctx.lineTo(vent.x - width * 0.145 * growth, top);
+        ctx.lineTo(vent.x + width * 0.145 * growth, top);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
         ctx.beginPath();
         ctx.rect(0, 0, width, height);
-        ctx.roundRect(card.left, card.top, card.width, card.height, 28);
+        ctx.rect(card.left, card.top, card.width, card.height);
         ctx.clip('evenodd');
       }
-      ctx.globalAlpha = fade * Math.min(1, age / 30);
+      ctx.globalAlpha = opacity;
       const polygon = (color: string, points: readonly Point[]) => {
         ctx.beginPath();
         ctx.moveTo(vent.x, vent.y);
