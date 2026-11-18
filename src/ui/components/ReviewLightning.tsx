@@ -204,9 +204,7 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
       ctx.globalAlpha = 1;
     };
 
-    const gold = style.getPropertyValue('--eruption-gold').trim();
-    const amber = style.getPropertyValue('--eruption-amber').trim();
-    const ivory = style.getPropertyValue('--eruption-core').trim();
+    const beamViolet = style.getPropertyValue('--eruption-violet').trim();
     const beamShards = [-0.47, -0.36, -0.27, 0.25, 0.35, 0.47];
     const drawBeam = (age: number) => {
       if (age < 0 || age >= 740) return;
@@ -214,7 +212,8 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
       const fade = 1 - Math.max(0, (age - 270) / 470);
       const top = vent.y - (vent.y + 20) * growth;
       ctx.save();
-      ctx.globalAlpha = fade * Math.min(1, age / 30);
+      const opacity = fade * Math.min(1, age / 30);
+      ctx.globalAlpha = opacity;
       const polygon = (color: string, points: readonly Point[]) => {
         ctx.beginPath();
         ctx.moveTo(vent.x, vent.y);
@@ -226,20 +225,61 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
       for (const offset of beamShards) {
         const x = vent.x + width * offset * growth;
         const y = vent.y * (1 - growth * (0.5 + Math.abs(offset) * 0.65));
-        polygon(Math.abs(offset) > 0.4 ? gold : amber, [
+        polygon(Math.abs(offset) > 0.4 ? blue : beamViolet, [
           point(vent.x + (x - vent.x) * 0.54, (vent.y + y) / 2),
           point(x, y),
           point(vent.x + (x - vent.x) * 0.77, (vent.y + y) / 2),
         ]);
       }
-      for (const [color, spread] of [[amber, 0.21], [gold, 0.16], [ivory, 0.062]] as const) {
-        const half = width * spread * growth;
-        polygon(color, [
-          point(vent.x - half * 0.58, (vent.y + top) * 0.5),
-          point(vent.x - half, top),
-          point(vent.x + half, top),
-          point(vent.x + half * 0.64, (vent.y + top) * 0.48),
-        ]);
+      const beamOutline = (half: number) => [
+        point(vent.x - half * 0.58, (vent.y + top) * 0.5),
+        point(vent.x - half, top),
+        point(vent.x + half, top),
+        point(vent.x + half * 0.64, (vent.y + top) * 0.48),
+      ] as const;
+      const [leftBend, leftTip, rightTip, rightBend] = beamOutline(width * 0.21 * growth);
+      polygon(beamViolet, [leftBend, leftTip, rightTip, rightBend]);
+      polygon(violet, beamOutline(width * 0.16 * growth));
+      polygon(core, beamOutline(width * 0.062 * growth));
+
+      if (!reducedMotion) {
+        const drawEdgePulse = (bend: Point, tip: Point, side: number, delay: number) => {
+          const progress = (age - delay) / 270;
+          if (progress <= 0 || progress >= 1) return;
+          const bendAt = (vent.y - bend.y) / (vent.y - tip.y);
+          const pulse = Math.sin(Math.PI * progress);
+          const path = Array.from({ length: 9 }, (_, i) => {
+            const along = clamp(progress * 1.22 - (8 - i) * 0.0275, 0, 1);
+            const x = along < bendAt
+              ? vent.x + (bend.x - vent.x) * along / bendAt
+              : bend.x + (tip.x - bend.x) * (along - bendAt) / (1 - bendAt);
+            const jag = (i % 2 ? 1 : -1) * (2 + 2 * Math.sin(i * 2.3 + age / 32));
+            return point(x + side * (4 + jag), vent.y + (tip.y - vent.y) * along);
+          });
+          ctx.beginPath();
+          path.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+          const fork = path[5]!;
+          ctx.moveTo(fork.x, fork.y);
+          ctx.lineTo(fork.x + side * 9, fork.y - 5);
+          ctx.lineTo(fork.x + side * 17, fork.y - 16);
+          ctx.lineJoin = 'round';
+          ctx.lineCap = 'round';
+          ctx.strokeStyle = blue;
+          ctx.lineWidth = 5;
+          ctx.shadowColor = blue;
+          ctx.shadowBlur = 10;
+          ctx.globalAlpha = opacity * pulse * 0.8;
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+          ctx.strokeStyle = core;
+          ctx.lineWidth = 1.6;
+          ctx.globalAlpha = opacity * pulse;
+          ctx.stroke();
+        };
+        drawEdgePulse(leftBend, leftTip, -1, 35);
+        drawEdgePulse(rightBend, rightTip, 1, 80);
+        drawEdgePulse(leftBend, leftTip, -1, 215);
+        drawEdgePulse(rightBend, rightTip, 1, 255);
       }
       ctx.restore();
     };
@@ -274,7 +314,7 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
           const radius = 12 + width * 0.64 * Math.sqrt(progress);
           ctx.beginPath();
           ctx.ellipse(vent.x, vent.y, radius, radius * 0.25, 0, 0, Math.PI * 2);
-          ctx.strokeStyle = delay ? amber : gold;
+          ctx.strokeStyle = delay ? blue : violet;
           ctx.lineWidth = 5 * (1 - progress) + 1;
           ctx.globalAlpha = (1 - progress) * 0.8;
           ctx.stroke();
@@ -291,7 +331,7 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
           ctx.moveTo(x, y);
           ctx.lineTo(x - ember.vx * 19, y - (ember.vy + 0.0018 * t) * 19);
           ctx.lineWidth = size;
-          ctx.strokeStyle = ember.size > 4 ? ivory : gold;
+          ctx.strokeStyle = ember.size > 4 ? core : violet;
           ctx.stroke();
         }
         ctx.globalAlpha = 1;
