@@ -6,7 +6,7 @@ import { formatInterval } from '../../core/scheduler/format';
 import { assumeAnswered, buildQueue, hasUnsavedAnswers, stateOf } from '../../core/scheduler/queue';
 import { recordReview, undoReview } from '../../adapters/storage/repo';
 import { play, stopAll } from '../../adapters/speech/speech';
-import { advanceCombo, comboStrike, comboTier, lightningBurstLevel, playReviewArcadeSound } from '../../adapters/sound/reviewArcade';
+import { advanceCombo, comboBoltTimes, comboTier, lightningBurstLevel, playReviewArcadeSound, vibrateCombo } from '../../adapters/sound/reviewArcade';
 import { ReviewLightning, type LightningTrigger } from '../components/ReviewLightning';
 import { ReviewProgressArc } from '../components/ReviewProgressArc';
 import { CardFace } from '../components/CardFace';
@@ -218,7 +218,11 @@ export function Review({ deckId }: { deckId?: string }) {
       if (arcadeSound) playReviewArcadeSound(r, nextCombo);
       // 사운드를 꺼도 번개 연출은 유지한다. 애니메이션은 카드 이동과 독립적으로 재생된다.
       const burst = r >= 3 ? lightningBurstLevel(nextCombo) : 0;
-      if (burst) setLightning((previous) => ({ id: (previous?.id ?? 0) + 1, level: burst, strikes: comboStrike(nextCombo) }));
+      if (burst) {
+        const times = comboBoltTimes(nextCombo);
+        vibrateCombo(times);
+        setLightning((previous) => ({ id: (previous?.id ?? 0) + 1, level: burst, times, rise: nextCombo === 10 }));
+      }
       saving.current.add(id);
       setAnswered((a) => ({ ...a, [id]: at }));
       setHistory((h) => [...h, { cardId: id, rating: r, phase: card.phase }]);
