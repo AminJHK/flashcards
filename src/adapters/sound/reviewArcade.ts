@@ -43,10 +43,9 @@ export function comboStrike(combo: number): 0 | 1 | 2 {
   return thunderMilestoneLevel(combo) ? 1 : 0;
 }
 
-export const ERUPTION_COMBO = 2; // 화면 확인용 임시 기준
+export const ERUPTION_COMBO = 10;
 
 export function comboBoltTimes(combo: number): readonly number[] {
-  if (combo === ERUPTION_COMBO) return [140, 246, 352, 458, 564];
   if (!lightningBurstLevel(combo)) return [];
   const count = combo < 5 ? 1 : Math.min(combo - 3, 5);
   const interval = 246 - count * 28;
