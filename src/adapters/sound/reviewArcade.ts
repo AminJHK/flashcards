@@ -44,6 +44,19 @@ export function comboStrike(combo: number): 0 | 1 | 2 {
   return thunderMilestoneLevel(combo) ? 1 : 0;
 }
 
+export function comboBoltTimes(combo: number): readonly number[] {
+  if (!lightningBurstLevel(combo)) return [];
+  const count = combo < 5 ? 1 : Math.min(combo - 3, 5);
+  const interval = 246 - count * 28;
+  const first = comboStrike(combo) ? STRIKE_TIMES_MS[0] : 0;
+  return Array.from({ length: count }, (_, i) => first + i * interval);
+}
+
+export function vibrateCombo(times: readonly number[]): void {
+  const pattern = times.flatMap((time, i) => [time - (i ? times[i - 1]! + 15 : 0), 15]);
+  navigator.vibrate?.([0, ...pattern]);
+}
+
 // 미리 듣기 샘플의 타격 시점 (충전음 뒤 130ms, 연타는 320ms).
 export const STRIKE_TIMES_MS = [140, 330] as const;
 

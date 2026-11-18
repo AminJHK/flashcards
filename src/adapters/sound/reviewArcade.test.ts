@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { advanceCombo, comboStrike, comboTier, lightningBurstLevel, thunderMilestoneLevel } from './reviewArcade';
+import { advanceCombo, comboBoltTimes, comboStrike, comboTier, lightningBurstLevel, thunderMilestoneLevel } from './reviewArcade';
 
 describe('review arcade combo', () => {
   it('increases for Good and Easy and caps the sound stage at 10', () => {
@@ -57,6 +57,13 @@ describe('review arcade combo', () => {
   it('shows lightning for every consecutive success from 3 onward', () => {
     expect([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 20]
       .map(lightningBurstLevel)).toEqual([0, 0, 0, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3]);
+  });
+
+  it('builds up to five faster lightning strikes', () => {
+    expect([2, 3, 4, 5, 6, 7, 8, 10, 30].map((combo) => comboBoltTimes(combo).length))
+      .toEqual([0, 1, 1, 2, 3, 4, 5, 5, 5]);
+    const [first, second] = comboBoltTimes(10);
+    expect(second! - first!).toBeLessThan(190);
   });
 
   it('starts double strikes at five and repeats every five combos', () => {

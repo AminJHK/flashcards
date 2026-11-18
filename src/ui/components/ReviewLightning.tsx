@@ -1,10 +1,10 @@
-import { STRIKE_TIMES_MS } from '../../adapters/sound/reviewArcade';
 import { useEffect, useRef } from 'react';
 
 export interface LightningTrigger {
   id: number;
   level: 1 | 2 | 3;
-  strikes: 0 | 1 | 2;
+  times: readonly number[];
+  rise: boolean;
 }
 
 interface Point { x: number; y: number }
@@ -86,7 +86,7 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
     const finish = point(clamp(impact.x + random(-width * 0.16, width * 0.16), width * 0.2, width * 0.8), height + 8);
     const upper = jagged(start, impact, 3, Math.min(42, width * 0.12), 9);
     const lower = jagged(impact, finish, Math.max(7, Math.ceil((height - impact.y) / 95)), Math.min(92, width * 0.26), 16);
-    const firstStrike = trigger.strikes ? STRIKE_TIMES_MS[0] : 0;
+    const firstStrike = trigger.times[0] ?? 0;
     const main = [...upper, ...lower.slice(1)];
     const arcs: Arc[] = [{
       path: main,
@@ -95,13 +95,14 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
       delay: firstStrike,
     }];
 
-    if (trigger.strikes === 2) {
-      const secondImpact = point(clamp(impact.x + width * 0.14, 12, width - 12), impact.y);
-      const secondUpper = jagged(point(secondImpact.x + 18, -16), secondImpact, 3, width * 0.12, 9);
-      const secondLower = jagged(secondImpact, point(secondImpact.x - 28, height + 8), 8, width * 0.24, 16);
-      arcs[0]!.width *= 0.72;
-      arcs.push({ path: [...secondUpper, ...secondLower.slice(1)], width: 11.6, delay: STRIKE_TIMES_MS[1] });
-    }
+    trigger.times.slice(1).forEach((delay, i) => {
+      const direction = i % 2 === 0 ? 1 : -1;
+      const x = clamp(impact.x + direction * width * (0.12 + i * 0.045), 12, width - 12);
+      const nextImpact = point(x, impact.y);
+      const nextUpper = jagged(point(x + 18 * direction, -16), nextImpact, 3, width * 0.12, 9);
+      const nextLower = jagged(nextImpact, point(x - 28 * direction, height + 8), 8, width * 0.24, 16);
+      arcs.push({ path: [...nextUpper, ...nextLower.slice(1)], width: 6.2 + i * 0.95, delay });
+    });
 
     // 짧은 잔가지는 메인 줄기 전체에 분산. 한 점에서 빗자루처럼 퍼지지 않는다.
     const count = trigger.level === 1 ? 5 : trigger.level === 2 ? 6 : 7;
@@ -156,7 +157,12 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
     });
 
     const startTime = performance.now();
-    const duration = trigger.level === 1 ? 720 : trigger.level === 2 ? 890 : 1060;
+    const duration = Math.max(trigger.level === 1 ? 720 : trigger.level === 2 ? 890 : 1060,
+      (trigger.times.at(-1) ?? 0) + 380);
+    const risingPaths = trigger.rise ? Array.from({ length: 5 }, (_, i) => {
+      const x = width * (0.26 + i * 0.12);
+      return jagged(point(x, height + 8), point(x + (i - 2) * 19, height * 0.15), 8, width * 0.10, 10);
+    }) : [];
 
     const drawLine = (arc: Arc, alpha: number) => {
       if (alpha <= 0) return;
@@ -199,8 +205,7 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
 
       // 충격 순간 짧게 화면 전체를 비추되 눈부심은 억제.
       const burst = ageSinceStrike < 0 ? 0 : Math.max(0, 1 - ageSinceStrike / 170);
-      const echo = Math.max(0, 1 - Math.abs(elapsed - (trigger.strikes === 2 ? STRIKE_TIMES_MS[1] : firstStrike + 175)) / 90) * 0.38;
-      const glow = Math.max(burst, echo);
+      const glow = burst;
       if (glow > 0) {
         ctx.fillStyle = edge;
         ctx.globalAlpha = glow * (trigger.level === 3 ? 0.13 : 0.08);
@@ -208,6 +213,16 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
         ctx.globalAlpha = 1;
       }
 
+      risingPaths.forEach((path, i) => {
+        // 에너지가 바닥에서 위로 차오르고 끝에서 사라진다.
+        const progress = Math.max(0, Math.min(1, (elapsed - 260 - i * 28) / 470));
+        if (!progress) return;
+        const end = Math.ceil(progress * path.length);
+        const trail = path.slice(Math.max(0, end - 12), end);
+        if (trail.length < 2) return;
+        const opacity = Math.min(1, progress * 7, (1 - progress) * 5);
+        drawLine({ path: trail, width: i === 2 ? 7 : 3, delay: 0 }, opacity);
+      });
       for (const arc of arcs) {
         const age = elapsed - arc.delay;
         const alpha = age < 0 ? 0 : age < 100 ? 1 : Math.max(0, 1 - (age - 100) / 230);
