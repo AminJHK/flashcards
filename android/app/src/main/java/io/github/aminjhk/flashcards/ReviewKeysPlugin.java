@@ -1,6 +1,11 @@
 package io.github.aminjhk.flashcards;
 
+import android.content.Context;
+import android.os.Build;
 import android.os.Handler;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.os.VibratorManager;
 import android.os.Looper;
 import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
@@ -30,6 +35,44 @@ public class ReviewKeysPlugin extends Plugin {
             enabled = Boolean.TRUE.equals(call.getBoolean("enabled", false));
             call.resolve();
         });
+    }
+
+    @PluginMethod
+    public void vibrateCombo(PluginCall call) {
+        final int duration = 28;
+        var times = call.getArray("times");
+        if (times == null || times.length() < 1 || times.length() > 5) {
+            call.reject("Invalid lightning timing");
+            return;
+        }
+        long[] pattern = new long[times.length() * 2];
+        int end = 0;
+        for (int i = 0; i < times.length(); i++) {
+            int start = times.optInt(i, -1);
+            if (start < end || start > 1000) {
+                call.reject("Invalid lightning timing");
+                return;
+            }
+            pattern[i * 2] = start - end;
+            pattern[i * 2 + 1] = duration;
+            end = start + duration;
+        }
+        Context context = getActivity();
+        Vibrator vibrator;
+        if (Build.VERSION.SDK_INT >= 31) {
+            VibratorManager manager = context.getSystemService(VibratorManager.class);
+            vibrator = manager == null ? null : manager.getDefaultVibrator();
+        } else {
+            vibrator = context.getSystemService(Vibrator.class);
+        }
+        try {
+            if (vibrator != null && vibrator.hasVibrator()) {
+                vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
+            }
+            call.resolve();
+        } catch (SecurityException error) {
+            call.reject("Vibration permission unavailable", error);
+        }
     }
 
     public boolean consume(KeyEvent event) {
