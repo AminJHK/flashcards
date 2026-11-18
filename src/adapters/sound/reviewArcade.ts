@@ -57,27 +57,42 @@ export function eruptionAt(times: readonly number[]): number {
   return (times[times.length - 1] ?? 0) + 110;
 }
 
+let eruptionBuffer: AudioBuffer | undefined;
+
 function playEruption(ctx: AudioContext, out: AudioNode, at: number): void {
-  const length = Math.round(ctx.sampleRate * 1.55);
-  const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
-  const samples = buffer.getChannelData(0);
-  let rumble = 0;
-  let body = 0;
-  for (let i = 0; i < length; i++) {
-    const t = i / ctx.sampleRate;
-    const noise = Math.random() * 2 - 1;
-    rumble += 0.018 * (noise - rumble);
-    body += 0.075 * (noise - body);
-    const echoAge = Math.max(0, t - ERUPTION_ECHO_MS / 1000);
-    const hit = Math.min(1, t / 0.008) * Math.exp(-t * 12);
-    const echo = Math.min(1, echoAge / 0.009) * Math.exp(-echoAge * 9);
-    const tail = Math.min(1, t / 0.045) * Math.exp(-t * 2.5);
-    const phase = 2 * Math.PI * (43 * t + 42 * (1 - Math.exp(-15 * t)) / 15);
-    samples[i] = Math.tanh(3 * (body * (hit + echo * 0.67) + rumble * tail * 1.8 +
-      Math.sin(phase) * (hit * 0.27 + echo * 0.14 + tail * 0.06))) * Math.min(1, (1.55 - t) / 0.15);
+  if (!eruptionBuffer || eruptionBuffer.sampleRate !== ctx.sampleRate) {
+    const duration = 1.85;
+    eruptionBuffer = ctx.createBuffer(1, Math.round(ctx.sampleRate * duration), ctx.sampleRate);
+    const samples = eruptionBuffer.getChannelData(0);
+    let low = 0;
+    let mid = 0;
+    // Two distinct impacts, each with a pitched body and a filtered debris tail.
+    const hits = [
+      { time: 0, pitch: 126, force: 1 },
+      { time: ERUPTION_ECHO_MS / 1000, pitch: 94, force: 0.78 },
+      { time: 0.43, pitch: 64, force: 0.19 },
+    ];
+    for (let i = 0; i < samples.length; i++) {
+      const t = i / ctx.sampleRate;
+      const noise = Math.random() * 2 - 1;
+      low += 0.035 * (noise - low);
+      mid += 0.22 * (noise - mid);
+      let sample = 0;
+      for (const { time, pitch, force } of hits) {
+        const age = t - time;
+        if (age < 0) break;
+        const phase = 2 * Math.PI * (50 * age + (pitch - 50) * -Math.expm1(-13 * age) / 13);
+        const attack = Math.min(1, age / 0.006);
+        const punch = (Math.sin(phase) + 0.4 * Math.sin(phase * 2)) * Math.exp(-age * 13);
+        const crack = (mid - low) * 0.8 * Math.exp(-age * 24);
+        const decay = low * 1.1 * Math.exp(-age * 3.3);
+        sample += force * attack * (0.56 * punch + crack + decay);
+      }
+      samples[i] = Math.tanh(sample * 2.3) * Math.min(1, (duration - t) / 0.23);
+    }
   }
   const source = ctx.createBufferSource();
-  source.buffer = buffer;
+  source.buffer = eruptionBuffer;
   source.connect(out);
   source.start(at);
 }
