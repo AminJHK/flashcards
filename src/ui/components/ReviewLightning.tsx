@@ -7,6 +7,7 @@ export interface LightningTrigger {
   level: 1 | 2 | 3;
   times: readonly number[];
   rise: boolean;
+  previewCombo?: number;
 }
 
 interface Point { x: number; y: number }
@@ -168,6 +169,19 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
     const duration = trigger.rise ? eruption + 900 : Math.max(
       trigger.level === 1 ? 720 : trigger.level === 2 ? 890 : 1060,
       (trigger.times.at(-1) ?? 0) + 380);
+    const intensity = clamp((trigger.previewCombo ?? 10) - 10, 0, 5);
+    const stars = Array.from({ length: intensity * 5 }, (_, i) => {
+      const side = i % 2 ? 1 : -1;
+      const fan = intensity === 5;
+      return {
+        x: side * random(0.11, fan ? 0.19 : 0.27),
+        y: random(fan ? 0.19 : 0.33, fan ? 0.32 : 0.78),
+        dx: side * random(0.04, fan ? 0.28 : 0.14),
+        dy: random(-0.16, -0.035),
+        delay: (fan ? 220 : 130) + random(0, 200),
+        size: random(3, 8),
+      };
+    });
     const ejecta = trigger.rise ? Array.from({ length: 72 }, (_, i) => ({
       vx: random(-0.82, 0.82),
       vy: random(-1.5, -0.32),
@@ -237,7 +251,7 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
         point(vent.x + half, top),
         point(vent.x + half * 0.64, (vent.y + top) * 0.48),
       ] as const;
-      const [leftBend, leftTip, rightTip, rightBend] = beamOutline(width * 0.21 * growth);
+      const [leftBend, leftTip, rightTip, rightBend] = beamOutline(width * (0.21 + intensity * 0.008) * growth);
       polygon(beamViolet, [leftBend, leftTip, rightTip, rightBend]);
       polygon(violet, beamOutline(width * 0.16 * growth));
       polygon(core, beamOutline(width * 0.062 * growth));
@@ -311,7 +325,7 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
           const t = age - delay;
           if (t < 0 || t > 580) continue;
           const progress = t / 580;
-          const radius = 12 + width * 0.64 * Math.sqrt(progress);
+          const radius = 12 + width * (0.64 + intensity * 0.035) * Math.sqrt(progress);
           ctx.beginPath();
           ctx.ellipse(vent.x, vent.y, radius, radius * 0.25, 0, 0, Math.PI * 2);
           ctx.strokeStyle = delay ? blue : violet;
@@ -333,6 +347,26 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
           ctx.lineWidth = size;
           ctx.strokeStyle = ember.size > 4 ? core : violet;
           ctx.stroke();
+        }
+        for (const [i, star] of stars.entries()) {
+          const t = (age - star.delay) / 440;
+          if (t <= 0 || t >= 1) continue;
+          const x = vent.x + width * (star.x + star.dx * t);
+          const y = vent.y * (star.y + star.dy * t);
+          const size = star.size * Math.sin(Math.PI * t);
+          ctx.beginPath();
+          ctx.moveTo(x, y - size);
+          ctx.lineTo(x + size * 0.22, y - size * 0.22);
+          ctx.lineTo(x + size * 0.75, y);
+          ctx.lineTo(x + size * 0.22, y + size * 0.22);
+          ctx.lineTo(x, y + size);
+          ctx.lineTo(x - size * 0.22, y + size * 0.22);
+          ctx.lineTo(x - size * 0.75, y);
+          ctx.lineTo(x - size * 0.22, y - size * 0.22);
+          ctx.closePath();
+          ctx.globalAlpha = Math.min(1, t * 6, (1 - t) * 3);
+          ctx.fillStyle = i % 3 === 0 ? violet : core;
+          ctx.fill();
         }
         ctx.globalAlpha = 1;
       }
