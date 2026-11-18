@@ -130,7 +130,7 @@ function ComboPreview() {
       playReviewArcadeSound(3, ERUPTION_COMBO);
       vibrateCombo(times, true);
     }
-    setTrigger((previous) => ({ id: (previous?.id ?? 0) + 1, level: 3, times, rise: true, previewCombo: combo }));
+    setTrigger((previous) => ({ id: (previous?.id ?? 0) + 1, level: 3, times, rise: true, eruptionCombo: combo }));
   };
 
   return (
