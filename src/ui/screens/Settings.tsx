@@ -1,3 +1,6 @@
+import { ReviewLightning, type LightningTrigger } from '../components/ReviewLightning';
+import { comboBoltTimes, ERUPTION_COMBO, playReviewArcadeSound } from '../../adapters/sound/reviewArcade';
+import { vibrateCombo } from '../../adapters/native/reviewKeys';
 import { ScreenSync } from '../components/ScreenSync';
 import { useEffect, useState } from 'react';
 import type { AccentKey, FontScale, Settings as SettingsT, ThemePref } from '../../core/model/types';
@@ -116,12 +119,42 @@ function SettingsHub({ s }: { s: SettingsT }) {
   );
 }
 
+function ComboPreview() {
+  const [trigger, setTrigger] = useState<LightningTrigger>();
+  const [soundAndVibration, setSoundAndVibration] = useState(false);
+
+  const play = () => {
+    const times = comboBoltTimes(ERUPTION_COMBO);
+    if (soundAndVibration) {
+      playReviewArcadeSound(3, ERUPTION_COMBO);
+      vibrateCombo(times, true);
+    }
+    setTrigger((previous) => ({ id: (previous?.id ?? 0) + 1, level: 3, times, rise: true }));
+  };
+
+  return (
+    <>
+      <Row col title="10콤보 효과 미리보기">
+        {trigger && <div className="card-sheet" lang="id">nanggung</div>}
+        <button type="button" className="btn-soft" onClick={play}>
+          {trigger ? '다시 재생' : '재생'}
+        </button>
+      </Row>
+      <Row title="미리보기 소리·진동">
+        <Switch label="미리보기 소리·진동" checked={soundAndVibration} onChange={setSoundAndVibration} />
+      </Row>
+      {trigger && <ReviewLightning trigger={trigger} />}
+    </>
+  );
+}
+
 function StudySettings({ s }: { s: SettingsT }) {
   const scheduler = useScheduler(s);
   const toast = useToast();
   const set = (patch: Partial<SettingsT>) => saveSettings(patch);
   return (
     <div className="group">
+      <ComboPreview />
       <Row col title="답 버튼">
         <Segmented<2 | 4>
           label="답 버튼"
