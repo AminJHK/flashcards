@@ -219,13 +219,13 @@ export function Review({ deckId }: { deckId?: string }) {
       const nextCombo = advanceCombo(combo, r, card.phase);
       if (arcadeSound) playReviewArcadeSound(r, nextCombo);
       // 사운드를 꺼도 번개 연출은 유지한다. 애니메이션은 카드 이동과 독립적으로 재생된다.
-      const rise = nextCombo === ERUPTION_COMBO;
+      const rise = nextCombo >= ERUPTION_COMBO && nextCombo <= 15;
       const burst = r >= 3 ? (rise ? 3 : lightningBurstLevel(nextCombo)) : 0;
       if (burst) {
         const times = comboBoltTimes(nextCombo);
-        vibrateCombo(times, rise);
+        vibrateCombo(times, nextCombo === ERUPTION_COMBO);
         const setEffect = rise ? setEruption : setLightning;
-        setEffect((previous) => ({ id: (previous?.id ?? 0) + 1, level: burst, times, rise }));
+        setEffect((previous) => ({ id: (previous?.id ?? 0) + 1, level: burst, times, rise, eruptionCombo: rise ? nextCombo : undefined }));
       }
       saving.current.add(id);
       setAnswered((a) => ({ ...a, [id]: at }));
