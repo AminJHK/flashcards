@@ -1,5 +1,6 @@
 import { ERUPTION_ECHO_MS, eruptionAt } from '../../adapters/sound/reviewArcade';
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface LightningTrigger {
   id: number;
@@ -24,7 +25,9 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
     if (!trigger || !ref.current) return;
     const canvas = ref.current;
     const ctx = canvas.getContext('2d');
-    if (!ctx || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!ctx) return;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion && !trigger.rise) return;
 
     const style = getComputedStyle(document.documentElement);
     const core = style.getPropertyValue('--lightning-bright').trim() || '#efffff';
@@ -39,8 +42,9 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
     const point = (x: number, y: number): Point => ({ x, y });
 
     const fit = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
+      const rect = canvas.getBoundingClientRect();
+      width = rect.width;
+      height = rect.height;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = Math.ceil(width * dpr);
       canvas.height = Math.ceil(height * dpr);
@@ -86,7 +90,8 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
     const start = point(clamp(impact.x + random(-width * 0.09, width * 0.09), width * 0.2, width * 0.8), -16);
     const finish = point(clamp(impact.x + random(-width * 0.16, width * 0.16), width * 0.2, width * 0.8), height + 8);
     const upper = jagged(start, impact, 3, Math.min(42, width * 0.12), 9);
-    const vent = point(width * 0.5, height * 0.88);
+    const cardBottom = document.querySelector('.card-area .card-sheet')?.getBoundingClientRect().bottom ?? 0;
+    const vent = point(width * 0.5, Math.min(height - 12, Math.max(height * 0.92, cardBottom + 16)));
     const lower = jagged(impact, trigger.rise ? vent : finish, Math.max(7, Math.ceil((height - impact.y) / 95)), Math.min(92, width * 0.26), 16);
     const firstStrike = trigger.times[0] ?? 0;
     const main = [...upper, ...lower.slice(1)];
@@ -208,32 +213,8 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
       const growth = 1 - (1 - Math.min(1, age / 170)) ** 3;
       const fade = 1 - Math.max(0, (age - 270) / 470);
       const top = vent.y - (vent.y + 20) * growth;
-      const card = document.querySelector('.card-area .card-sheet')?.getBoundingClientRect();
-
-      const opacity = fade * Math.min(1, age / 30);
       ctx.save();
-      // Keep a visible gold spine through the card at lower opacity.
-      if (card) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(card.left, card.top, card.width, card.height);
-        ctx.clip();
-        ctx.globalAlpha = opacity * 0.24;
-        ctx.fillStyle = gold;
-        ctx.beginPath();
-        ctx.moveTo(vent.x, vent.y);
-        ctx.lineTo(vent.x - width * 0.145 * growth, top);
-        ctx.lineTo(vent.x + width * 0.145 * growth, top);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-
-        ctx.beginPath();
-        ctx.rect(0, 0, width, height);
-        ctx.rect(card.left, card.top, card.width, card.height);
-        ctx.clip('evenodd');
-      }
-      ctx.globalAlpha = opacity;
+      ctx.globalAlpha = fade * Math.min(1, age / 30);
       const polygon = (color: string, points: readonly Point[]) => {
         ctx.beginPath();
         ctx.moveTo(vent.x, vent.y);
@@ -339,6 +320,14 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
       else ctx.clearRect(0, 0, width, height);
     };
 
+    if (reducedMotion) {
+      drawBeam(190);
+      const timeout = window.setTimeout(() => ctx.clearRect(0, 0, width, height), 620);
+      return () => {
+        window.clearTimeout(timeout);
+        ctx.clearRect(0, 0, width, height);
+      };
+    }
     frame = requestAnimationFrame(draw);
     window.addEventListener('resize', fit);
     return () => {
@@ -348,5 +337,8 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
     };
   }, [trigger]);
 
-  return <canvas ref={ref} className="review-lightning" aria-hidden="true" />;
+  return createPortal(
+    <canvas ref={ref} className={trigger?.rise ? 'review-lightning review-eruption' : 'review-lightning'} aria-hidden="true" />,
+    document.body,
+  );
 }
