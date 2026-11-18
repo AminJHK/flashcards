@@ -121,6 +121,7 @@ function SettingsHub({ s }: { s: SettingsT }) {
 
 function ComboPreview() {
   const [trigger, setTrigger] = useState<LightningTrigger>();
+  const [combo, setCombo] = useState(ERUPTION_COMBO);
   const [soundAndVibration, setSoundAndVibration] = useState(false);
 
   const play = () => {
@@ -129,15 +130,22 @@ function ComboPreview() {
       playReviewArcadeSound(3, ERUPTION_COMBO);
       vibrateCombo(times, true);
     }
-    setTrigger((previous) => ({ id: (previous?.id ?? 0) + 1, level: 3, times, rise: true }));
+    setTrigger((previous) => ({ id: (previous?.id ?? 0) + 1, level: 3, times, rise: true, previewCombo: combo }));
   };
 
   return (
     <>
-      <Row col title="10콤보 효과 미리보기">
+      <Row col title="콤보 효과 미리보기">
+        <Segmented<number>
+          label="미리보기 콤보"
+          value={combo}
+          options={[10, 11, 12, 13, 14, 15].map((value) => [value, String(value)])}
+          onChange={setCombo}
+          wrap
+        />
         {trigger && <div className="card-sheet" lang="id">nanggung</div>}
         <button type="button" className="btn-soft" onClick={play}>
-          {trigger ? '다시 재생' : '재생'}
+          {combo}콤보 재생
         </button>
       </Row>
       <Row title="미리보기 소리·진동">
