@@ -221,7 +221,7 @@ export function Review({ deckId }: { deckId?: string }) {
       const burst = r >= 3 ? lightningBurstLevel(nextCombo) : 0;
       if (burst) {
         const times = comboBoltTimes(nextCombo);
-        vibrateCombo(times);
+        vibrateCombo(times, nextCombo === 10);
         setLightning((previous) => ({ id: (previous?.id ?? 0) + 1, level: burst, times, rise: nextCombo === 10 }));
       }
       saving.current.add(id);

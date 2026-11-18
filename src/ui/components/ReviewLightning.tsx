@@ -1,3 +1,4 @@
+import { ERUPTION_ECHO_MS, eruptionAt } from '../../adapters/sound/reviewArcade';
 import { useEffect, useRef } from 'react';
 
 export interface LightningTrigger {
@@ -85,7 +86,8 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
     const start = point(clamp(impact.x + random(-width * 0.09, width * 0.09), width * 0.2, width * 0.8), -16);
     const finish = point(clamp(impact.x + random(-width * 0.16, width * 0.16), width * 0.2, width * 0.8), height + 8);
     const upper = jagged(start, impact, 3, Math.min(42, width * 0.12), 9);
-    const lower = jagged(impact, finish, Math.max(7, Math.ceil((height - impact.y) / 95)), Math.min(92, width * 0.26), 16);
+    const vent = point(width * 0.5, height * 0.88);
+    const lower = jagged(impact, trigger.rise ? vent : finish, Math.max(7, Math.ceil((height - impact.y) / 95)), Math.min(92, width * 0.26), 16);
     const firstStrike = trigger.times[0] ?? 0;
     const main = [...upper, ...lower.slice(1)];
     const arcs: Arc[] = [{
@@ -100,7 +102,7 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
       const x = clamp(impact.x + direction * width * (0.12 + i * 0.045), 12, width - 12);
       const nextImpact = point(x, impact.y);
       const nextUpper = jagged(point(x + 18 * direction, -16), nextImpact, 3, width * 0.12, 9);
-      const nextLower = jagged(nextImpact, point(x - 28 * direction, height + 8), 8, width * 0.24, 16);
+      const nextLower = jagged(nextImpact, trigger.rise ? vent : point(x - 28 * direction, height + 8), 8, width * 0.24, 16);
       arcs.push({ path: [...nextUpper, ...nextLower.slice(1)], width: 6.2 + i * 0.95, delay });
     });
 
@@ -157,12 +159,16 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
     });
 
     const startTime = performance.now();
-    const duration = Math.max(trigger.level === 1 ? 720 : trigger.level === 2 ? 890 : 1060,
+    const eruption = eruptionAt(trigger.times);
+    const duration = trigger.rise ? eruption + 900 : Math.max(
+      trigger.level === 1 ? 720 : trigger.level === 2 ? 890 : 1060,
       (trigger.times.at(-1) ?? 0) + 380);
-    const risingPaths = trigger.rise ? Array.from({ length: 5 }, (_, i) => {
-      const x = width * (0.26 + i * 0.12);
-      return jagged(point(x, height + 8), point(x + (i - 2) * 19, height * 0.15), 8, width * 0.10, 10);
-    }) : [];
+    const ejecta = trigger.rise ? Array.from({ length: 72 }, (_, i) => ({
+      vx: random(-0.82, 0.82),
+      vy: random(-1.5, -0.32),
+      size: random(1.2, 5.8),
+      delay: i < 51 ? 0 : ERUPTION_ECHO_MS,
+    })) : [];
 
     const drawLine = (arc: Arc, alpha: number) => {
       if (alpha <= 0) return;
@@ -213,16 +219,45 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
         ctx.globalAlpha = 1;
       }
 
-      risingPaths.forEach((path, i) => {
-        // 에너지가 바닥에서 위로 차오르고 끝에서 사라진다.
-        const progress = Math.max(0, Math.min(1, (elapsed - 260 - i * 28) / 470));
-        if (!progress) return;
-        const end = Math.ceil(progress * path.length);
-        const trail = path.slice(Math.max(0, end - 12), end);
-        if (trail.length < 2) return;
-        const opacity = Math.min(1, progress * 7, (1 - progress) * 5);
-        drawLine({ path: trail, width: i === 2 ? 7 : 3, delay: 0 }, opacity);
-      });
+      if (trigger.rise) {
+        const age = elapsed - eruption;
+        for (const delay of [0, ERUPTION_ECHO_MS]) {
+          const t = age - delay;
+          if (t < 0 || t > 580) continue;
+          const progress = t / 580;
+          const radius = 12 + width * 0.64 * Math.sqrt(progress);
+          ctx.beginPath();
+          ctx.ellipse(vent.x, vent.y, radius, radius * 0.25, 0, 0, Math.PI * 2);
+          ctx.strokeStyle = delay ? edge : core;
+          ctx.lineWidth = 5 * (1 - progress) + 1;
+          ctx.globalAlpha = (1 - progress) * 0.8;
+          ctx.stroke();
+          if (t < 240) {
+            const glow = ctx.createRadialGradient(vent.x, vent.y, 0, vent.x, vent.y, radius + 24);
+            glow.addColorStop(0, core);
+            glow.addColorStop(0.18, edge);
+            glow.addColorStop(1, 'transparent');
+            ctx.globalAlpha = (1 - t / 240) * 0.85;
+            ctx.fillStyle = glow;
+            ctx.fillRect(vent.x - radius - 24, vent.y - radius - 24, (radius + 24) * 2, (radius + 24) * 2);
+          }
+        }
+        for (const ember of ejecta) {
+          const t = age - ember.delay;
+          if (t < 0 || t > 720) continue;
+          const x = vent.x + ember.vx * t;
+          const y = vent.y + ember.vy * t + 0.0009 * t * t;
+          const size = ember.size * (1 - t / 800);
+          ctx.globalAlpha = Math.min(1, t / 14, 1 - t / 720);
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x - ember.vx * 19, y - (ember.vy + 0.0018 * t) * 19);
+          ctx.lineWidth = size;
+          ctx.strokeStyle = ember.size > 4 ? core : edge;
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      }
       for (const arc of arcs) {
         const age = elapsed - arc.delay;
         const alpha = age < 0 ? 0 : age < 100 ? 1 : Math.max(0, 1 - (age - 100) / 230);
