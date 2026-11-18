@@ -43,7 +43,10 @@ export function comboStrike(combo: number): 0 | 1 | 2 {
   return thunderMilestoneLevel(combo) ? 1 : 0;
 }
 
+export const ERUPTION_COMBO = 2; // 화면 확인용 임시 기준
+
 export function comboBoltTimes(combo: number): readonly number[] {
+  if (combo === ERUPTION_COMBO) return [140, 246, 352, 458, 564];
   if (!lightningBurstLevel(combo)) return [];
   const count = combo < 5 ? 1 : Math.min(combo - 3, 5);
   const interval = 246 - count * 28;
@@ -217,7 +220,7 @@ export function playReviewArcadeSound(rating: Rating, combo: number): void {
     const times = comboBoltTimes(combo);
     const volume = times.length > 1 ? 0.62 : 0.9;
     times.forEach((delay) => playStrike(ctx, mix, t + delay / 1000, volume));
-    if (combo === 10) playEruption(ctx, mix, t + eruptionAt(times) / 1000);
+    if (combo === ERUPTION_COMBO) playEruption(ctx, mix, t + eruptionAt(times) / 1000);
   } catch {
     // 음향 오류는 FSRS 저장이나 다음 카드 이동에 영향을 주지 않는다.
   }

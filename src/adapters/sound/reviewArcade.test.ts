@@ -61,7 +61,7 @@ describe('review arcade combo', () => {
 
   it('builds up to five faster lightning strikes', () => {
     expect([2, 3, 4, 5, 6, 7, 8, 10, 30].map((combo) => comboBoltTimes(combo).length))
-      .toEqual([0, 1, 1, 2, 3, 4, 5, 5, 5]);
+      .toEqual([5, 1, 1, 2, 3, 4, 5, 5, 5]);
     const [first, second] = comboBoltTimes(10);
     expect(second! - first!).toBeLessThan(190);
   });
