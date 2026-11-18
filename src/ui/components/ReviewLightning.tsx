@@ -199,6 +199,54 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
       ctx.globalAlpha = 1;
     };
 
+    const gold = style.getPropertyValue('--eruption-gold').trim();
+    const amber = style.getPropertyValue('--eruption-amber').trim();
+    const ivory = style.getPropertyValue('--eruption-core').trim();
+    const beamShards = [-0.47, -0.36, -0.27, 0.25, 0.35, 0.47];
+    const drawBeam = (age: number) => {
+      if (age < 0 || age >= 620) return;
+      const growth = 1 - (1 - Math.min(1, age / 170)) ** 3;
+      const fade = 1 - Math.max(0, (age - 220) / 400);
+      const top = vent.y - (vent.y + 20) * growth;
+      const card = document.querySelector('.card-area .card-sheet')?.getBoundingClientRect();
+
+      ctx.save();
+      if (card) {
+        ctx.beginPath();
+        ctx.rect(0, 0, width, height);
+        ctx.roundRect(card.left, card.top, card.width, card.height, 28);
+        ctx.clip('evenodd');
+      }
+      ctx.globalAlpha = fade * Math.min(1, age / 30);
+      const polygon = (color: string, points: readonly Point[]) => {
+        ctx.beginPath();
+        ctx.moveTo(vent.x, vent.y);
+        for (const p of points) ctx.lineTo(p.x, p.y);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+      };
+      for (const offset of beamShards) {
+        const x = vent.x + width * offset * growth;
+        const y = vent.y * (1 - growth * (0.5 + Math.abs(offset) * 0.65));
+        polygon(Math.abs(offset) > 0.4 ? gold : amber, [
+          point(vent.x + (x - vent.x) * 0.54, (vent.y + y) / 2),
+          point(x, y),
+          point(vent.x + (x - vent.x) * 0.77, (vent.y + y) / 2),
+        ]);
+      }
+      for (const [color, spread] of [[amber, 0.21], [gold, 0.16], [ivory, 0.062]] as const) {
+        const half = width * spread * growth;
+        polygon(color, [
+          point(vent.x - half * 0.58, (vent.y + top) * 0.5),
+          point(vent.x - half, top),
+          point(vent.x + half, top),
+          point(vent.x + half * 0.64, (vent.y + top) * 0.48),
+        ]);
+      }
+      ctx.restore();
+    };
+
     const draw = (now: number) => {
       if (document.hidden) {
         ctx.clearRect(0, 0, width, height);
@@ -221,6 +269,7 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
 
       if (trigger.rise) {
         const age = elapsed - eruption;
+        drawBeam(age);
         for (const delay of [0, ERUPTION_ECHO_MS]) {
           const t = age - delay;
           if (t < 0 || t > 580) continue;
@@ -228,19 +277,11 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
           const radius = 12 + width * 0.64 * Math.sqrt(progress);
           ctx.beginPath();
           ctx.ellipse(vent.x, vent.y, radius, radius * 0.25, 0, 0, Math.PI * 2);
-          ctx.strokeStyle = delay ? edge : core;
+          ctx.strokeStyle = delay ? amber : gold;
           ctx.lineWidth = 5 * (1 - progress) + 1;
           ctx.globalAlpha = (1 - progress) * 0.8;
           ctx.stroke();
-          if (t < 240) {
-            const glow = ctx.createRadialGradient(vent.x, vent.y, 0, vent.x, vent.y, radius + 24);
-            glow.addColorStop(0, core);
-            glow.addColorStop(0.18, edge);
-            glow.addColorStop(1, 'transparent');
-            ctx.globalAlpha = (1 - t / 240) * 0.85;
-            ctx.fillStyle = glow;
-            ctx.fillRect(vent.x - radius - 24, vent.y - radius - 24, (radius + 24) * 2, (radius + 24) * 2);
-          }
+
         }
         for (const ember of ejecta) {
           const t = age - ember.delay;
@@ -253,7 +294,7 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
           ctx.moveTo(x, y);
           ctx.lineTo(x - ember.vx * 19, y - (ember.vy + 0.0018 * t) * 19);
           ctx.lineWidth = size;
-          ctx.strokeStyle = ember.size > 4 ? core : edge;
+          ctx.strokeStyle = ember.size > 4 ? ivory : gold;
           ctx.stroke();
         }
         ctx.globalAlpha = 1;
