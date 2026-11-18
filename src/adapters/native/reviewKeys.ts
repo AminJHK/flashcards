@@ -1,8 +1,9 @@
+import { ERUPTION_ECHO_MS, eruptionAt } from '../sound/reviewArcade';
 import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor/core';
 
 export type ReviewKey = 'up' | 'down' | 'undo';
 interface ReviewKeysPlugin {
-  vibrateCombo(options: { times: readonly number[] }): Promise<void>;
+  vibrateCombo(options: { times: readonly number[]; eruption?: boolean }): Promise<void>;
   setEnabled(options: { enabled: boolean }): Promise<void>;
   addListener(event: 'key', callback: (event: { action: ReviewKey }) => void): Promise<PluginListenerHandle>;
 }
@@ -28,20 +29,29 @@ export async function listenReviewKeys(callback: (key: ReviewKey) => void): Prom
 }
 
 
-export function vibrateCombo(times: readonly number[]): void {
+export function vibrateCombo(times: readonly number[], eruption = false): void {
   if (supportsReviewKeys()) {
-    void plugin.vibrateCombo({ times }).catch(() => vibrateInBrowser(times));
+    void plugin.vibrateCombo({ times, eruption }).catch(() => vibrateInBrowser(times, eruption));
   } else {
-    vibrateInBrowser(times);
+    vibrateInBrowser(times, eruption);
   }
 }
 
-function vibrateInBrowser(times: readonly number[]): void {
-  const duration = 28;
-  const pattern = times.flatMap((time, i) => [time - (i ? times[i - 1]! + duration : 0), duration]);
+function vibrateInBrowser(times: readonly number[], eruption: boolean): void {
+  const beats = times.map((start, i) => ({ start, duration: i % 2 ? 13 : 25 }));
+  if (eruption) {
+    const start = eruptionAt(times);
+    beats.push({ start, duration: 78 }, { start: start + ERUPTION_ECHO_MS, duration: 58 });
+  }
+  let end = 0;
+  const pattern = beats.flatMap(({ start, duration }) => {
+    const gap = start - end;
+    end = start + duration;
+    return [gap, duration];
+  });
   try {
     navigator.vibrate?.(pattern[0] === 0 ? pattern.slice(1) : [0, ...pattern]);
   } catch {
-    // 일부 브라우저는 진동이 지원되지 않는다.
+    // 진동을 지원하지 않는 브라우저도 있다.
   }
 }

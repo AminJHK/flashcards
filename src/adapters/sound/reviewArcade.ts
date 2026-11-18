@@ -51,6 +51,37 @@ export function comboBoltTimes(combo: number): readonly number[] {
   return Array.from({ length: count }, (_, i) => first + i * interval);
 }
 
+export const ERUPTION_ECHO_MS = 185;
+
+export function eruptionAt(times: readonly number[]): number {
+  return (times[times.length - 1] ?? 0) + 110;
+}
+
+function playEruption(ctx: AudioContext, out: AudioNode, at: number): void {
+  const length = Math.round(ctx.sampleRate * 1.55);
+  const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+  const samples = buffer.getChannelData(0);
+  let rumble = 0;
+  let body = 0;
+  for (let i = 0; i < length; i++) {
+    const t = i / ctx.sampleRate;
+    const noise = Math.random() * 2 - 1;
+    rumble += 0.018 * (noise - rumble);
+    body += 0.075 * (noise - body);
+    const echoAge = Math.max(0, t - ERUPTION_ECHO_MS / 1000);
+    const hit = Math.min(1, t / 0.008) * Math.exp(-t * 12);
+    const echo = Math.min(1, echoAge / 0.009) * Math.exp(-echoAge * 9);
+    const tail = Math.min(1, t / 0.045) * Math.exp(-t * 2.5);
+    const phase = 2 * Math.PI * (43 * t + 42 * (1 - Math.exp(-15 * t)) / 15);
+    samples[i] = Math.tanh(3 * (body * (hit + echo * 0.67) + rumble * tail * 1.8 +
+      Math.sin(phase) * (hit * 0.27 + echo * 0.14 + tail * 0.06))) * Math.min(1, (1.55 - t) / 0.15);
+  }
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  source.connect(out);
+  source.start(at);
+}
+
 // 타격 샘플의 충전음은 건너뛰고, 화면 효과와 같은 시점에 타격을 재생한다.
 const STRIKE_TIMES_MS = [140] as const;
 const STRIKE_SAMPLE_OFFSET = 0.13;
@@ -171,6 +202,7 @@ export function playReviewArcadeSound(rating: Rating, combo: number): void {
     const times = comboBoltTimes(combo);
     const volume = times.length > 1 ? 0.62 : 0.9;
     times.forEach((delay) => playStrike(ctx, mix, t + delay / 1000, volume));
+    if (combo === 10) playEruption(ctx, mix, t + eruptionAt(times) / 1000);
   } catch {
     // 음향 오류는 FSRS 저장이나 다음 카드 이동에 영향을 주지 않는다.
   }

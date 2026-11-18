@@ -39,13 +39,14 @@ public class ReviewKeysPlugin extends Plugin {
 
     @PluginMethod
     public void vibrateCombo(PluginCall call) {
-        final int duration = 28;
+        boolean eruption = Boolean.TRUE.equals(call.getBoolean("eruption", false));
         var times = call.getArray("times");
         if (times == null || times.length() < 1 || times.length() > 5) {
             call.reject("Invalid lightning timing");
             return;
         }
-        long[] pattern = new long[times.length() * 2];
+        long[] pattern = new long[times.length() * 2 + (eruption ? 4 : 0)];
+        int[] amplitudes = new int[pattern.length];
         int end = 0;
         for (int i = 0; i < times.length(); i++) {
             int start = times.optInt(i, -1);
@@ -53,9 +54,20 @@ public class ReviewKeysPlugin extends Plugin {
                 call.reject("Invalid lightning timing");
                 return;
             }
+            int duration = i % 2 == 0 ? 25 : 13;
             pattern[i * 2] = start - end;
             pattern[i * 2 + 1] = duration;
+            amplitudes[i * 2 + 1] = i % 2 == 0 ? 155 : 70;
             end = start + duration;
+        }
+        if (eruption) {
+            int index = times.length() * 2;
+            pattern[index] = times.optInt(times.length() - 1) + 110 - end;
+            pattern[index + 1] = 78;
+            pattern[index + 2] = 185 - 78;
+            pattern[index + 3] = 58;
+            amplitudes[index + 1] = 255;
+            amplitudes[index + 3] = 205;
         }
         Context context = getActivity();
         Vibrator vibrator;
@@ -67,7 +79,9 @@ public class ReviewKeysPlugin extends Plugin {
         }
         try {
             if (vibrator != null && vibrator.hasVibrator()) {
-                vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
+                vibrator.vibrate(vibrator.hasAmplitudeControl()
+                    ? VibrationEffect.createWaveform(pattern, amplitudes, -1)
+                    : VibrationEffect.createWaveform(pattern, -1));
             }
             call.resolve();
         } catch (SecurityException error) {
