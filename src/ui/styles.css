@@ -3398,6 +3398,7 @@ textarea.input-sentence {
   pointer-events: none;
   z-index: 45;
 }
+.review-eruption { z-index: 46; }
 .review-tools-panel {
   position: absolute;
   top: calc(var(--safe-top) + 54px);

@@ -58,6 +58,7 @@ export function Review({ deckId }: { deckId?: string }) {
   const [arcadeSound, setArcadeSound] = useState(() => localStorage.getItem('review-arcade-sound') !== 'false');
   const [toolsOpen, setToolsOpen] = useState(false);
   const [lightning, setLightning] = useState<LightningTrigger>();
+  const [eruption, setEruption] = useState<LightningTrigger>();
   /**
    * 방금 답한 카드 → 답한 시각. 저장소 목록이 갱신되기 전(폰이 느릴 때)에도 같은 카드를 다시 고르지 않게
    * 대기열을 만들 때 "답한 것"으로 간주한다 (assumeAnswered).
@@ -222,7 +223,9 @@ export function Review({ deckId }: { deckId?: string }) {
       if (burst) {
         const times = comboBoltTimes(nextCombo);
         vibrateCombo(times, nextCombo === 10);
-        setLightning((previous) => ({ id: (previous?.id ?? 0) + 1, level: burst, times, rise: nextCombo === 10 }));
+        const rise = nextCombo === 10;
+        const setEffect = rise ? setEruption : setLightning;
+        setEffect((previous) => ({ id: (previous?.id ?? 0) + 1, level: burst, times, rise }));
       }
       saving.current.add(id);
       setAnswered((a) => ({ ...a, [id]: at }));
@@ -394,6 +397,7 @@ export function Review({ deckId }: { deckId?: string }) {
         </div>
       )}
       <ReviewLightning trigger={lightning} />
+      <ReviewLightning trigger={eruption} />
     </>
   );
 
