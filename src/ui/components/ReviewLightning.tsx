@@ -7,7 +7,7 @@ export interface LightningTrigger {
   level: 1 | 2 | 3;
   times: readonly number[];
   rise: boolean;
-  previewCombo?: number;
+  eruptionCombo?: number;
 }
 
 interface Point { x: number; y: number }
@@ -169,7 +169,7 @@ export function ReviewLightning({ trigger }: { trigger?: LightningTrigger }) {
     const duration = trigger.rise ? eruption + 900 : Math.max(
       trigger.level === 1 ? 720 : trigger.level === 2 ? 890 : 1060,
       (trigger.times.at(-1) ?? 0) + 380);
-    const intensity = clamp((trigger.previewCombo ?? 10) - 10, 0, 5);
+    const intensity = clamp((trigger.eruptionCombo ?? 10) - 10, 0, 5);
     const stars = Array.from({ length: intensity * 5 }, (_, i) => {
       const side = i % 2 ? 1 : -1;
       const fan = intensity === 5;
